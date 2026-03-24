@@ -11,11 +11,12 @@ class Notification extends Model
     
    protected $fillable = [
         'user_id', 'from_id', 'flat_id', 'building_id', 'status', 'department_id',
-        'title', 'body', 'type', 'dataPayload', 'read_at', 'admin_read', 'deleted_at', 'created_at', 'updated_at'
+        'title', 'body', 'image', 'target_roles', 'type', 'dataPayload', 'read_at', 'admin_read', 'deleted_at', 'created_at', 'updated_at'
     ];
 
     protected $casts = [
-        'dataPayload' => 'array', // auto json_encode on save, json_decode on fetch
+        'dataPayload' => 'array',
+        'target_roles' => 'array',
     ];
     
     public function user()

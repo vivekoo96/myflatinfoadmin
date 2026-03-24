@@ -9,18 +9,18 @@
   <!-- Google Font: Source Sans Pro -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
   <!-- Font Awesome -->
-  <link rel="stylesheet" href="{{asset('public/admin/plugins/fontawesome-free/css/all.min.css')}}">
+  <link rel="stylesheet" href="{{asset('admin/plugins/fontawesome-free/css/all.min.css')}}">
   <!-- DataTables -->
-  <link rel="stylesheet" href="{{asset('public/admin/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css')}}">
-  <link rel="stylesheet" href="{{asset('public/admin/plugins/datatables-responsive/css/responsive.bootstrap4.min.css')}}">
-  <link rel="stylesheet" href="{{asset('public/admin/plugins/datatables-buttons/css/buttons.bootstrap4.min.css')}}">
+  <link rel="stylesheet" href="{{asset('admin/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css')}}">
+  <link rel="stylesheet" href="{{asset('admin/plugins/datatables-responsive/css/responsive.bootstrap4.min.css')}}">
+  <link rel="stylesheet" href="{{asset('admin/plugins/datatables-buttons/css/buttons.bootstrap4.min.css')}}">
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <!-- Select2 -->
-  <link rel="stylesheet" href="{{asset('public/admin/plugins/select2/css/select2.min.css')}}">
-  <link rel="stylesheet" href="{{asset('public/admin/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css')}}">
+  <link rel="stylesheet" href="{{asset('admin/plugins/select2/css/select2.min.css')}}">
+  <link rel="stylesheet" href="{{asset('admin/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css')}}">
   <!-- Theme style -->
-  <link rel="stylesheet" href="{{asset('public/admin/dist/css/adminlte.min.css')}}">
+  <link rel="stylesheet" href="{{asset('admin/dist/css/adminlte.min.css')}}">
  
      <style>
     @import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
@@ -1000,7 +1000,36 @@
             </a>
           </li>
         @endif
-        
+
+          @php
+            $hasNotifFeature = $building && $building->hasPermission('Send Notification');
+          @endphp
+          @if($user->role == 'BA')
+          <li class="nav-item {{ request()->is('notification*') ? 'menu-open' : '' }}">
+            <a href="#" class="nav-link {{ request()->is('notification*') ? 'active' : '' }} {{ getAccessControl($hasNotifFeature) }}">
+              <i class="nav-icon fas fa-bell"></i>
+              <p>
+                Send Notification
+                <i class="right fas fa-angle-left"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="{{ route('notification.index') }}" class="nav-link {{ request()->routeIs('notification.index') ? 'active' : '' }}">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Create Notification</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{{ route('notification.history') }}" class="nav-link {{ request()->routeIs('notification.history') ? 'active' : '' }}">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Previous Notifications</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+          @endif
+
           @if($user->role == 'BA' || Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President' || Auth::User()->hasPermission('custom.classifieds'))
           <li class="nav-item">
             <a href="{{route('classified.index')}}" class="nav-link {{ request()->is('classified*') ? 'active' : '' }}">
@@ -1134,33 +1163,33 @@
 <!-- ./wrapper -->
 
 <!-- jQuery -->
-<script src="{{asset('public/admin/plugins/jquery/jquery.min.js')}}"></script>
+<script src="{{asset('admin/plugins/jquery/jquery.min.js')}}"></script>
 <!-- Bootstrap 4 -->
-<script src="{{asset('public/admin/plugins/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
+<script src="{{asset('admin/plugins/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
 <!-- DataTables  & Plugins -->
-<script src="{{asset('public/admin/plugins/datatables/jquery.dataTables.min.js')}}"></script>
-<script src="{{asset('public/admin/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js')}}"></script>
-<script src="{{asset('public/admin/plugins/datatables-responsive/js/dataTables.responsive.min.js')}}"></script>
-<script src="{{asset('public/admin/plugins/datatables-responsive/js/responsive.bootstrap4.min.js')}}"></script>
-<script src="{{asset('public/admin/plugins/datatables-buttons/js/dataTables.buttons.min.js')}}"></script>
-<script src="{{asset('public/admin/plugins/datatables-buttons/js/buttons.bootstrap4.min.js')}}"></script>
-<script src="{{asset('public/admin/plugins/jszip/jszip.min.js')}}"></script>
-<script src="{{asset('public/admin/plugins/pdfmake/pdfmake.min.js')}}"></script>
-<script src="{{asset('public/admin/plugins/pdfmake/vfs_fonts.js')}}"></script>
-<script src="{{asset('public/admin/plugins/datatables-buttons/js/buttons.html5.min.js')}}"></script>
-<script src="{{asset('public/admin/plugins/datatables-buttons/js/buttons.print.min.js')}}"></script>
-<script src="{{asset('public/admin/plugins/datatables-buttons/js/buttons.colVis.min.js')}}"></script>
-<script src="{{asset('public/admin/plugins/inputmask/jquery.inputmask.min.js')}}"></script>
+<script src="{{asset('admin/plugins/datatables/jquery.dataTables.min.js')}}"></script>
+<script src="{{asset('admin/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js')}}"></script>
+<script src="{{asset('admin/plugins/datatables-responsive/js/dataTables.responsive.min.js')}}"></script>
+<script src="{{asset('admin/plugins/datatables-responsive/js/responsive.bootstrap4.min.js')}}"></script>
+<script src="{{asset('admin/plugins/datatables-buttons/js/dataTables.buttons.min.js')}}"></script>
+<script src="{{asset('admin/plugins/datatables-buttons/js/buttons.bootstrap4.min.js')}}"></script>
+<script src="{{asset('admin/plugins/jszip/jszip.min.js')}}"></script>
+<script src="{{asset('admin/plugins/pdfmake/pdfmake.min.js')}}"></script>
+<script src="{{asset('admin/plugins/pdfmake/vfs_fonts.js')}}"></script>
+<script src="{{asset('admin/plugins/datatables-buttons/js/buttons.html5.min.js')}}"></script>
+<script src="{{asset('admin/plugins/datatables-buttons/js/buttons.print.min.js')}}"></script>
+<script src="{{asset('admin/plugins/datatables-buttons/js/buttons.colVis.min.js')}}"></script>
+<script src="{{asset('admin/plugins/inputmask/jquery.inputmask.min.js')}}"></script>
 <!-- AdminLTE App -->
-<script src="{{asset('public/admin/dist/js/adminlte.min.js')}}"></script>
+<script src="{{asset('admin/dist/js/adminlte.min.js')}}"></script>
 <!-- AdminLTE for demo purposes -->
-<script src="{{asset('public/admin/dist/js/demo.js')}}"></script>
+<script src="{{asset('admin/dist/js/demo.js')}}"></script>
 
 <!-- Select2 -->
-<script src="{{asset('public/admin/plugins/select2/js/select2.full.min.js')}}"></script>
+<script src="{{asset('admin/plugins/select2/js/select2.full.min.js')}}"></script>
 
 <!-- Bootstrap Switch -->
-<script src="{{asset('public/admin/plugins/bootstrap-switch/js/bootstrap-switch.min.js')}}"></script>
+<script src="{{asset('admin/plugins/bootstrap-switch/js/bootstrap-switch.min.js')}}"></script>
 
 <script src="https://www.gstatic.com/firebasejs/8.3.2/firebase.js"></script>
 

@@ -262,6 +262,8 @@ Route::middleware('admin')->group(function () {
         //
         
         Route::resource('/notification', NotificationController::class);
+        Route::get('/notification-history', [NotificationController::class, 'history'])->name('notification.history');
+        Route::post('/notification-mark-all-read', [NotificationController::class, 'mark_all_as_read'])->name('notification.mark_all_as_read');
         Route::resource('/setting',SettingController::class);
         Route::get('/taxes',[SettingController::class, 'taxes']);
         Route::post('/update-taxes',[SettingController::class, 'update_taxes']);

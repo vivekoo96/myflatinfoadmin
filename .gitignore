@@ -1,10 +1,5 @@
 /node_modules
-/storage
-/vendor
 /public
-/bootstrap
-composer.json
-composer.lock
 .env
 .env.*
 !.env.example

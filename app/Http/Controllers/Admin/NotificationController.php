@@ -4,126 +4,163 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Application;
-use App\Models\ApplicationDocument;
-use App\Models\ApplicationStep;
 use App\Models\User;
 use App\Models\Notification;
-use App\Models\Setting;
-
+use App\Models\Flat;
+use App\Models\BuildingUser;
+use App\Models\UserDevice;
+use App\Services\FCMService;
 use \Auth;
 
 class NotificationController extends Controller
 {
     public function index()
     {
-        $setting = Setting::first();
-        $notifications = Notification::orderBy('id','asc')->get();
-        $recieved_notifications = Notification::where('user_id',Auth::User()->id)->get();
-        $sent_notifications = Notification::where('from_id',Auth::User()->id)->get();
-        return view('admin.notifications.index',compact('notifications','recieved_notifications','sent_notifications'));
+        $buildingId = Auth::user()->building_id;
+
+        // Previous notifications sent by this admin as broadcast
+        $sentNotifications = Notification::where('building_id', $buildingId)
+            ->where('from_id', Auth::user()->id)
+            ->where('type', 'admin_broadcast')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.notifications.index', compact('sentNotifications'));
     }
 
     public function create()
     {
-        //
+        return redirect()->route('notification.index');
     }
 
     public function store(Request $request)
     {
-        //$token = User::whereNotNull('device_token')->pluck('device_token')->all();
-        // $token = User::where('role',$request->to)->whereNotNull('device_token')->pluck('device_token')->all();
-        $tokens = User::whereNotNull('fcm_token')->pluck('fcm_token')->all();
-        $SERVER_API_KEY = \App\Models\Setting::first()->fcm_key;
-        $data = [
-            "registration_ids" => $tokens,
-            "notification" => [
-                "title" => "Your Post Was Rejected",
-                "body"  => "Unfortunately, your classified was not approved. Please review and edit your post before resubmitting.",
-                "sound" => "bellnotificationsound.wav",
-            ],
-            "data" => [
-                "screen"     => "Classifieds",
-                "params"     => json_encode([
-                    "ScreenTab" => "Post Status",
-                    "id"        => "34"
-                ]),
-                "categoryId" => "UnplannedVisitors",
-                "channelId"  => "app",
-                "click_action" => "FLUTTER_NOTIFICATION_CLICK"
-            ],
-            "priority" => "high"
-        ];
-        $dataString = json_encode($data);
-        $headers = [
-            'Authorization: key=' . $SERVER_API_KEY,
-            'Content-Type: application/json',
-        ];
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'https://fcm.googleapis.com/fcm/send');
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
-        $response = curl_exec($ch);
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
-    
-        return response()->json([
-            'http_code' => $httpCode,
-            'fcm_response' => json_decode($response, true),
-            'curl_error' => $curlError
+        $request->validate([
+            'title'        => 'required|string|max:255',
+            'body'         => 'required|string',
+            'image'        => 'nullable|image|max:4096',
+            'target_roles' => 'required|array|min:1',
         ]);
-        //$users = User::whereNotNull('device_token')->get();
-        // if($request->to == 'vendor'){
-        //     $user = User::find(2);
-        // }else{
-        //     $user = User::find(3);
-        // }
 
-        // $notification = new Notification();
-        // $notification->user_id = $user->id;
-        // $notification->title = $request->title;
-        // $notification->body = $request->body;
-        // $notification->save();
+        $buildingId = Auth::user()->building_id;
+        $fromId     = Auth::user()->id;
+        $targetRoles = $request->target_roles; // e.g. ['all_flat_users', 'security']
 
-        return redirect()->back()->with('success','Notification sent');
+        // Upload image if provided
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('notifications', 'public');
+        }
+
+        // Collect target user IDs based on selected roles
+        $userIds = collect();
+
+        $flats = Flat::where('building_id', $buildingId)->get();
+
+        if (in_array('all_flat_users', $targetRoles)) {
+            $userIds = $userIds
+                ->merge($flats->whereNotNull('owner_id')->pluck('owner_id'))
+                ->merge($flats->whereNotNull('tanent_id')->pluck('tanent_id'));
+        } else {
+            if (in_array('owners', $targetRoles)) {
+                $userIds = $userIds->merge($flats->whereNotNull('owner_id')->pluck('owner_id'));
+            }
+            if (in_array('tenants', $targetRoles)) {
+                $userIds = $userIds->merge($flats->whereNotNull('tanent_id')->pluck('tanent_id'));
+            }
+        }
+
+        if (in_array('security', $targetRoles)) {
+            $ids = BuildingUser::where('building_id', $buildingId)
+                ->whereHas('role', fn($q) => $q->where('slug', 'security'))
+                ->pluck('user_id');
+            $userIds = $userIds->merge($ids);
+        }
+
+        if (in_array('issue_management', $targetRoles)) {
+            $ids = BuildingUser::where('building_id', $buildingId)
+                ->whereHas('role', fn($q) => $q->where('type', 'issue'))
+                ->pluck('user_id');
+            $userIds = $userIds->merge($ids);
+        }
+
+        if (in_array('accounts', $targetRoles)) {
+            $ids = BuildingUser::where('building_id', $buildingId)
+                ->whereHas('role', fn($q) => $q->where('slug', 'accounts'))
+                ->pluck('user_id');
+            $userIds = $userIds->merge($ids);
+        }
+
+        $userIds = $userIds->unique()->filter()->values();
+
+        // Get active FCM tokens for targeted users
+        $tokens = UserDevice::whereIn('user_id', $userIds)
+            ->whereNotNull('fcm_token')
+            ->where('is_active', 1)
+            ->pluck('fcm_token')
+            ->toArray();
+
+        // Send via FCM v1
+        $fcmResult = ['success' => 0, 'failure' => 0];
+        if (!empty($tokens)) {
+            $fcmService = new FCMService();
+            $data = [
+                'screen' => 'Notifications',
+                'type'   => 'admin_broadcast',
+                'image'  => $imagePath ? asset('storage/' . $imagePath) : '',
+            ];
+            $fcmResult = $fcmService->sendToMultipleDevices($tokens, $request->title, $request->body, $data);
+        }
+
+        // Save one broadcast record (not per-user, just a log entry)
+        Notification::create([
+            'user_id'      => 0,
+            'from_id'      => $fromId,
+            'building_id'  => $buildingId,
+            'title'        => $request->title,
+            'body'         => $request->body,
+            'image'        => $imagePath,
+            'target_roles' => $targetRoles,
+            'type'         => 'admin_broadcast',
+            'status'       => 1,
+            'admin_read'   => 1,
+            'dataPayload'  => json_encode([]),
+        ]);
+
+        $userCount = $userIds->count();
+        $msg = "Notification sent to {$userCount} users. (FCM: {$fcmResult['success']} success, {$fcmResult['failure']} failed)";
+
+        return redirect()->route('notification.history')->with('success', $msg);
+    }
+
+    public function history()
+    {
+        $buildingId = Auth::user()->building_id;
+
+        $sentNotifications = Notification::where('building_id', $buildingId)
+            ->where('from_id', Auth::user()->id)
+            ->where('type', 'admin_broadcast')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.notifications.history', compact('sentNotifications'));
     }
 
     public function show($id)
     {
-        $notification = Notification::find($id);
-        $notification->admin_read = 1;
-        $notification->save();
-        return view('admin.notifications.show',compact('notification'));
+        $notification = Notification::findOrFail($id);
+        return view('admin.notifications.show', compact('notification'));
     }
 
-    public function edit($id)
-    {
-        //
-    }
+    public function edit($id) {}
 
-    public function update(Request $request, $id)
-    {
-        //
-    }
+    public function update(Request $request, $id) {}
 
-    public function destroy($id)
-    {
-        
-    }
-    
+    public function destroy($id) {}
+
     public function mark_all_as_read(Request $request)
     {
-        $notifications = Notification::where('admin_read',0)->get();
-        foreach($notifications as $notification){
-            $notification->admin_read = 1;
-            $notification->save();
-        }
-        return redirect()->back()->with('success','All notification marked as read');
+        Notification::where('admin_read', 0)->update(['admin_read' => 1]);
+        return redirect()->back()->with('success', 'All notifications marked as read');
     }
-    
 }
