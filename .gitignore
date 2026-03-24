@@ -1,0 +1,15 @@
+/node_modules
+/storage
+/vendor
+/public
+/bootstrap
+composer.json
+composer.lock
+.env
+.env.*
+!.env.example
+myflatinfo-firebase-adminsdk.json
+composer.phar
+composer-setup.php
+error_log
+/sql
