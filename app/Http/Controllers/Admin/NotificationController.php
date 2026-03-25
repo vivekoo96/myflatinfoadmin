@@ -21,6 +21,7 @@ class NotificationController extends Controller
         $sentNotifications = Notification::where('building_id', $buildingId)
             ->where('from_id', Auth::user()->id)
             ->where('type', 'admin_broadcast')
+            ->where('user_id', 0)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -115,6 +116,21 @@ class NotificationController extends Controller
             ]
         );
 
+        // Save broadcast summary record for admin history page
+        Notification::create([
+            'user_id'      => 0,
+            'from_id'      => $fromId,
+            'building_id'  => $buildingId,
+            'title'        => $request->title,
+            'body'         => $request->body,
+            'image'        => $imagePath,
+            'target_roles' => $targetRoles,
+            'type'         => 'admin_broadcast',
+            'status'       => 1,
+            'admin_read'   => 1,
+            'dataPayload'  => json_encode([]),
+        ]);
+
         $msg = "Notification sent to {$result['total_users']} users. ({$result['successful']} success, {$result['failed']} failed, {$result['total_devices']} devices)";
 
         return redirect()->route('notification.history')->with('success', $msg);
@@ -127,6 +143,7 @@ class NotificationController extends Controller
         $sentNotifications = Notification::where('building_id', $buildingId)
             ->where('from_id', Auth::user()->id)
             ->where('type', 'admin_broadcast')
+            ->where('user_id', 0)
             ->orderBy('created_at', 'desc')
             ->get();
 

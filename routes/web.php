@@ -15,7 +15,7 @@ use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\NoticeboardController;
 use App\Http\Controllers\Admin\ClassifiedController;
 use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\PermissionController;
+// use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\BlockController;
 use App\Http\Controllers\Admin\FlatController;
 use App\Http\Controllers\Admin\IssueController;
@@ -133,7 +133,7 @@ Route::middleware('admin')->group(function () {
         
         Route::resource('/city', CityController::class);
         Route::resource('/role', RoleController::class);
-        Route::resource('/permission', PermissionController::class);
+//         Route::resource('/permission', PermissionController::class);
         Route::get('/get-role-permissions/{id}', [RoleController::class, 'getRolePermissions'])->name('getRolePermissions');
         Route::post('/store-user-role',[RoleController::class, 'store_user_role']);
         Route::post('/update-user-role',[RoleController::class, 'update_user_role']);
