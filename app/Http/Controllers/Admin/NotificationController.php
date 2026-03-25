@@ -8,8 +8,7 @@ use App\Models\User;
 use App\Models\Notification;
 use App\Models\Flat;
 use App\Models\BuildingUser;
-use App\Models\UserDevice;
-use App\Services\FCMService;
+use App\Helpers\NotificationHelper2 as NotificationHelper;
 use \Auth;
 
 class NotificationController extends Controller
@@ -93,42 +92,30 @@ class NotificationController extends Controller
 
         $userIds = $userIds->unique()->filter()->values();
 
-        // Get active FCM tokens for targeted users
-        $tokens = UserDevice::whereIn('user_id', $userIds)
-            ->whereNotNull('fcm_token')
-            ->where('is_active', 1)
-            ->pluck('fcm_token')
-            ->toArray();
-
-        // Send via FCM v1
-        $fcmResult = ['success' => 0, 'failure' => 0];
-        if (!empty($tokens)) {
-            $fcmService = new FCMService();
-            $data = [
-                'screen' => 'Notifications',
-                'type'   => 'admin_broadcast',
-                'image'  => $imagePath ? asset('storage/' . $imagePath) : '',
-            ];
-            $fcmResult = $fcmService->sendToMultipleDevices($tokens, $request->title, $request->body, $data);
-        }
-
-        // Save one broadcast record (not per-user, just a log entry)
-        Notification::create([
-            'user_id'      => 0,
-            'from_id'      => $fromId,
-            'building_id'  => $buildingId,
-            'title'        => $request->title,
-            'body'         => $request->body,
-            'image'        => $imagePath,
-            'target_roles' => $targetRoles,
+        // Send notification to each user (saves per-user DB record + sends push)
+        $dataPayload = [
+            'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+            'screen'       => 'Notifications',
             'type'         => 'admin_broadcast',
-            'status'       => 1,
-            'admin_read'   => 1,
-            'dataPayload'  => json_encode([]),
-        ]);
+            'categoryId'   => 'broadcast',
+            'channelId'    => 'default',
+            'sound'        => 'default',
+            'image'        => $imagePath ? asset('storage/' . $imagePath) : '',
+        ];
 
-        $userCount = $userIds->count();
-        $msg = "Notification sent to {$userCount} users. (FCM: {$fcmResult['success']} success, {$fcmResult['failure']} failed)";
+        $result = NotificationHelper::sendBulkNotifications(
+            $userIds->toArray(),
+            $request->title,
+            $request->body,
+            $dataPayload,
+            [
+                'from_id'      => $fromId,
+                'building_id'  => $buildingId,
+                'type'         => 'admin_broadcast',
+            ]
+        );
+
+        $msg = "Notification sent to {$result['total_users']} users. ({$result['successful']} success, {$result['failed']} failed, {$result['total_devices']} devices)";
 
         return redirect()->route('notification.history')->with('success', $msg);
     }
