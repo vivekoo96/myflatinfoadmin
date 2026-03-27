@@ -9,6 +9,7 @@ use App\Models\Notification;
 use App\Models\Flat;
 use App\Models\BuildingUser;
 use App\Helpers\NotificationHelper2 as NotificationHelper;
+use Illuminate\Support\Facades\Log;
 use \Auth;
 
 class NotificationController extends Controller
@@ -92,6 +93,14 @@ class NotificationController extends Controller
         }
 
         $userIds = $userIds->unique()->filter()->values();
+
+        if ($userIds->isEmpty()) {
+            Log::warning('Admin broadcast: no users found for selected target roles', [
+                'building_id'  => $buildingId,
+                'target_roles' => $targetRoles,
+            ]);
+            return redirect()->route('notification.history')->with('error', 'No users found for the selected roles.');
+        }
 
         // Send notification to each user (saves per-user DB record + sends push)
         $dataPayload = [

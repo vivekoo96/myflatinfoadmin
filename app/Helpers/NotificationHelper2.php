@@ -117,8 +117,13 @@ class NotificationHelper2
             }
 
             /** Firebase init */
+            $serviceAccountPath = config('services.fcm.service_account', base_path('myflatinfo-firebase-adminsdk.json'));
+            if (!file_exists($serviceAccountPath)) {
+                Log::error('FCM service account file not found', ['path' => $serviceAccountPath]);
+                throw new \Exception("FCM service account file not found: $serviceAccountPath");
+            }
             $firebase = (new Factory)
-                ->withServiceAccount(base_path('myflatinfo-firebase-adminsdk.json'))
+                ->withServiceAccount($serviceAccountPath)
                 ->createMessaging();
 
             $successCount = 0;
@@ -376,6 +381,10 @@ class NotificationHelper2
                 $results['total_devices'] += $result['devices_notified'];
             } else {
                 $results['failed']++;
+                Log::error('Bulk notification failed for user', [
+                    'user_id' => $userId,
+                    'reason'  => $result['message'] ?? 'unknown',
+                ]);
             }
         }
 
