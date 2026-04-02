@@ -1001,6 +1001,15 @@
           </li>
         @endif
 
+        @if($user->role == 'BA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President') || Auth::User()->hasPermission('custom.polls'))
+          <li class="nav-item">
+            <a href="{{ route('poll.index') }}" class="nav-link {{ request()->is('poll*') ? 'active' : '' }}">
+              <i class="nav-icon fa fa-bar-chart"></i>
+              <p>Polls &amp; Surveys</p>
+            </a>
+          </li>
+        @endif
+
           @php
             $hasNotifFeature = $building && $building->hasPermission('Send Notification');
           @endphp

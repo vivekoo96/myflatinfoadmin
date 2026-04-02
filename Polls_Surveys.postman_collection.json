@@ -1,0 +1,541 @@
+{
+  "info": {
+    "name": "MyFlatInfos – Polls & Surveys",
+    "description": "All API and Admin endpoints for the Polls & Surveys feature.\n\n**Variables to set:**\n- `api_url` – e.g. `http://your-domain.com/api`\n- `admin_url` – e.g. `http://your-domain.com`\n- `token` – Bearer token from user login (for User API)\n- `csrf_token` – CSRF token from admin session (for Admin routes)\n- `poll_id` – Poll ID to use in detail/action requests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "api_url",    "value": "http://localhost:8000/api",  "type": "string" },
+    { "key": "admin_url",  "value": "http://localhost:8000",      "type": "string" },
+    { "key": "token",      "value": "PASTE_USER_BEARER_TOKEN",    "type": "string" },
+    { "key": "csrf_token", "value": "PASTE_CSRF_TOKEN",           "type": "string" },
+    { "key": "poll_id",    "value": "1",                          "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "📱 User API",
+      "description": "Mobile app endpoints. Requires: Authorization: Bearer {{token}} + flat must be selected via select-flat first.",
+      "item": [
+
+        {
+          "name": "Get Polls",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{api_url}}/get-polls", "host": ["{{api_url}}"], "path": ["get-polls"] },
+            "description": "Returns all active, closed, and published polls for the user's building.\n\nReturns:\n- `id`, `title`, `description`, `type` (poll/survey)\n- `structure` (single/multiple)\n- `voting_type` (flat_based/user_based)\n- `status` (active / expiring_soon / closed / published)\n- `expiry_date`\n- `has_voted` – whether this user/flat already voted\n- `total_voters` – total unique votes cast so far\n- `results_released` – true only when status = published\n- `created_by_name`, `created_by_role`"
+          },
+          "response": [
+            {
+              "name": "200 OK – Example",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"polls\": [\n    {\n      \"id\": 1,\n      \"title\": \"Parking Bay Preference\",\n      \"description\": \"Tell us your preferred parking arrangement.\",\n      \"type\": \"poll\",\n      \"structure\": \"single\",\n      \"voting_type\": \"user_based\",\n      \"status\": \"active\",\n      \"expiry_date\": \"2026-04-15 18:00:00\",\n      \"created_by_name\": \"John Smith\",\n      \"created_by_role\": \"Building Admin\",\n      \"has_voted\": false,\n      \"total_voters\": 12,\n      \"questions_count\": 1,\n      \"results_released\": false\n    }\n  ]\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Get Poll Detail",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poll_id\": {{poll_id}}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{api_url}}/get-poll-detail", "host": ["{{api_url}}"], "path": ["get-poll-detail"] },
+            "description": "Returns full poll with all questions and options.\n\n**Required body:**\n- `poll_id` – integer\n\nReturns:\n- All poll fields from get-polls\n- `participation_pct` – % of eligible voters who have voted\n- `questions[]` – array of questions with options\n  - Each option has `is_selected: true` if this user already voted for it\n\n**Note:** Results data (vote counts/%) is NOT included here. Use `get-poll-results` after results are released."
+          },
+          "response": [
+            {
+              "name": "200 OK – Example",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"poll\": {\n    \"id\": 1,\n    \"title\": \"Parking Bay Preference\",\n    \"type\": \"poll\",\n    \"structure\": \"single\",\n    \"voting_type\": \"user_based\",\n    \"status\": \"active\",\n    \"expiry_date\": \"2026-04-15 18:00:00\",\n    \"created_by_name\": \"John Smith\",\n    \"created_by_role\": \"Building Admin\",\n    \"has_voted\": false,\n    \"total_voters\": 12,\n    \"participation_pct\": 34.3,\n    \"results_released\": false,\n    \"questions\": [\n      {\n        \"id\": 1,\n        \"question\": \"Which parking bay arrangement do you prefer?\",\n        \"order\": 0,\n        \"options\": [\n          { \"id\": 1, \"option_text\": \"Assigned bays\",   \"order\": 0, \"is_selected\": false },\n          { \"id\": 2, \"option_text\": \"First come first\", \"order\": 1, \"is_selected\": false }\n        ]\n      }\n    ]\n  }\n}"
+            },
+            {
+              "name": "404 – Not found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Poll not found or not available.\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Cast Vote",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poll_id\": {{poll_id}},\n  \"answers\": [\n    {\n      \"question_id\": 1,\n      \"option_id\": 2\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{api_url}}/cast-vote", "host": ["{{api_url}}"], "path": ["cast-vote"] },
+            "description": "Submit the user's vote for a poll.\n\n**Required body:**\n- `poll_id` – integer\n- `answers` – array of `{ question_id, option_id }`\n  - For **single-structure** polls: 1 answer\n  - For **multiple-structure** polls: one answer per question (all required)\n\n**Rules:**\n- Poll must be `active` and not expired\n- User can only vote once (permanent, cannot change)\n- `flat_based`: enforced per flat_id; `user_based`: enforced per user_id\n\n**Returns:**\n- `{ \"message\": \"Vote cast successfully.\", \"has_voted\": true }`"
+          },
+          "response": [
+            {
+              "name": "200 OK – Vote cast",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Vote cast successfully.\",\n  \"has_voted\": true\n}"
+            },
+            {
+              "name": "422 – Already voted",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"You have already voted in this poll.\"\n}"
+            },
+            {
+              "name": "422 – Poll expired",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"This poll has expired.\"\n}"
+            },
+            {
+              "name": "422 – Missing answers (multiple)",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Please answer all questions.\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Get Poll Results",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poll_id\": {{poll_id}}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{api_url}}/get-poll-results", "host": ["{{api_url}}"], "path": ["get-poll-results"] },
+            "description": "Fetch final results for a poll.\n\n**Required body:**\n- `poll_id` – integer\n\n**Rules:**\n- Returns 403 if status is NOT `published` (results not yet released by admin)\n- Even users who didn't vote can view results once published\n\n**Returns per question:**\n- `total_votes`\n- Options with `votes` count and `percentage`"
+          },
+          "response": [
+            {
+              "name": "200 OK – Results",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"poll\": {\n    \"id\": 1,\n    \"title\": \"Parking Bay Preference\",\n    \"type\": \"poll\",\n    \"voting_type\": \"user_based\",\n    \"total_voters\": 35,\n    \"result_released_at\": \"2026-04-16 10:00:00\",\n    \"created_by_name\": \"John Smith\",\n    \"created_by_role\": \"Building Admin\"\n  },\n  \"results\": [\n    {\n      \"question_id\": 1,\n      \"question\": \"Which parking bay arrangement do you prefer?\",\n      \"total_votes\": 35,\n      \"options\": [\n        { \"id\": 1, \"text\": \"Assigned bays\",   \"votes\": 22, \"percentage\": 62.9 },\n        { \"id\": 2, \"text\": \"First come first\", \"votes\": 13, \"percentage\": 37.1 }\n      ]\n    }\n  ]\n}"
+            },
+            {
+              "name": "403 – Not yet released",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Results have not been released yet.\"\n}"
+            }
+          ]
+        }
+
+      ]
+    },
+
+    {
+      "name": "🔧 Admin Panel (Building Admin)",
+      "description": "Web session routes for Building Admin (BA) / President.\n\n**Auth:** Session cookie + CSRF token.\nAdd `_token: {{csrf_token}}` to every POST/DELETE body, or set `X-CSRF-TOKEN: {{csrf_token}}` header.\n\nTo get CSRF token: load any admin page and copy from `<meta name=\"csrf-token\">` in the HTML head.",
+      "item": [
+
+        {
+          "name": "List Polls",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "text/html" }
+            ],
+            "url": { "raw": "{{admin_url}}/poll", "host": ["{{admin_url}}"], "path": ["poll"] },
+            "description": "Returns the Polls & Surveys index page.\nShows all polls for the admin's building with status, total voters, expiry, and action buttons."
+          },
+          "response": []
+        },
+
+        {
+          "name": "Create Poll – Save as Draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",                        "value": "{{csrf_token}}" },
+                { "key": "status_action",                 "value": "draft" },
+                { "key": "title",                         "value": "Parking Bay Preference" },
+                { "key": "description",                   "value": "Tell us your preferred arrangement." },
+                { "key": "type",                          "value": "poll",    "description": "poll or survey" },
+                { "key": "structure",                     "value": "single",  "description": "single or multiple" },
+                { "key": "voting_type",                   "value": "user_based", "description": "user_based or flat_based" },
+                { "key": "expiry_date",                   "value": "2026-04-30T18:00", "description": "datetime-local format (optional)" },
+                { "key": "questions[0][question]",        "value": "Which parking arrangement do you prefer?" },
+                { "key": "questions[0][options][]",       "value": "Assigned bays" },
+                { "key": "questions[0][options][]",       "value": "First come first served" }
+              ]
+            },
+            "url": { "raw": "{{admin_url}}/poll", "host": ["{{admin_url}}"], "path": ["poll"] },
+            "description": "Create a new poll or survey and save it as **Draft** (not visible to users yet).\n\n**Required fields:**\n- `title`\n- `type`: `poll` or `survey`\n- `structure`: `single` or `multiple`\n- `voting_type`: `user_based` or `flat_based`\n- `questions[0][question]`\n- `questions[0][options][]` – minimum 2 options\n\n**Optional:**\n- `description`\n- `expiry_date` – datetime-local format\n\n**Multiple questions:** Add `questions[1][question]`, `questions[1][options][]`, etc. (only valid when `structure=multiple`)\n\n**status_action:** `draft` = save only, `activate` = save and go live immediately"
+          },
+          "response": []
+        },
+
+        {
+          "name": "Create Poll – Create & Activate",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",                        "value": "{{csrf_token}}" },
+                { "key": "status_action",                 "value": "activate" },
+                { "key": "title",                         "value": "Favourite Common Area" },
+                { "key": "description",                   "value": "Vote for your preferred common area." },
+                { "key": "type",                          "value": "survey" },
+                { "key": "structure",                     "value": "multiple" },
+                { "key": "voting_type",                   "value": "flat_based" },
+                { "key": "expiry_date",                   "value": "2026-05-01T23:59" },
+                { "key": "questions[0][question]",        "value": "Which area do you use most?" },
+                { "key": "questions[0][options][]",       "value": "Gym" },
+                { "key": "questions[0][options][]",       "value": "Garden" },
+                { "key": "questions[0][options][]",       "value": "Clubhouse" },
+                { "key": "questions[1][question]",        "value": "How often do you visit?" },
+                { "key": "questions[1][options][]",       "value": "Daily" },
+                { "key": "questions[1][options][]",       "value": "Weekly" },
+                { "key": "questions[1][options][]",       "value": "Rarely" }
+              ]
+            },
+            "url": { "raw": "{{admin_url}}/poll", "host": ["{{admin_url}}"], "path": ["poll"] },
+            "description": "Create and immediately activate a poll. Users will be notified via push notification.\n\nSame fields as *Save as Draft* but `status_action = activate`."
+          },
+          "response": []
+        },
+
+        {
+          "name": "View Poll / Results",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "text/html" }
+            ],
+            "url": { "raw": "{{admin_url}}/poll/{{poll_id}}", "host": ["{{admin_url}}"], "path": ["poll", "{{poll_id}}"] },
+            "description": "View poll details and live voting results (available to admin at **any status** — draft, active, closed, published).\n\nShows:\n- Poll info (status, voting type, expiry, total voters)\n- Per-option vote counts and % progress bars\n- Action buttons (activate / close / release results / delete)"
+          },
+          "response": []
+        },
+
+        {
+          "name": "Activate Poll (draft → active)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" }
+              ]
+            },
+            "url": { "raw": "{{admin_url}}/poll/{{poll_id}}/activate", "host": ["{{admin_url}}"], "path": ["poll", "{{poll_id}}", "activate"] },
+            "description": "Activate a draft poll. Makes it visible and accepting votes from users.\nPush notification is sent to all flat owners and tenants in the building.\n\n**Rules:** Poll must be in `draft` status.\n\n**Returns:** `{ \"msg\": \"success\", \"status\": \"active\" }`"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"msg\": \"success\",\n  \"status\": \"active\"\n}"
+            },
+            {
+              "name": "422 – Not a draft",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Only draft polls can be activated.\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Close Poll (active → closed)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" }
+              ]
+            },
+            "url": { "raw": "{{admin_url}}/poll/{{poll_id}}/close", "host": ["{{admin_url}}"], "path": ["poll", "{{poll_id}}", "close"] },
+            "description": "Manually close an active poll. Voting stops immediately.\nUsers can no longer submit votes. Admin can then review results and release them.\n\n**Note:** Polls also auto-close when `expiry_date` is reached (via scheduled command `polls:close-expired`).\n\n**Returns:** `{ \"msg\": \"success\", \"status\": \"closed\" }`"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"msg\": \"success\",\n  \"status\": \"closed\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Release Results (closed → published)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" }
+              ]
+            },
+            "url": { "raw": "{{admin_url}}/poll/{{poll_id}}/release-results", "host": ["{{admin_url}}"], "path": ["poll", "{{poll_id}}", "release-results"] },
+            "description": "Publish poll results so all users can see them.\nPush notification is sent to all building users.\n\n**Rules:**\n- Poll must be `closed`\n- **Only the creator** of the poll can release results (other admins cannot)\n\n**Returns:** `{ \"msg\": \"success\", \"status\": \"published\" }`"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"msg\": \"success\",\n  \"status\": \"published\"\n}"
+            },
+            {
+              "name": "403 – Not the creator",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Only the poll creator can release results.\"\n}"
+            },
+            {
+              "name": "422 – Not closed",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Poll must be closed before releasing results.\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Update Expiry Date",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",      "value": "{{csrf_token}}" },
+                { "key": "expiry_date", "value": "2026-05-10T23:59", "description": "Must be a future datetime" }
+              ]
+            },
+            "url": { "raw": "{{admin_url}}/poll/{{poll_id}}/update-expiry", "host": ["{{admin_url}}"], "path": ["poll", "{{poll_id}}", "update-expiry"] },
+            "description": "Update the expiry date of a poll.\n\n**This is the ONLY field editable after creation.**\n\n**Rules:**\n- `expiry_date` must be a future date/time\n- Cannot change expiry of `closed` or `published` polls\n\n**Returns:** `{ \"msg\": \"success\", \"expiry_date\": \"10 May 2026, 11:59 PM\" }`"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"msg\": \"success\",\n  \"expiry_date\": \"10 May 2026, 11:59 PM\"\n}"
+            },
+            {
+              "name": "422 – Closed/published poll",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Cannot change expiry of a closed or published poll.\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Delete Poll",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",  "value": "{{csrf_token}}" },
+                { "key": "_method", "value": "DELETE" },
+                { "key": "action",  "value": "delete", "description": "delete or restore" }
+              ]
+            },
+            "url": { "raw": "{{admin_url}}/poll/{{poll_id}}", "host": ["{{admin_url}}"], "path": ["poll", "{{poll_id}}"] },
+            "description": "Soft-delete a poll at **any stage**.\nDeleted polls are hidden from users immediately (the app API filters by `deleted_at IS NULL`).\n\nTo **restore** a deleted poll: set `action = restore`.\n\n**Returns:** `{ \"msg\": \"success\" }`"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"msg\": \"success\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Restore Poll",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",  "value": "{{csrf_token}}" },
+                { "key": "_method", "value": "DELETE" },
+                { "key": "action",  "value": "restore" }
+              ]
+            },
+            "url": { "raw": "{{admin_url}}/poll/{{poll_id}}", "host": ["{{admin_url}}"], "path": ["poll", "{{poll_id}}"] },
+            "description": "Restore a previously soft-deleted poll.\n\n**Returns:** `{ \"msg\": \"success\" }`"
+          },
+          "response": []
+        }
+
+      ]
+    },
+
+    {
+      "name": "🛡️ Super Admin Panel",
+      "description": "Same lifecycle endpoints as Building Admin but:\n- **Building is selected via `building_id` field** in the create form (SA manages all buildings)\n- `created_by_role` is automatically set to `Super Admin`\n- No middleware restriction — SA is authenticated via the `admin` session middleware\n\nAll action URLs (`/poll/{id}/activate` etc.) are identical to the BA panel.",
+      "item": [
+
+        {
+          "name": "List All Polls (all buildings)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "text/html" }],
+            "url": { "raw": "{{superadmin_url}}/poll", "host": ["{{superadmin_url}}"], "path": ["poll"] },
+            "description": "Lists polls across all buildings. Use `?building_id=X` query param to filter by a specific building."
+          },
+          "response": []
+        },
+
+        {
+          "name": "List Polls – Filter by Building",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "text/html" }],
+            "url": {
+              "raw": "{{superadmin_url}}/poll?building_id=1",
+              "host": ["{{superadmin_url}}"],
+              "path": ["poll"],
+              "query": [{ "key": "building_id", "value": "1" }]
+            },
+            "description": "Filter polls by building ID."
+          },
+          "response": []
+        },
+
+        {
+          "name": "Create Poll (SA – with building_id)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",                  "value": "{{csrf_token}}" },
+                { "key": "status_action",           "value": "draft", "description": "draft or activate" },
+                { "key": "building_id",             "value": "1",     "description": "Required for SA – select building" },
+                { "key": "title",                   "value": "Community Rule Feedback" },
+                { "key": "description",             "value": "Help us improve the building rules." },
+                { "key": "type",                    "value": "survey" },
+                { "key": "structure",               "value": "single" },
+                { "key": "voting_type",             "value": "user_based" },
+                { "key": "expiry_date",             "value": "2026-05-20T23:59" },
+                { "key": "questions[0][question]",  "value": "Are you satisfied with the current noise rules?" },
+                { "key": "questions[0][options][]", "value": "Yes, they are fair" },
+                { "key": "questions[0][options][]", "value": "No, too strict" },
+                { "key": "questions[0][options][]", "value": "No, too lenient" }
+              ]
+            },
+            "url": { "raw": "{{superadmin_url}}/poll", "host": ["{{superadmin_url}}"], "path": ["poll"] },
+            "description": "Create a poll from the Super Admin panel.\n\n**Key difference from BA:** `building_id` is required in the body (SA selects the target building).\n`created_by_role` is automatically stored as `'Super Admin'`."
+          },
+          "response": []
+        }
+
+      ]
+    },
+
+    {
+      "name": "📊 Status Flow Reference",
+      "description": "Poll status lifecycle:\n\n`draft` → `active` → `closed` → `published`\n\n| Status | Visible to Users | Voting Open | Results Visible |\n|---|---|---|---|\n| draft | ❌ | ❌ | ❌ |\n| active | ✅ | ✅ | ❌ |\n| expiring_soon* | ✅ | ✅ | ❌ |\n| closed | ✅ | ❌ | ❌ |\n| published | ✅ | ❌ | ✅ |\n\n*`expiring_soon` is a computed display status when `active` and within 24 hrs of `expiry_date`. Stored as `active` in DB.\n\n**Auto-close:** Scheduler runs `polls:close-expired` every minute. Any `active` poll past its `expiry_date` is auto-moved to `closed`.",
+      "item": []
+    }
+
+  ]
+}

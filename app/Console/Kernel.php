@@ -20,6 +20,7 @@ class Kernel extends ConsoleKernel
         Commands\SendNoticeFromNotifications::class,
         Commands\DiagnoseNoticeboards::class,
         Commands\SendScheduledNoticeboardNotifications::class,
+        Commands\CloseExpiredPolls::class,
     ];
 
     protected function schedule(Schedule $schedule)
@@ -36,6 +37,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('notice:send-from-notifications')->everyMinute()->evenInMaintenanceMode();
         // $schedule->command('noticeboard:send-scheduled')->everyMinute()->evenInMaintenanceMode();
          $schedule->command('classified:send-scheduled')->everyMinute()->evenInMaintenanceMode();
+        $schedule->command('polls:close-expired')->everyMinute()->evenInMaintenanceMode();
     }
 
 //everyFiveMinutes()

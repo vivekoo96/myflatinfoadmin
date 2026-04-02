@@ -93,6 +93,7 @@ class Kernel extends HttpKernel
         'vehicle' => \App\Http\Middleware\VehicleMiddleware::class,
         'issue' => \App\Http\Middleware\IssueMiddleware::class,
         'classified' => \App\Http\Middleware\ClassifiedMiddleware::class,
+        'poll'       => \App\Http\Middleware\PollMiddleware::class,
 
         //'cors' => \App\Http\Middleware\CorsMiddleware::class,
     ];

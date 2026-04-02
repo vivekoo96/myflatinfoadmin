@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\TruthScreenController;
 use App\Http\Controllers\Api\WebhookController;
+use App\Http\Controllers\Api\PollController;
 
 // Route::prefix('customer')->group(function () {
     Route::post('register',[CustomerController::class,'register']);
@@ -134,7 +135,13 @@ use App\Http\Controllers\Api\WebhookController;
             Route::post('dnd-mode',[CustomerController::class,'dnd_mode']);
             Route::post('update-dnd-mode',[CustomerController::class,'update_dnd_mode']);
             Route::post('building-policy',[CustomerController::class,'building_policy']);
-            
+
+            // Polls & Surveys (User)
+            Route::post('get-polls', [PollController::class, 'getPolls']);
+            Route::post('get-poll-detail', [PollController::class, 'getPollDetail']);
+            Route::post('cast-vote', [PollController::class, 'castVote']);
+            Route::post('get-poll-results', [PollController::class, 'getPollResults']);
+
         });
         //Route::post('create-razorpay-order', [CustomerController::class,'create_razorpay_order']);
         //Route::post('verify-razorpay-signature', [CustomerController::class,'verify_razorpay_signature']);

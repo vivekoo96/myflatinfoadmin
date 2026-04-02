@@ -34,6 +34,7 @@ use App\Http\Controllers\Admin\ExpenseController;
 use App\Http\Controllers\Admin\ParkingController;
 use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\BookingController;
+use App\Http\Controllers\Admin\PollController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\Setting;
@@ -261,6 +262,15 @@ Route::middleware('admin')->group(function () {
 
         //
         
+        // Polls & Surveys
+        Route::middleware('poll')->group(function () {
+            Route::resource('/poll', PollController::class)->only(['index', 'store', 'show', 'destroy']);
+            Route::post('/poll/{id}/activate', [PollController::class, 'activate'])->name('poll.activate');
+            Route::post('/poll/{id}/close', [PollController::class, 'close'])->name('poll.close');
+            Route::post('/poll/{id}/release-results', [PollController::class, 'releaseResults'])->name('poll.releaseResults');
+            Route::post('/poll/{id}/update-expiry', [PollController::class, 'updateExpiry'])->name('poll.updateExpiry');
+        });
+
         Route::resource('/notification', NotificationController::class);
         Route::get('/notification-history', [NotificationController::class, 'history'])->name('notification.history');
         Route::post('/notification-mark-all-read', [NotificationController::class, 'mark_all_as_read'])->name('notification.mark_all_as_read');
