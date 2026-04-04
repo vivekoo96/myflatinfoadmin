@@ -1,0 +1,599 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "MyFlatInfos - New Features",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "42451536"
+  },
+  "item": [
+    {
+      "name": "Polls & Surveys (API)",
+      "item": [
+        {
+          "name": "get-polls",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/get-polls",
+              "host": ["{{BASE_URL}}"],
+              "path": ["get-polls"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-poll-detail",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poll_id\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/get-poll-detail",
+              "host": ["{{BASE_URL}}"],
+              "path": ["get-poll-detail"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cast-vote",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "// Single-question poll:\n// {\n//   \"poll_id\": 1,\n//   \"answers\": [\n//     { \"question_id\": 1, \"option_id\": 2 }\n//   ]\n// }\n\n// Multiple-question survey:\n{\n  \"poll_id\": 1,\n  \"answers\": [\n    { \"question_id\": 1, \"option_id\": 2 },\n    { \"question_id\": 2, \"option_id\": 5 }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/cast-vote",
+              "host": ["{{BASE_URL}}"],
+              "path": ["cast-vote"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-poll-results",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poll_id\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/get-poll-results",
+              "host": ["{{BASE_URL}}"],
+              "path": ["get-poll-results"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Guide Videos (API)",
+      "item": [
+        {
+          "name": "get-guide-videos",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "// Get all active videos (no filter):\n// {}\n\n// Filter by app category:\n// category: user_app | security_app | role_app | building_admin\n{\n  \"category\": \"building_admin\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/get-guide-videos",
+              "host": ["{{BASE_URL}}"],
+              "path": ["get-guide-videos"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Meeting Minutes (API)",
+      "item": [
+        {
+          "name": "get-meeting-minutes",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/get-meeting-minutes?page=1&limit=10",
+              "host": ["{{BASE_URL}}"],
+              "path": ["get-meeting-minutes"],
+              "query": [
+                { "key": "page",  "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Panel - Polls",
+      "item": [
+        {
+          "name": "list-polls",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/poll",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["poll"],
+              "query": [
+                { "key": "status",   "value": "active", "disabled": true },
+                { "key": "status",   "value": "draft",  "disabled": true },
+                { "key": "status",   "value": "closed",  "disabled": true },
+                { "key": "status",   "value": "published", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create-poll-draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",                  "value": "{{csrf_token}}" },
+                { "key": "status_action",           "value": "draft",       "description": "draft | activate" },
+                { "key": "title",                   "value": "Sample Poll" },
+                { "key": "description",             "value": "Poll description" },
+                { "key": "type",                    "value": "poll",        "description": "poll | survey" },
+                { "key": "structure",               "value": "single",      "description": "single | multiple" },
+                { "key": "voting_type",             "value": "user_based",  "description": "user_based | flat_based" },
+                { "key": "expiry_date",             "value": "2026-05-01T18:00", "description": "optional" },
+                { "key": "questions[0][question]",  "value": "Your question here?" },
+                { "key": "questions[0][options][]", "value": "Option A" },
+                { "key": "questions[0][options][]", "value": "Option B" },
+                { "key": "questions[0][options][]", "value": "Option C", "disabled": true }
+              ]
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/poll",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["poll"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create-poll-activate",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",                  "value": "{{csrf_token}}" },
+                { "key": "status_action",           "value": "activate" },
+                { "key": "title",                   "value": "Favourite Common Area" },
+                { "key": "description",             "value": "Vote for your preferred common area." },
+                { "key": "type",                    "value": "survey" },
+                { "key": "structure",               "value": "multiple" },
+                { "key": "voting_type",             "value": "flat_based" },
+                { "key": "expiry_date",             "value": "2026-05-01T23:59" },
+                { "key": "questions[0][question]",  "value": "Which area do you use most?" },
+                { "key": "questions[0][options][]", "value": "Gym" },
+                { "key": "questions[0][options][]", "value": "Garden" },
+                { "key": "questions[0][options][]", "value": "Clubhouse" },
+                { "key": "questions[1][question]",  "value": "How often do you visit?" },
+                { "key": "questions[1][options][]", "value": "Daily" },
+                { "key": "questions[1][options][]", "value": "Weekly" },
+                { "key": "questions[1][options][]", "value": "Rarely" }
+              ]
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/poll",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["poll"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "view-poll",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/poll/{{poll_id}}",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["poll", "{{poll_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "activate-poll",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"_token\": \"{{csrf_token}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/poll/{{poll_id}}/activate",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["poll", "{{poll_id}}", "activate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "close-poll",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"_token\": \"{{csrf_token}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/poll/{{poll_id}}/close",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["poll", "{{poll_id}}", "close"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "release-results",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"_token\": \"{{csrf_token}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/poll/{{poll_id}}/release-results",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["poll", "{{poll_id}}", "release-results"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update-expiry",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"_token\": \"{{csrf_token}}\",\n  \"expiry_date\": \"2026-05-10T23:59\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/poll/{{poll_id}}/update-expiry",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["poll", "{{poll_id}}", "update-expiry"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete-restore-poll",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "// Delete:\n// {\n//   \"_token\": \"{{csrf_token}}\",\n//   \"_method\": \"DELETE\",\n//   \"action\": \"delete\"\n// }\n\n// Restore:\n{\n  \"_token\": \"{{csrf_token}}\",\n  \"_method\": \"DELETE\",\n  \"action\": \"restore\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/poll/{{poll_id}}",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["poll", "{{poll_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Panel - Meeting Minutes",
+      "item": [
+        {
+          "name": "list-meeting-minutes",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/meeting-minute",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["meeting-minute"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create-meeting-minute",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"_token\": \"{{csrf_token}}\",\n  \"title\": \"Monthly Committee Meeting\",\n  \"description\": \"Discussed parking rules, maintenance schedule, and upcoming events.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/meeting-minute",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["meeting-minute"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Superadmin - Polls",
+      "item": [
+        {
+          "name": "list-polls",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{SA_URL}}/poll",
+              "host": ["{{SA_URL}}"],
+              "path": ["poll"],
+              "query": [
+                { "key": "building_id", "value": "1", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create-poll",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",                  "value": "{{csrf_token}}" },
+                { "key": "status_action",           "value": "draft",       "description": "draft | activate" },
+                { "key": "building_id",             "value": "1",           "description": "Required — select target building" },
+                { "key": "title",                   "value": "Community Rule Feedback" },
+                { "key": "description",             "value": "Help us improve the building rules." },
+                { "key": "type",                    "value": "survey" },
+                { "key": "structure",               "value": "single" },
+                { "key": "voting_type",             "value": "user_based" },
+                { "key": "expiry_date",             "value": "2026-05-20T23:59" },
+                { "key": "questions[0][question]",  "value": "Are you satisfied with the current noise rules?" },
+                { "key": "questions[0][options][]", "value": "Yes, they are fair" },
+                { "key": "questions[0][options][]", "value": "No, too strict" },
+                { "key": "questions[0][options][]", "value": "No, too lenient" }
+              ]
+            },
+            "url": {
+              "raw": "{{SA_URL}}/poll",
+              "host": ["{{SA_URL}}"],
+              "path": ["poll"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Superadmin - Guide Videos",
+      "item": [
+        {
+          "name": "list-guide-videos",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{SA_URL}}/guide-video",
+              "host": ["{{SA_URL}}"],
+              "path": ["guide-video"],
+              "query": [
+                { "key": "category", "value": "user_app",       "disabled": true },
+                { "key": "category", "value": "security_app",   "disabled": true },
+                { "key": "category", "value": "role_app",       "disabled": true },
+                { "key": "category", "value": "building_admin", "disabled": true },
+                { "key": "category", "value": "all",            "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add-edit-video",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "// Add new (no id field):\n// {\n//   \"_token\": \"{{csrf_token}}\",\n//   \"title\": \"How to raise an issue\",\n//   \"description\": \"Step by step guide\",\n//   \"category\": \"user_app\",\n//   \"youtube_link\": \"https://www.youtube.com/watch?v=XXXXXXXXXXX\",\n//   \"status\": \"active\"\n// }\n\n// Edit existing (include id):\n{\n  \"_token\": \"{{csrf_token}}\",\n  \"id\": 1,\n  \"title\": \"How to raise an issue\",\n  \"description\": \"Step by step guide\",\n  \"category\": \"user_app\",\n  \"youtube_link\": \"https://www.youtube.com/watch?v=XXXXXXXXXXX\",\n  \"status\": \"active\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{SA_URL}}/guide-video/store",
+              "host": ["{{SA_URL}}"],
+              "path": ["guide-video", "store"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete-restore-video",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "// Delete:\n// {\n//   \"_token\": \"{{csrf_token}}\",\n//   \"_method\": \"DELETE\",\n//   \"action\": \"delete\"\n// }\n\n// Restore:\n{\n  \"_token\": \"{{csrf_token}}\",\n  \"_method\": \"DELETE\",\n  \"action\": \"restore\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{SA_URL}}/guide-video/1",
+              "host": ["{{SA_URL}}"],
+              "path": ["guide-video", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "BASE_URL",    "value": "" },
+    { "key": "ADMIN_URL",   "value": "" },
+    { "key": "SA_URL",      "value": "" },
+    { "key": "token",       "value": "" },
+    { "key": "csrf_token",  "value": "" },
+    { "key": "poll_id",     "value": "1" }
+  ]
+}

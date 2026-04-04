@@ -35,6 +35,8 @@ use App\Http\Controllers\Admin\ParkingController;
 use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\PollController;
+use App\Http\Controllers\Admin\GuideVideoController;
+use App\Http\Controllers\Admin\MeetingMinuteController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\Setting;
@@ -270,6 +272,13 @@ Route::middleware('admin')->group(function () {
             Route::post('/poll/{id}/release-results', [PollController::class, 'releaseResults'])->name('poll.releaseResults');
             Route::post('/poll/{id}/update-expiry', [PollController::class, 'updateExpiry'])->name('poll.updateExpiry');
         });
+
+        // Guided Video Tutorials (read-only display for BA)
+        Route::get('/guide-video', [GuideVideoController::class, 'index'])->name('guide-video.index');
+
+        // Meeting Minutes
+        Route::get('/meeting-minute', [MeetingMinuteController::class, 'index'])->name('meeting-minute.index');
+        Route::post('/meeting-minute', [MeetingMinuteController::class, 'store'])->name('meeting-minute.store');
 
         Route::resource('/notification', NotificationController::class);
         Route::get('/notification-history', [NotificationController::class, 'history'])->name('notification.history');

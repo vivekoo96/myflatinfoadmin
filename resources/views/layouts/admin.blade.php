@@ -1010,6 +1010,21 @@
           </li>
         @endif
 
+        @if($user->role == 'BA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President'))
+          <li class="nav-item">
+            <a href="{{ route('meeting-minute.index') }}" class="nav-link {{ request()->is('meeting-minute*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-file-alt"></i>
+              <p>Meeting Minutes</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('guide-video.index') }}" class="nav-link {{ request()->is('guide-video*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-play-circle"></i>
+              <p>How to Use</p>
+            </a>
+          </li>
+        @endif
+
           @php
             $hasNotifFeature = $building && $building->hasPermission('Send Notification');
           @endphp
