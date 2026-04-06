@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\WebhookController;
 use App\Http\Controllers\Api\PollController;
 use App\Http\Controllers\Api\GuideVideoController;
 use App\Http\Controllers\Api\MeetingMinuteController;
+use App\Http\Controllers\Api\MeetingController;
+use App\Http\Controllers\Api\VideoTutorialController;
 
 // Route::prefix('customer')->group(function () {
     Route::post('register',[CustomerController::class,'register']);
@@ -315,5 +317,20 @@ use App\Http\Controllers\Api\MeetingMinuteController;
 // });
 
 
+// Otherfun routes
+Route::prefix('otherfun')->group(function () {
+
+    // Meetings
+    Route::get('meetings', [MeetingController::class, 'index']);
+    Route::post('meetings', [MeetingController::class, 'store']);
+    Route::get('meetings/{id}', [MeetingController::class, 'show']);
+
+    // Video Tutorials
+    Route::post('video_tutorials/create_module', [VideoTutorialController::class, 'createModule']);
+    Route::get('video_tutorials/create_module', [VideoTutorialController::class, 'getModules']);
+    Route::post('video_tutorials/post_video', [VideoTutorialController::class, 'postVideo']);
+    Route::get('video_tutorials/post_video', [VideoTutorialController::class, 'getVideos']);
+
+});
 
 

@@ -243,11 +243,6 @@ class PollController extends Controller
             ->where('building_id', $building->id)
             ->firstOrFail();
 
-        // Only the creator can release results
-        if ($poll->created_by !== Auth::id()) {
-            return response()->json(['error' => 'Only the poll creator can release results.'], 403);
-        }
-
         if ($poll->status !== 'closed') {
             return response()->json(['error' => 'Poll must be closed before releasing results.'], 422);
         }
@@ -396,7 +391,7 @@ class PollController extends Controller
 
             $dataPayload = [
                 'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
-                'screen'       => 'Timeline',
+                'screen'       => 'PollsAndSurveys',
                 'params'       => json_encode([
                     'ScreenTab'   => 'Polls',
                     'poll_id'     => (string) $poll->id,
