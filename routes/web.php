@@ -37,6 +37,7 @@ use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\PollController;
 use App\Http\Controllers\Admin\GuideVideoController;
 use App\Http\Controllers\Admin\MeetingMinuteController;
+use App\Http\Controllers\Admin\MeetingController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\Setting;
@@ -279,6 +280,11 @@ Route::middleware('admin')->group(function () {
         // Meeting Minutes
         Route::get('/meeting-minute', [MeetingMinuteController::class, 'index'])->name('meeting-minute.index');
         Route::post('/meeting-minute', [MeetingMinuteController::class, 'store'])->name('meeting-minute.store');
+
+        // Meetings
+        Route::get('/meeting', [MeetingController::class, 'index'])->name('meeting.index');
+        Route::post('/meeting', [MeetingController::class, 'store'])->name('meeting.store');
+        Route::delete('/meeting/{id}', [MeetingController::class, 'destroy'])->name('meeting.destroy');
 
         Route::resource('/notification', NotificationController::class);
         Route::get('/notification-history', [NotificationController::class, 'history'])->name('notification.history');
