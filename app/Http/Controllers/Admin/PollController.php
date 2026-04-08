@@ -187,6 +187,10 @@ class PollController extends Controller
         }
 
         $building = $this->getCurrentBuilding();
+        if (! $building) {
+            return response()->json(['error' => 'Building context not found. Please re-select your building.'], 422);
+        }
+
         $poll = Poll::where('id', $id)
             ->where('building_id', $building->id)
             ->firstOrFail();
@@ -215,6 +219,10 @@ class PollController extends Controller
         }
 
         $building = $this->getCurrentBuilding();
+        if (! $building) {
+            return response()->json(['error' => 'Building context not found. Please re-select your building.'], 422);
+        }
+
         $poll = Poll::where('id', $id)
             ->where('building_id', $building->id)
             ->firstOrFail();
@@ -239,6 +247,10 @@ class PollController extends Controller
         }
 
         $building = $this->getCurrentBuilding();
+        if (! $building) {
+            return response()->json(['error' => 'Building context not found. Please re-select your building.'], 422);
+        }
+
         $poll = Poll::where('id', $id)
             ->where('building_id', $building->id)
             ->firstOrFail();
@@ -268,6 +280,10 @@ class PollController extends Controller
         }
 
         $building = $this->getCurrentBuilding();
+        if (! $building) {
+            return response()->json(['error' => 'Building context not found. Please re-select your building.'], 422);
+        }
+
         $poll = Poll::where('id', $id)
             ->where('building_id', $building->id)
             ->withTrashed()
@@ -294,6 +310,10 @@ class PollController extends Controller
         $request->validate(['expiry_date' => 'required|date|after:now']);
 
         $building = $this->getCurrentBuilding();
+        if (! $building) {
+            return response()->json(['error' => 'Building context not found. Please re-select your building.'], 422);
+        }
+
         $poll = Poll::where('id', $id)
             ->where('building_id', $building->id)
             ->firstOrFail();
@@ -326,13 +346,18 @@ class PollController extends Controller
         $user = Auth::user();
         if (! $user) return null;
 
-        if ($user->building) return $user->building;
+        // Prefer session value — set by SetCurrentBuilding middleware and select_building()
+        $buildingId = session('current_building_id');
 
-        if (! empty($user->building_id)) {
-            $b = Building::find($user->building_id);
-            if ($b) return $b;
+        if (empty($buildingId)) {
+            $buildingId = $user->building_id;
         }
 
+        if (! empty($buildingId)) {
+            return Building::withTrashed()->find($buildingId);
+        }
+
+        // Fallback: first building from role assignments
         $assigned = method_exists($user, 'allBuildings') ? $user->allBuildings() : $user->buildings();
         if ($assigned && is_iterable($assigned) && count($assigned) > 0) {
             return $assigned[0];

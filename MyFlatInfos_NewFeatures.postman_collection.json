@@ -431,6 +431,198 @@
       ]
     },
     {
+      "name": "Meetings (API)",
+      "item": [
+        {
+          "name": "get-meetings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/otherfun/meetings?limit=10&page=1",
+              "host": ["{{BASE_URL}}"],
+              "path": ["otherfun", "meetings"],
+              "query": [
+                { "key": "limit",     "value": "10" },
+                { "key": "page",      "value": "1" },
+                { "key": "search",    "value": "AGM",        "disabled": true },
+                { "key": "fromDate",  "value": "2026-01-01", "disabled": true },
+                { "key": "toDate",    "value": "2026-12-31", "disabled": true },
+                { "key": "sortField", "value": "date",       "disabled": true },
+                { "key": "sortOrder", "value": "desc",       "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create-meeting",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Monthly Society Meeting\",\n  \"description\": \"Discuss society matters\",\n  \"date\": \"2026-04-15\",\n  \"time\": \"10:00\",\n  \"createdBy\": \"1\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/otherfun/meetings",
+              "host": ["{{BASE_URL}}"],
+              "path": ["otherfun", "meetings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-single-meeting",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/otherfun/meetings/1",
+              "host": ["{{BASE_URL}}"],
+              "path": ["otherfun", "meetings", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Video Tutorials (API)",
+      "item": [
+        {
+          "name": "create-module",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Getting Started\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/otherfun/video_tutorials/create_module",
+              "host": ["{{BASE_URL}}"],
+              "path": ["otherfun", "video_tutorials", "create_module"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-all-modules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/otherfun/video_tutorials/create_module",
+              "host": ["{{BASE_URL}}"],
+              "path": ["otherfun", "video_tutorials", "create_module"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "post-video-tutorial",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"moduleId\": 1,\n  \"title\": \"Intro to the Platform\",\n  \"text\": \"A quick overview of the app and its main features.\",\n  \"videoUrl\": \"https://youtu.be/zUfPhL_EU2Y\",\n  \"videoType\": \"youtube\",\n  \"interfaces\": [\"user\", \"BA\"]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/otherfun/video_tutorials/post_video",
+              "host": ["{{BASE_URL}}"],
+              "path": ["otherfun", "video_tutorials", "post_video"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-tutorial-videos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/otherfun/video_tutorials/post_video?limit=10&page=1",
+              "host": ["{{BASE_URL}}"],
+              "path": ["otherfun", "video_tutorials", "post_video"],
+              "query": [
+                { "key": "limit",  "value": "10" },
+                { "key": "page",   "value": "1" },
+                { "key": "role",   "value": "BA",    "disabled": true },
+                { "key": "search", "value": "intro", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Panel - Meetings",
+      "item": [
+        {
+          "name": "list-meetings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ADMIN_URL}}/meeting",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["meeting"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create-meeting",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",      "value": "{{csrf_token}}" },
+                { "key": "title",       "value": "Monthly Society Meeting" },
+                { "key": "description", "value": "Agenda: parking, maintenance, events" },
+                { "key": "date",        "value": "2026-04-15" },
+                { "key": "time",        "value": "10:00" }
+              ]
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/meeting",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["meeting"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete-meeting",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token",  "value": "{{csrf_token}}" },
+                { "key": "_method", "value": "DELETE" }
+              ]
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/meeting/1",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["meeting", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Superadmin - Polls",
       "item": [
         {

@@ -256,41 +256,44 @@ class PollController extends Controller
             return response()->json(['error' => 'Results have not been released yet.'], 403);
         }
 
-        $results = [];
-        foreach ($poll->questions as $question) {
+        $questionsData = $poll->questions->map(function (PollQuestion $question) {
             $totalVotes = $question->votes()->count();
-            $options = $question->options->map(function (PollOption $option) use ($question, $totalVotes) {
-                $count = PollVote::where('poll_question_id', $question->id)
-                    ->where('poll_option_id', $option->id)
-                    ->count();
-                return [
-                    'id'         => $option->id,
-                    'text'       => $option->option_text,
-                    'votes'      => $count,
-                    'percentage' => $totalVotes > 0 ? round(($count / $totalVotes) * 100, 1) : 0,
-                ];
-            });
 
-            $results[] = [
-                'question_id'  => $question->id,
-                'question'     => $question->question,
-                'total_votes'  => $totalVotes,
-                'options'      => $options,
+            return [
+                'id'       => $question->id,
+                'question' => $question->question,
+                'order'    => $question->order,
+                'options'  => $question->options->map(function (PollOption $option) use ($question, $totalVotes) {
+                    $count = PollVote::where('poll_question_id', $question->id)
+                        ->where('poll_option_id', $option->id)
+                        ->count();
+                    return [
+                        'id'          => $option->id,
+                        'option_text' => $option->option_text,
+                        'order'       => $option->order,
+                        'votes'       => $count,
+                        'percentage'  => $totalVotes > 0 ? round(($count / $totalVotes) * 100, 1) : 0,
+                    ];
+                }),
             ];
-        }
+        });
 
         return response()->json([
             'poll' => [
                 'id'                 => $poll->id,
                 'title'              => $poll->title,
+                'description'        => $poll->description,
                 'type'               => $poll->type,
+                'structure'          => $poll->structure,
                 'voting_type'        => $poll->voting_type,
-                'total_voters'       => $poll->total_voters,
-                'result_released_at' => $poll->result_released_at ? $poll->result_released_at->toDateTimeString() : null,
+                'status'             => $poll->display_status,
+                'expiry_date'        => $poll->expiry_date ? $poll->expiry_date->toDateTimeString() : null,
                 'created_by_name'    => $poll->creator ? $poll->creator->name : null,
                 'created_by_role'    => $poll->created_by_role,
+                'total_voters'       => $poll->total_voters,
+                'result_released_at' => $poll->result_released_at ? $poll->result_released_at->toDateTimeString() : null,
             ],
-            'results' => $results,
+            'questions' => $questionsData,
         ], 200);
     }
 

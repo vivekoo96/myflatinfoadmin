@@ -81,7 +81,7 @@
               @endif
 
               {{-- Release Results --}}
-              @if($poll->status === 'closed' && $poll->created_by == Auth::id() && !$poll->deleted_at)
+              @if($poll->status === 'closed' && !$poll->deleted_at)
                 <button class="btn btn-primary btn-sm btn-release" data-id="{{ $poll->id }}">
                   <i class="fa fa-unlock"></i> Release Results
                 </button>
