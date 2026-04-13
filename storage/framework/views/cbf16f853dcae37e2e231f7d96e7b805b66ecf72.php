@@ -1001,6 +1001,30 @@
           </li>
         <?php endif; ?>
 
+        <?php if($user->role == 'BA' || $user->role == 'SA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President') || Auth::User()->hasPermission('custom.polls')): ?>
+          <li class="nav-item">
+            <a href="<?php echo e(route('poll.index')); ?>" class="nav-link <?php echo e(request()->is('poll*') ? 'active' : ''); ?>">
+              <i class="nav-icon fa fa-bar-chart"></i>
+              <p>Polls &amp; Surveys</p>
+            </a>
+          </li>
+        <?php endif; ?>
+
+        <?php if($user->role == 'BA' || $user->role == 'SA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President')): ?>
+          <li class="nav-item">
+            <a href="<?php echo e(route('meeting-minute.index')); ?>" class="nav-link <?php echo e(request()->is('meeting-minute*') ? 'active' : ''); ?>">
+              <i class="nav-icon fas fa-file-alt"></i>
+              <p>Meeting Minutes</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="<?php echo e(route('guide-video.index')); ?>" class="nav-link <?php echo e(request()->is('guide-video*') ? 'active' : ''); ?>">
+              <i class="nav-icon fas fa-play-circle"></i>
+              <p>How to Use</p>
+            </a>
+          </li>
+        <?php endif; ?>
+
           <?php
             $hasNotifFeature = $building && $building->hasPermission('Send Notification');
           ?>
