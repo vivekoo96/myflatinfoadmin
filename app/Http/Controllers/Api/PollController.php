@@ -31,7 +31,24 @@ class PollController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $data = $polls->map(function (Poll $poll) use ($user, $flat) {
+        // Determine if user is owner or tenant
+        $isOwner = $flat->owner_id === $user->id;
+        $isTenant = $flat->tanent_id === $user->id;
+
+        $data = $polls->filter(function (Poll $poll) use ($isOwner, $isTenant) {
+            // Filter polls based on voting type and user role
+            if ($poll->voting_type === 'user_based') {
+                // Both owner and tenant can see
+                return true;
+            } elseif ($poll->voting_type === 'owner_based') {
+                // Only owner can see
+                return $isOwner;
+            } elseif ($poll->voting_type === 'tenant_based') {
+                // Only tenant can see
+                return $isTenant;
+            }
+            return false;
+        })->map(function (Poll $poll) use ($user, $flat) {
             $hasVoted = $this->hasUserVoted($poll, $user->id, $flat->id);
 
             return [
@@ -52,7 +69,7 @@ class PollController extends Controller
             ];
         });
 
-        return response()->json(['polls' => $data], 200);
+        return response()->json(['polls' => $data->values()], 200);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -74,6 +91,23 @@ class PollController extends Controller
 
         if (! $poll) {
             return response()->json(['error' => 'Poll not found or not available.'], 404);
+        }
+
+        // Check if user is eligible to view this poll
+        $isOwner = $flat->owner_id === $user->id;
+        $isTenant = $flat->tanent_id === $user->id;
+
+        $canView = false;
+        if ($poll->voting_type === 'user_based') {
+            $canView = true;
+        } elseif ($poll->voting_type === 'owner_based') {
+            $canView = $isOwner;
+        } elseif ($poll->voting_type === 'tenant_based') {
+            $canView = $isTenant;
+        }
+
+        if (! $canView) {
+            return response()->json(['error' => 'You are not eligible to view this poll.'], 403);
         }
 
         $hasVoted = $this->hasUserVoted($poll, $user->id, $flat->id);
@@ -273,6 +307,23 @@ class PollController extends Controller
 
         if ($poll->status !== 'published') {
             return response()->json(['error' => 'Results have not been released yet.'], 403);
+        }
+
+        // Check if user is eligible to view this poll
+        $isOwner = $flat->owner_id === $user->id;
+        $isTenant = $flat->tanent_id === $user->id;
+
+        $canView = false;
+        if ($poll->voting_type === 'user_based') {
+            $canView = true;
+        } elseif ($poll->voting_type === 'owner_based') {
+            $canView = $isOwner;
+        } elseif ($poll->voting_type === 'tenant_based') {
+            $canView = $isTenant;
+        }
+
+        if (! $canView) {
+            return response()->json(['error' => 'You are not eligible to view this poll.'], 403);
         }
 
         $hasVoted = $this->hasUserVoted($poll, $user->id, $flat->id);
