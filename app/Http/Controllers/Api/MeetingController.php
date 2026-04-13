@@ -35,9 +35,8 @@ class MeetingController extends Controller
 
             // Build query
              
-            $query = Meeting::query();
-             dd(MeetingMinute::all());
-
+            $query = MeetingMinute::query();
+           
             // Apply filters if provided
             if ($search) {
                 $query->where(function ($q) use ($search) {
