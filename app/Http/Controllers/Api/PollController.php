@@ -341,14 +341,20 @@ class PollController extends Controller
         $participation = $eligibleVoters > 0 ? round(($totalVotes / $eligibleVoters) * 100, 1) : 0;
         if ($participation > 100) $participation = 100;
 
-        $questionsData = $poll->questions->map(function (PollQuestion $question) {
+        // Get user's votes to show is_selected
+        $userVotes = PollVote::where('poll_id', $poll->id)
+            ->where('user_id', $user->id)
+            ->pluck('poll_option_id', 'poll_question_id')
+            ->toArray();
+
+        $questionsData = $poll->questions->map(function (PollQuestion $question) use ($userVotes) {
             $totalVotes = $question->votes()->count();
 
             return [
                 'id'       => $question->id,
                 'question' => $question->question,
                 'order'    => $question->order,
-                'options'  => $question->options->map(function (PollOption $option) use ($question, $totalVotes) {
+                'options'  => $question->options->map(function (PollOption $option) use ($question, $totalVotes, $userVotes) {
                     $count = PollVote::where('poll_question_id', $question->id)
                         ->where('poll_option_id', $option->id)
                         ->count();
@@ -358,6 +364,7 @@ class PollController extends Controller
                         'order'       => $option->order,
                         'votes'       => $count,
                         'percentage'  => $totalVotes > 0 ? round(($count / $totalVotes) * 100, 1) : 0,
+                        'is_selected' => isset($userVotes[$question->id]) && $userVotes[$question->id] == $option->id,
                     ];
                 }),
             ];
