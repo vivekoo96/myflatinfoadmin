@@ -285,6 +285,23 @@
             </div>
           </div>
 
+          {{-- Row 3: Notify Role --}}
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Notify Role <small class="text-muted">(optional)</small></label>
+                <select name="notify_role" class="form-control">
+                  <option value="all" selected>All (Owners & Tenants)</option>
+                  <option value="president">President Only</option>
+                  <option value="building_admin">Building Admin Only</option>
+                  <option value="owner">Owners Only</option>
+                  <option value="tenant">Tenants Only</option>
+                </select>
+                <small class="form-text text-muted">Who to notify when poll is activated</small>
+              </div>
+            </div>
+          </div>
+
           {{-- Expiry Date --}}
           <div class="row">
             <div class="col-md-6">

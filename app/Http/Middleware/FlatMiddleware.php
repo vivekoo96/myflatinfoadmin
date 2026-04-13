@@ -24,33 +24,31 @@ class FlatMiddleware
             ], 422);
         }
 
-$userRoleIds = BuildingUser::where('user_id', $user->id)
-    ->where('status', 'Active')
-    ->where('building_id', $flat->building_id)
-    ->pluck('role_id');
-
-$validUserRoleFound = Role::whereIn('id', $userRoleIds)
-    ->where('type', 'user')
-    ->exists();
-
-if (!$validUserRoleFound) {
-    return response()->json([
-            'action'=>'logout',
-            'alert_title' => 'Access Denied',
-            'error' => 'Your user role access in this building is Inactive.'
-    ], 422);
-}
-   
-
-
-        if (empty($flat->id)) {
+        if (!$flat || empty($flat->id)) {
             return response()->json([
                 'error' => 'Flat is not selected',
                 'redirect' => 'select_flat_screen',
             ], 422);
         }
 
-        if (!$flat || $flat->status != 'Active') {
+        $userRoleIds = BuildingUser::where('user_id', $user->id)
+            ->where('status', 'Active')
+            ->where('building_id', $flat->building_id)
+            ->pluck('role_id');
+
+        $validUserRoleFound = Role::whereIn('id', $userRoleIds)
+            ->where('type', 'user')
+            ->exists();
+
+        if (!$validUserRoleFound) {
+            return response()->json([
+                'action' => 'logout',
+                'alert_title' => 'Access Denied',
+                'error' => 'Your user role access in this building is Inactive.'
+            ], 422);
+        }
+
+        if ($flat->status != 'Active') {
             return response()->json([
                 'error' => 'Flat is not active',
                 'redirect' => 'select_flat_screen',
