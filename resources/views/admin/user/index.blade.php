@@ -163,7 +163,7 @@
            <div class="form-group">
             <label for="email" class="col-form-label">Email:</label>
             <div class="input-group">
-              <input type="email" name="email" class="form-control" id="email" maxlength="40" placeholder="Email" required>
+              <input type="email" name="email" class="form-control" id="email" maxlength="255" placeholder="Email" required>
               <div class="input-group-append">
                 <button type="button" class="btn btn-info" id="check-user-btn">Check User</button>
               </div>

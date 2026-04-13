@@ -260,7 +260,7 @@ select:disabled {
           <div class="form-group owner-email-group">
             <label for="email" class="col-form-label">Owner Email:</label>
             <div class="input-group">
-              <input type="email" name="owner_email" class="form-control" id="owner_email" maxlength="40" placeholder="Owner Email">
+              <input type="email" name="owner_email" class="form-control" id="owner_email" maxlength="255" placeholder="Owner Email">
               <div class="input-group-append">
                 <button type="button" class="btn btn-primary" id="getOwnerData">Get Owner Data</button>
               </div>
@@ -274,7 +274,7 @@ select:disabled {
           <div class="form-group tanent-email-group">
             <label for="email" class="col-form-label">Tenant Email:</label>
             <div class="input-group">
-              <input type="email" name="tanent_email" class="form-control" id="tanent_email" maxlength="40" placeholder="Tenant Email">
+              <input type="email" name="tanent_email" class="form-control" id="tanent_email" maxlength="255" placeholder="Tenant Email">
               <div class="input-group-append">
                 <button type="button" class="btn btn-primary" id="getTanentData">Get Tenant Data</button>
               </div>

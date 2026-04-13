@@ -158,7 +158,7 @@
           <div class="form-group">
             <label for="email" class="col-form-label">Owner Email:</label>
             <div class="input-group">
-              <input type="email" name="owner_email" class="form-control" id="owner_email" maxlength="40" placeholder="Owner Email" required>
+              <input type="email" name="owner_email" class="form-control" id="owner_email" maxlength="255" placeholder="Owner Email" required>
               <div class="input-group-append">
                 <button type="button" class="btn btn-primary" id="getOwnerData">Get Owner Data</button>
               </div>
@@ -172,7 +172,7 @@
           <div class="form-group">
             <label for="email" class="col-form-label">Tanent Email:</label>
             <div class="input-group">
-              <input type="email" name="tanent_email" class="form-control" id="tanent_email" maxlength="40" placeholder="Tanent Email" required>
+              <input type="email" name="tanent_email" class="form-control" id="tanent_email" maxlength="255" placeholder="Tanent Email" required>
               <div class="input-group-append">
                 <button type="button" class="btn btn-primary" id="getTanentData">Get Tanent Data</button>
               </div>

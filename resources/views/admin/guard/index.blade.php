@@ -157,7 +157,7 @@
           <div class="form-group">
             <label for="email_new" class="col-form-label">Email:</label>
             <div class="input-group">
-              <input type="email" name="email" class="form-control" id="email_new" maxlength="40" placeholder="Email" required>
+              <input type="email" name="email" class="form-control" id="email_new" maxlength="255" placeholder="Email" required>
               <div class="input-group-append">
                 <button type="button" class="btn btn-info" id="check-existing-user">Check User</button>
               </div>
@@ -281,7 +281,7 @@
           <div class="form-group">
             <label for="email" class="col-form-label">User Email:</label>
             <div class="input-group">
-              <input type="email" name="user_email" class="form-control" id="user_email" maxlength="40" placeholder="Email" required>
+              <input type="email" name="user_email" class="form-control" id="user_email" maxlength="255" placeholder="Email" required>
               <div class="input-group-append">
                 <button type="button" class="btn btn-primary" id="getUserData">Get User Data</button>
               </div>
