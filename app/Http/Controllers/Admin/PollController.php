@@ -55,7 +55,7 @@ class PollController extends Controller
             'title'       => 'required|string|max:255',
             'type'        => 'required|in:poll,survey',
             'structure'   => 'required|in:single,multiple',
-            'voting_type' => 'required|in:flat_based,user_based,owner_based,tenant_based',
+            'voting_type' => 'required|in:user_based,owner_based,tenant_based',
             'questions'   => 'required|array|min:1',
             'questions.*.question' => 'required|string|max:500',
             'questions.*.options'  => 'required|array|min:2',
@@ -417,7 +417,7 @@ class PollController extends Controller
                 ->get();
 
             foreach ($flats as $flat) {
-                if ($votingType === 'user_based' || $votingType === 'flat_based') {
+                if ($votingType === 'user_based') {
                     // Notify both owner and tenant
                     if ($flat->owner) $targetUsers->push($flat->owner);
                     if ($flat->tanent) $targetUsers->push($flat->tanent);

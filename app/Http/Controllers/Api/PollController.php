@@ -107,11 +107,10 @@ class PollController extends Controller
         // Calculate eligible voters based on voting type
         $eligibleVoters = $totalFlats;
         if ($poll->voting_type === 'user_based') {
-            $eligibleVoters = $totalFlats * 2; // owner + tenant
-        } elseif ($poll->voting_type === 'owner_based') {
-            $eligibleVoters = $totalFlats; // only owners
-        } elseif ($poll->voting_type === 'tenant_based') {
-            $eligibleVoters = $totalFlats; // only tenants
+            $eligibleVoters = $totalFlats * 2; // owner + tenant = 2 voters per flat
+        } else {
+            // owner_based and tenant_based: only 1 voter per flat
+            $eligibleVoters = $totalFlats;
         }
 
         $participation = $eligibleVoters > 0 ? round(($totalVotes / $eligibleVoters) * 100, 1) : 0;
@@ -226,12 +225,8 @@ class PollController extends Controller
                 }
 
                 // Double-check duplicate (race condition safety)
-                $existsQuery = PollVote::where('poll_question_id', $questionId);
-                if ($poll->voting_type === 'flat_based') {
-                    $existsQuery->where('flat_id', $flat->id);
-                } else {
-                    $existsQuery->where('user_id', $user->id);
-                }
+                $existsQuery = PollVote::where('poll_question_id', $questionId)
+                    ->where('user_id', $user->id);
 
                 if ($existsQuery->exists()) {
                     DB::rollBack();
@@ -289,11 +284,10 @@ class PollController extends Controller
         // Calculate eligible voters based on voting type
         $eligibleVoters = $totalFlats;
         if ($poll->voting_type === 'user_based') {
-            $eligibleVoters = $totalFlats * 2; // owner + tenant
-        } elseif ($poll->voting_type === 'owner_based') {
-            $eligibleVoters = $totalFlats; // only owners
-        } elseif ($poll->voting_type === 'tenant_based') {
-            $eligibleVoters = $totalFlats; // only tenants
+            $eligibleVoters = $totalFlats * 2; // owner + tenant = 2 voters per flat
+        } else {
+            // owner_based and tenant_based: only 1 voter per flat
+            $eligibleVoters = $totalFlats;
         }
 
         $participation = $eligibleVoters > 0 ? round(($totalVotes / $eligibleVoters) * 100, 1) : 0;
@@ -355,13 +349,10 @@ class PollController extends Controller
 
         $query = PollVote::where('poll_question_id', $firstQuestion->id);
 
-        if ($poll->voting_type === 'flat_based') {
-            $query->where('flat_id', $flatId);
+        if ($poll->voting_type === 'user_based') {
+            $query->where('user_id', $userId);
         } elseif ($poll->voting_type === 'owner_based' || $poll->voting_type === 'tenant_based') {
             // For owner/tenant based, check by user_id since only one person per flat votes
-            $query->where('user_id', $userId);
-        } else {
-            // user_based or default
             $query->where('user_id', $userId);
         }
 

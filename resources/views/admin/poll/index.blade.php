@@ -95,7 +95,6 @@
                         @php
                           $votingLabels = [
                             'user_based' => 'User Based',
-                            'flat_based' => 'Flat Based',
                             'owner_based' => 'Owner Based',
                             'tenant_based' => 'Tenant Based'
                           ];
@@ -274,7 +273,6 @@
                 <select name="voting_type" id="votingTypeSelect" class="form-control"
                   onchange="updateVotingHelper()">
                   <option value="user_based">User-based voting</option>
-                  <option value="flat_based">Flat-based voting</option>
                   <option value="owner_based">Owner-based voting</option>
                   <option value="tenant_based">Tenant-based voting</option>
                 </select>
@@ -424,7 +422,6 @@ $(function () {
     var val = $('#votingTypeSelect').val();
     var helpers = {
       'user_based': 'Every registered user (owner & tenant) gets one vote.',
-      'flat_based': 'One vote per flat — only the flat owner can vote.',
       'owner_based': 'Only flat owners can vote (one vote per flat).',
       'tenant_based': 'Only flat tenants can vote (one vote per flat).'
     };

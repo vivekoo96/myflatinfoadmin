@@ -51,7 +51,6 @@
                 @php
                   $votingLabels = [
                     'user_based' => 'User Based',
-                    'flat_based' => 'Flat Based',
                     'owner_based' => 'Owner Based',
                     'tenant_based' => 'Tenant Based'
                   ];
