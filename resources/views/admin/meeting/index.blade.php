@@ -61,12 +61,14 @@
                   placeholder="Agenda or details...">{{ old('description') }}</textarea>
               </div>
               <div class="form-group">
-                <label>Date</label>
-                <input type="date" name="date" class="form-control" value="{{ old('date') }}">
+                <label>Date <span class="text-danger">*</span></label>
+                <input type="date" name="date" class="form-control" id="meetingDate"
+                  value="{{ old('date') }}" required>
               </div>
               <div class="form-group">
-                <label>Time</label>
-                <input type="time" name="time" class="form-control" value="{{ old('time') }}">
+                <label>Time <span class="text-danger">*</span></label>
+                <input type="time" name="time" class="form-control" id="meetingTime"
+                  value="{{ old('time') }}" required>
               </div>
               <button type="submit" class="btn btn-primary btn-block">
                 <i class="fa fa-save mr-1"></i> Save Meeting
@@ -144,4 +146,35 @@
     </div>
   </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const dateInput = document.getElementById('meetingDate');
+  const timeInput = document.getElementById('meetingTime');
+
+  // Set minimum date to today
+  const today = new Date();
+  const todayISO = today.toISOString().split('T')[0];
+  dateInput.min = todayISO;
+
+  // Set minimum time if date is today
+  const now = new Date();
+  const currentTimeISO = now.toTimeString().slice(0, 5); // HH:MM format
+
+  dateInput.addEventListener('change', function() {
+    if (this.value === todayISO) {
+      timeInput.min = currentTimeISO;
+    } else if (this.value > todayISO) {
+      timeInput.min = '00:00';
+    }
+  });
+
+  // Initial validation if date is pre-filled
+  if (dateInput.value === todayISO) {
+    timeInput.min = currentTimeISO;
+  } else if (dateInput.value && dateInput.value > todayISO) {
+    timeInput.min = '00:00';
+  }
+});
+</script>
 @endsection
