@@ -7,6 +7,7 @@ use App\Models\Meeting;
 use App\Models\Building;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class MeetingController extends Controller
 {
@@ -47,12 +48,16 @@ class MeetingController extends Controller
             return redirect()->back()->with('error', 'Building context not found.');
         }
 
+        // Set default date/time to current if not provided
+        $date = $request->date ?? Carbon::now()->format('Y-m-d');
+        $time = $request->time ?? Carbon::now()->format('H:i');
+
         Meeting::create([
             'building_id' => $building->id,
             'title'       => $request->title,
             'description' => $request->description,
-            'date'        => $request->date,
-            'time'        => $request->time,
+            'date'        => $date,
+            'time'        => $time,
             'created_by'  => Auth::id(),
         ]);
 
