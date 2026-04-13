@@ -12,6 +12,8 @@ class MeetingController extends Controller
     // GET /meetings
     public function index(Request $request)
     {
+
+    dd($request->all());
         try {
             $limit     = (int) ($request->query('limit', 10));
             $page      = (int) ($request->query('page', 1));
