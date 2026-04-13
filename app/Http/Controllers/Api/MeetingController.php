@@ -13,7 +13,7 @@ class MeetingController extends Controller
     public function index(Request $request)
     {
 
-    dd($request->all());
+   
         try {
             $limit     = (int) ($request->query('limit', 10));
             $page      = (int) ($request->query('page', 1));
@@ -33,7 +33,9 @@ class MeetingController extends Controller
             $sortColumn = $columnMap[$sortField] ?? 'date';
 
             // Build query
+             
             $query = Meeting::query();
+             dd(Meeting::all());
 
             // Apply filters if provided
             if ($search) {
@@ -62,7 +64,7 @@ class MeetingController extends Controller
                               ->get();
 
             $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
-
+                    dd($meetings);
             return response()->json([
                 'success'     => true,
                 'data'        => $meetings,
