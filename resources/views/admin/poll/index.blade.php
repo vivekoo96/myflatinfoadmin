@@ -92,11 +92,17 @@
                       <td><span class="badge badge-info">{{ ucfirst($poll->type) }}</span></td>
                       <td>{{ ucfirst($poll->structure) }}</td>
                       <td>
-                        @if($poll->voting_type === 'flat_based')
-                          <span class="badge badge-secondary">Flat Based</span>
-                        @else
-                          <span class="badge badge-secondary">User Based</span>
-                        @endif
+                        @php
+                          $votingLabels = [
+                            'user_based' => 'User Based',
+                            'flat_based' => 'Flat Based',
+                            'owner_based' => 'Owner Based',
+                            'tenant_based' => 'Tenant Based'
+                          ];
+                        @endphp
+                        <span class="badge badge-secondary">
+                          {{ $votingLabels[$poll->voting_type] ?? $poll->voting_type }}
+                        </span>
                       </td>
                       <td>
                         <span class="badge {{ $badgeClass }}">
@@ -269,6 +275,8 @@
                   onchange="updateVotingHelper()">
                   <option value="user_based">User-based voting</option>
                   <option value="flat_based">Flat-based voting</option>
+                  <option value="owner_based">Owner-based voting</option>
+                  <option value="tenant_based">Tenant-based voting</option>
                 </select>
                 <small class="form-text text-muted" id="votingHelper">
                   Every registered user (owner &amp; tenant) gets one vote.
@@ -414,11 +422,13 @@ $(function () {
   // ── Voting type helper text ─────────────────────────────────
   window.updateVotingHelper = function () {
     var val = $('#votingTypeSelect').val();
-    $('#votingHelper').text(
-      val === 'flat_based'
-        ? 'One vote per flat — only the flat owner can vote.'
-        : 'Every registered user (owner & tenant) gets one vote.'
-    );
+    var helpers = {
+      'user_based': 'Every registered user (owner & tenant) gets one vote.',
+      'flat_based': 'One vote per flat — only the flat owner can vote.',
+      'owner_based': 'Only flat owners can vote (one vote per flat).',
+      'tenant_based': 'Only flat tenants can vote (one vote per flat).'
+    };
+    $('#votingHelper').text(helpers[val] || 'Select a voting type.');
   };
 
   // ── Add option ──────────────────────────────────────────────

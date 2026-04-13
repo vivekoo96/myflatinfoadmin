@@ -47,7 +47,17 @@
             <table class="table table-sm table-borderless">
               <tr><th width="40%">Type</th><td><span class="badge badge-info">{{ ucfirst($poll->type) }}</span></td></tr>
               <tr><th>Structure</th><td>{{ ucfirst($poll->structure) }}-Question</td></tr>
-              <tr><th>Voting</th><td>{{ $poll->voting_type === 'flat_based' ? 'Flat Based' : 'User Based' }}</td></tr>
+              <tr><th>Voting</th><td>
+                @php
+                  $votingLabels = [
+                    'user_based' => 'User Based',
+                    'flat_based' => 'Flat Based',
+                    'owner_based' => 'Owner Based',
+                    'tenant_based' => 'Tenant Based'
+                  ];
+                @endphp
+                {{ $votingLabels[$poll->voting_type] ?? $poll->voting_type }}
+              </td></tr>
               <tr><th>Status</th><td><span class="badge {{ $badgeClass }}">{{ ucfirst(str_replace('_',' ',$displayStatus)) }}</span></td></tr>
               <tr><th>Expiry</th><td>{{ $poll->expiry_date ? $poll->expiry_date->format('d M Y, h:i A') : 'No expiry' }}</td></tr>
               <tr><th>Total Voters</th><td><strong>{{ $poll->total_voters }}</strong></td></tr>
