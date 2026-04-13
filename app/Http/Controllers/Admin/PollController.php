@@ -10,6 +10,7 @@ use App\Models\PollOption;
 use App\Models\PollVote;
 use App\Models\Building;
 use App\Models\Flat;
+use App\Models\User;
 use App\Helpers\NotificationHelper2 as NotificationHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -54,7 +55,8 @@ class PollController extends Controller
             'title'       => 'required|string|max:255',
             'type'        => 'required|in:poll,survey',
             'structure'   => 'required|in:single,multiple',
-            'voting_type' => 'required|in:flat_based,user_based',
+            'voting_type' => 'required|in:flat_based,user_based,owner_based,tenant_based',
+            'notify_role' => 'nullable|in:all,president,building_admin,owner,tenant',
             'questions'   => 'required|array|min:1',
             'questions.*.question' => 'required|string|max:500',
             'questions.*.options'  => 'required|array|min:2',
@@ -111,6 +113,7 @@ class PollController extends Controller
                 'type'           => $request->type,
                 'structure'      => $request->structure,
                 'voting_type'    => $request->voting_type,
+                'notify_role'    => $request->notify_role ?? 'all',
                 'status'         => 'draft',
                 'expiry_date'    => $request->expiry_date ? Carbon::parse($request->expiry_date) : null,
                 'created_by'     => $user->id,
@@ -407,12 +410,46 @@ class PollController extends Controller
             $building = Building::find($poll->building_id);
             if (! $building) return;
 
+            // Determine which users to notify based on notify_role
+            $notifyRole = $poll->notify_role ?? 'all';
+            $targetUsers = collect();
+
             $flats = Flat::where('building_id', $building->id)
-                ->where(function ($q) {
-                    $q->whereNotNull('owner_id')->orWhereNotNull('tanent_id');
-                })
                 ->with(['owner', 'tanent'])
                 ->get();
+
+            foreach ($flats as $flat) {
+                if ($notifyRole === 'all') {
+                    // Notify both owner and tenant
+                    if ($flat->owner) $targetUsers->push($flat->owner);
+                    if ($flat->tanent) $targetUsers->push($flat->tanent);
+                } elseif ($notifyRole === 'owner') {
+                    // Notify only owners
+                    if ($flat->owner) $targetUsers->push($flat->owner);
+                } elseif ($notifyRole === 'tenant') {
+                    // Notify only tenants
+                    if ($flat->tanent) $targetUsers->push($flat->tanent);
+                } elseif ($notifyRole === 'president') {
+                    // Notify users with president role in this building
+                    $presidents = \App\Models\BuildingUser::where('building_id', $building->id)
+                        ->whereHas('role', function ($q) {
+                            $q->where('slug', 'president');
+                        })
+                        ->with('user')
+                        ->get()
+                        ->pluck('user');
+                    $targetUsers = $targetUsers->merge($presidents);
+                } elseif ($notifyRole === 'building_admin') {
+                    // Notify only building admins
+                    $admins = User::where('building_id', $building->id)
+                        ->where('role', 'BA')
+                        ->get();
+                    $targetUsers = $targetUsers->merge($admins);
+                }
+            }
+
+            // Remove duplicates
+            $targetUsers = $targetUsers->unique('id');
 
             $dataPayload = [
                 'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
@@ -429,29 +466,25 @@ class PollController extends Controller
                 'poll_id'     => (string) $poll->id,
             ];
 
-            foreach ($flats as $flat) {
-                foreach (collect([$flat->owner, $flat->tanent])->filter() as $targetUser) {
-                    try {
-                        NotificationHelper::sendNotification(
-                            $targetUser->id,
-                            $title,
-                            $body,
-                            array_merge($dataPayload, [
-                                'user_id' => (string) $targetUser->id,
-                                'flat_id' => (string) $flat->id,
-                            ]),
-                            [
-                                'from_id'     => null,
-                                'flat_id'     => $flat->id,
-                                'building_id' => $building->id,
-                                'type'        => 'poll_notification',
-                                'ios_sound'   => 'default',
-                            ],
-                            ['user']
-                        );
-                    } catch (\Exception $e) {
-                        Log::error('Poll notification failed', ['user_id' => $targetUser->id, 'error' => $e->getMessage()]);
-                    }
+            foreach ($targetUsers as $targetUser) {
+                try {
+                    NotificationHelper::sendNotification(
+                        $targetUser->id,
+                        $title,
+                        $body,
+                        array_merge($dataPayload, [
+                            'user_id' => (string) $targetUser->id,
+                        ]),
+                        [
+                            'from_id'     => null,
+                            'building_id' => $building->id,
+                            'type'        => 'poll_notification',
+                            'ios_sound'   => 'default',
+                        ],
+                        ['user']
+                    );
+                } catch (\Exception $e) {
+                    Log::error('Poll notification failed', ['user_id' => $targetUser->id, 'error' => $e->getMessage()]);
                 }
             }
         } catch (\Exception $e) {

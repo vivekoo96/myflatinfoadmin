@@ -1001,7 +1001,7 @@
           </li>
         @endif
 
-        @if($user->role == 'BA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President') || Auth::User()->hasPermission('custom.polls'))
+        @if($user->role == 'BA' || $user->role == 'SA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President') || Auth::User()->hasPermission('custom.polls'))
           <li class="nav-item">
             <a href="{{ route('poll.index') }}" class="nav-link {{ request()->is('poll*') ? 'active' : '' }}">
               <i class="nav-icon fa fa-bar-chart"></i>
@@ -1010,7 +1010,7 @@
           </li>
         @endif
 
-        @if($user->role == 'BA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President'))
+        @if($user->role == 'BA' || $user->role == 'SA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President'))
           <li class="nav-item">
             <a href="{{ route('meeting-minute.index') }}" class="nav-link {{ request()->is('meeting-minute*') ? 'active' : '' }}">
               <i class="nav-icon fas fa-file-alt"></i>

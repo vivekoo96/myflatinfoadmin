@@ -103,7 +103,18 @@ class PollController extends Controller
         // Build participation percentage (total voters vs total eligible)
         $totalVotes   = $poll->total_voters;
         $totalFlats   = \App\Models\Flat::where('building_id', $flat->building_id)->where('status', 'Active')->count();
-        $participation = $totalFlats > 0 ? round(($totalVotes / ($poll->voting_type === 'flat_based' ? $totalFlats : ($totalFlats * 2))) * 100, 1) : 0;
+
+        // Calculate eligible voters based on voting type
+        $eligibleVoters = $totalFlats;
+        if ($poll->voting_type === 'user_based') {
+            $eligibleVoters = $totalFlats * 2; // owner + tenant
+        } elseif ($poll->voting_type === 'owner_based') {
+            $eligibleVoters = $totalFlats; // only owners
+        } elseif ($poll->voting_type === 'tenant_based') {
+            $eligibleVoters = $totalFlats; // only tenants
+        }
+
+        $participation = $eligibleVoters > 0 ? round(($totalVotes / $eligibleVoters) * 100, 1) : 0;
         if ($participation > 100) $participation = 100;
 
         return response()->json([
@@ -122,6 +133,7 @@ class PollController extends Controller
                 'total_voters'      => $totalVotes,
                 'participation_pct' => $participation,
                 'results_released'  => $poll->status === 'published',
+                'result_released_at' => $poll->result_released_at ? $poll->result_released_at->toDateTimeString() : null,
                 'questions'         => $questionsData,
             ],
         ], 200);
@@ -156,6 +168,17 @@ class PollController extends Controller
         // Check expiry
         if ($poll->expiry_date && Carbon::now()->gt($poll->expiry_date)) {
             return response()->json(['error' => 'This poll has expired.'], 422);
+        }
+
+        // Validate voting eligibility based on voting type
+        if ($poll->voting_type === 'owner_based') {
+            if ($flat->owner_id !== $user->id) {
+                return response()->json(['error' => 'Only flat owners can vote in this poll.'], 403);
+            }
+        } elseif ($poll->voting_type === 'tenant_based') {
+            if ($flat->tanent_id !== $user->id) {
+                return response()->json(['error' => 'Only flat tenants can vote in this poll.'], 403);
+            }
         }
 
         // Check if already voted
@@ -240,6 +263,7 @@ class PollController extends Controller
     {
         $request->validate(['poll_id' => 'required|integer']);
 
+        $user = Auth::user();
         $flat = AuthHelper::flat();
 
         $poll = Poll::where('id', $request->poll_id)
@@ -255,6 +279,25 @@ class PollController extends Controller
         if ($poll->status !== 'published') {
             return response()->json(['error' => 'Results have not been released yet.'], 403);
         }
+
+        $hasVoted = $this->hasUserVoted($poll, $user->id, $flat->id);
+
+        // Build participation percentage (same as getPollDetail)
+        $totalVotes   = $poll->total_voters;
+        $totalFlats   = \App\Models\Flat::where('building_id', $flat->building_id)->where('status', 'Active')->count();
+
+        // Calculate eligible voters based on voting type
+        $eligibleVoters = $totalFlats;
+        if ($poll->voting_type === 'user_based') {
+            $eligibleVoters = $totalFlats * 2; // owner + tenant
+        } elseif ($poll->voting_type === 'owner_based') {
+            $eligibleVoters = $totalFlats; // only owners
+        } elseif ($poll->voting_type === 'tenant_based') {
+            $eligibleVoters = $totalFlats; // only tenants
+        }
+
+        $participation = $eligibleVoters > 0 ? round(($totalVotes / $eligibleVoters) * 100, 1) : 0;
+        if ($participation > 100) $participation = 100;
 
         $questionsData = $poll->questions->map(function (PollQuestion $question) {
             $totalVotes = $question->votes()->count();
@@ -290,7 +333,10 @@ class PollController extends Controller
                 'expiry_date'        => $poll->expiry_date ? $poll->expiry_date->toDateTimeString() : null,
                 'created_by_name'    => $poll->creator ? $poll->creator->name : null,
                 'created_by_role'    => $poll->created_by_role,
+                'has_voted'          => $hasVoted,
                 'total_voters'       => $poll->total_voters,
+                'participation_pct'  => $participation,
+                'results_released'   => $poll->status === 'published',
                 'result_released_at' => $poll->result_released_at ? $poll->result_released_at->toDateTimeString() : null,
             ],
             'questions' => $questionsData,
@@ -308,9 +354,14 @@ class PollController extends Controller
         $firstQuestion = $poll->questions->first();
 
         $query = PollVote::where('poll_question_id', $firstQuestion->id);
+
         if ($poll->voting_type === 'flat_based') {
             $query->where('flat_id', $flatId);
+        } elseif ($poll->voting_type === 'owner_based' || $poll->voting_type === 'tenant_based') {
+            // For owner/tenant based, check by user_id since only one person per flat votes
+            $query->where('user_id', $userId);
         } else {
+            // user_based or default
             $query->where('user_id', $userId);
         }
 
