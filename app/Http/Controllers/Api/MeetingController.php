@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Meeting;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class MeetingController extends Controller
 {
@@ -51,15 +52,15 @@ class MeetingController extends Controller
                           ->take($limit)
                           ->get();
 
+        $totalPages = (int) ceil($total / $limit);
+
         return response()->json([
-            'success' => true,
-            'data'    => $meetings,
-            'meta'    => [
-                'total'        => $total,
-                'per_page'     => $limit,
-                'current_page' => $page,
-                'last_page'    => (int) ceil($total / $limit),
-            ],
+            'success'     => true,
+            'momList'     => $meetings,
+            'page'        => $page,
+            'limit'       => $limit,
+            'total'       => $total,
+            'totalPages'  => $totalPages,
         ]);
     }
 
@@ -74,11 +75,15 @@ class MeetingController extends Controller
             'createdBy'   => 'nullable|string',
         ]);
 
+        // Set default date/time to current if not provided
+        $date = $request->date ?? Carbon::now()->format('Y-m-d');
+        $time = $request->time ?? Carbon::now()->format('H:i');
+
         $meeting = Meeting::create([
             'title'       => $request->title,
             'description' => $request->description,
-            'date'        => $request->date,
-            'time'        => $request->time,
+            'date'        => $date,
+            'time'        => $time,
             'created_by'  => $request->createdBy,
         ]);
 
