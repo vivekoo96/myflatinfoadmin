@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Meeting;
+use App\Models\MeetingMinute;
 use App\Models\Building;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +21,7 @@ class MeetingController extends Controller
         $meetings = collect();
 
         if ($building) {
-            $meetings = Meeting::where('building_id', $building->id)
+            $meetings = MeetingMinute::where('building_id', $building->id)
                 ->orderBy('date', 'desc')
                 ->orderBy('time', 'desc')
                 ->get();
@@ -52,13 +52,24 @@ class MeetingController extends Controller
         $date = $request->date ?? Carbon::now()->format('Y-m-d');
         $time = $request->time ?? Carbon::now()->format('H:i');
 
-        Meeting::create([
-            'building_id' => $building->id,
-            'title'       => $request->title,
-            'description' => $request->description,
-            'date'        => $date,
-            'time'        => $time,
-            'created_by'  => Auth::id(),
+        // Get user role
+        $user = Auth::user();
+        if ($user->role === 'BA') {
+            $role = 'Building Admin';
+        } elseif ($user->selectedRole) {
+            $role = $user->selectedRole->name ?? ucfirst($user->selectedRole->slug);
+        } else {
+            $role = 'Building Admin';
+        }
+
+        MeetingMinute::create([
+            'building_id'     => $building->id,
+            'title'           => $request->title,
+            'description'     => $request->description,
+            'date'            => $date,
+            'time'            => $time,
+            'created_by'      => $user->id,
+            'created_by_role' => $role,
         ]);
 
         return redirect()->back()->with('success', 'Meeting created successfully.');
@@ -71,11 +82,11 @@ class MeetingController extends Controller
         }
 
         $building = $this->getCurrentBuilding();
-        $meeting  = Meeting::where('id', $id)
+        $minute   = MeetingMinute::where('id', $id)
             ->where('building_id', $building->id)
             ->firstOrFail();
 
-        $meeting->delete();
+        $minute->delete();
 
         return redirect()->back()->with('success', 'Meeting deleted successfully.');
     }

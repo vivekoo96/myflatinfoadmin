@@ -14,6 +14,8 @@ class MeetingMinute extends Model
         'building_id',
         'title',
         'description',
+        'date',
+        'time',
         'created_by',
         'created_by_role',
     ];

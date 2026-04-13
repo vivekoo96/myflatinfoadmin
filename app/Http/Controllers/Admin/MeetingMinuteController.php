@@ -8,6 +8,7 @@ use App\Models\MeetingMinute;
 use App\Models\Building;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class MeetingMinuteController extends Controller
 {
@@ -39,12 +40,18 @@ class MeetingMinuteController extends Controller
         $request->validate([
             'title'       => 'required|string|max:255',
             'description' => 'required|string',
+            'date'        => 'nullable|date_format:Y-m-d',
+            'time'        => 'nullable|date_format:H:i',
         ]);
 
         $building = $this->getCurrentBuilding();
         if (! $building) {
             return redirect()->back()->with('error', 'Building context not found.');
         }
+
+        // Set default date/time to current if not provided
+        $date = $request->date ?? Carbon::now()->format('Y-m-d');
+        $time = $request->time ?? Carbon::now()->format('H:i');
 
         $user = Auth::user();
 
@@ -60,6 +67,8 @@ class MeetingMinuteController extends Controller
             'building_id'     => $building->id,
             'title'           => $request->title,
             'description'     => $request->description,
+            'date'            => $date,
+            'time'            => $time,
             'created_by'      => $user->id,
             'created_by_role' => $role,
         ]);

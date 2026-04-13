@@ -56,12 +56,22 @@
               </div>
               <div class="form-group">
                 <label>Description / Minutes <span class="text-danger">*</span></label>
-                <textarea name="description" class="form-control" rows="8"
+                <textarea name="description" class="form-control" rows="6"
                   placeholder="Enter the full meeting minutes here..." required>{{ old('description') }}</textarea>
+              </div>
+              <div class="form-group">
+                <label>Date <span class="text-danger">*</span></label>
+                <input type="date" name="date" class="form-control" id="minuteDate"
+                  value="{{ old('date') }}" required>
+              </div>
+              <div class="form-group">
+                <label>Time <span class="text-danger">*</span></label>
+                <input type="time" name="time" class="form-control" id="minuteTime"
+                  value="{{ old('time') }}" required>
               </div>
               <div class="alert alert-info py-2 small mb-3">
                 <i class="fa fa-info-circle mr-1"></i>
-                Date &amp; time are recorded automatically. Meeting minutes <strong>cannot be edited or deleted</strong> after saving.
+                Meeting minutes <strong>cannot be edited or deleted</strong> after saving.
               </div>
               <button type="submit" class="btn btn-primary btn-block">
                 <i class="fa fa-save mr-1"></i> Save Meeting Minutes
@@ -129,6 +139,62 @@
 
 @section('script')
 <script>
+// Prevent past date/time selection
+document.addEventListener('DOMContentLoaded', function() {
+  const dateInput = document.getElementById('minuteDate');
+  const timeInput = document.getElementById('minuteTime');
+  const form = dateInput.closest('form');
+
+  // Get current date and time
+  const now = new Date();
+  const todayISO = now.toISOString().split('T')[0];
+  const currentTimeISO = now.toTimeString().slice(0, 5); // HH:MM format
+
+  // Set minimum date to today
+  dateInput.min = todayISO;
+
+  // Update time constraints when date changes
+  dateInput.addEventListener('change', function() {
+    if (this.value === todayISO) {
+      // For today, set min time to current time
+      timeInput.min = currentTimeISO;
+      timeInput.max = '23:59';
+    } else if (this.value > todayISO) {
+      // For future dates, allow any time
+      timeInput.min = '00:00';
+      timeInput.max = '23:59';
+    }
+  });
+
+  // Initial validation if date is pre-filled
+  if (dateInput.value === todayISO) {
+    timeInput.min = currentTimeISO;
+  } else if (dateInput.value && dateInput.value > todayISO) {
+    timeInput.min = '00:00';
+  }
+
+  // Form submission validation - ensure date/time is not in the past
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      const selectedDate = dateInput.value;
+      const selectedTime = timeInput.value;
+
+      if (!selectedDate || !selectedTime) {
+        return; // Browser validation will handle this
+      }
+
+      const selectedDateTime = new Date(selectedDate + 'T' + selectedTime);
+
+      if (selectedDateTime < now) {
+        e.preventDefault();
+        alert('Please select a date and time in the future.');
+        return false;
+      }
+    });
+  }
+});
+
+// Toggle read more/less for meeting minutes
 $(document).on('click', '.btn-toggle-minute', function (e) {
   e.preventDefault();
   var id = $(this).data('id');

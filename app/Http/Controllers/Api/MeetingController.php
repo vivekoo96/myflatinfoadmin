@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Meeting;
 use App\Models\MeetingMinute;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -13,8 +12,6 @@ class MeetingController extends Controller
     // GET /meetings
     public function index(Request $request)
     {
-
-   
         try {
             $limit     = (int) ($request->query('limit', 10));
             $page      = (int) ($request->query('page', 1));
@@ -33,10 +30,9 @@ class MeetingController extends Controller
             ];
             $sortColumn = $columnMap[$sortField] ?? 'date';
 
-            // Build query
-             
+            // Build query - MeetingMinute model
             $query = MeetingMinute::query();
-           
+
             // Apply filters if provided
             if ($search) {
                 $query->where(function ($q) use ($search) {
@@ -57,17 +53,16 @@ class MeetingController extends Controller
             $total = $query->count();
 
             // Get data with sorting and pagination
-            $meetings = $query->orderBy($sortColumn, $sortOrder)
-                              ->orderBy('time', 'desc')
-                              ->skip(($page - 1) * $limit)
-                              ->take($limit)
-                              ->get();
+            $minutes = $query->orderBy($sortColumn, $sortOrder)
+                             ->skip(($page - 1) * $limit)
+                             ->take($limit)
+                             ->get();
 
             $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
-                    dd($meetings);
+
             return response()->json([
                 'success'     => true,
-                'data'        => $meetings,
+                'data'        => $minutes,
                 'page'        => $page,
                 'limit'       => $limit,
                 'total'       => $total,
@@ -86,41 +81,65 @@ class MeetingController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'date'        => 'nullable|date_format:Y-m-d',
-            'time'        => 'nullable|date_format:H:i',
-            'createdBy'   => 'nullable|string',
+            'title'           => 'required|string|max:255',
+            'description'     => 'required|string',
+            'date'            => 'nullable|date_format:Y-m-d',
+            'time'            => 'nullable|date_format:H:i',
+            'created_by'      => 'required|integer',
+            'created_by_role' => 'nullable|string',
         ]);
 
-        // Set default date/time to current if not provided
-        $date = $request->date ?? Carbon::now()->format('Y-m-d');
-        $time = $request->time ?? Carbon::now()->format('H:i');
+        try {
+            // Set default date/time to current if not provided
+            $date = $request->date ?? Carbon::now()->format('Y-m-d');
+            $time = $request->time ?? Carbon::now()->format('H:i');
 
-        $meeting = Meeting::create([
-            'title'       => $request->title,
-            'description' => $request->description,
-            'date'        => $date,
-            'time'        => $time,
-            'created_by'  => $request->createdBy,
-        ]);
+            $minute = MeetingMinute::create([
+                'title'           => $request->title,
+                'description'     => $request->description,
+                'date'            => $date,
+                'time'            => $time,
+                'created_by'      => $request->created_by,
+                'created_by_role' => $request->created_by_role ?? 'User',
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Meeting created successfully',
-            'data'    => $meeting,
-        ], 201);
+            return response()->json([
+                'success' => true,
+                'message' => 'Meeting minute created successfully',
+                'data'    => $minute,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creating meeting minute',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
 
     // GET /meetings/{id}
     public function show($id)
     {
-        $meeting = Meeting::find($id);
+        try {
+            $minute = MeetingMinute::find($id);
 
-        if (!$meeting) {
-            return response()->json(['success' => false, 'message' => 'Meeting not found'], 404);
+            if (!$minute) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Meeting minute not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data'    => $minute
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching meeting minute',
+                'error'   => $e->getMessage(),
+            ], 500);
         }
-
-        return response()->json(['success' => true, 'data' => $meeting]);
     }
 }

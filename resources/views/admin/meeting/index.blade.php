@@ -151,21 +151,26 @@
 document.addEventListener('DOMContentLoaded', function() {
   const dateInput = document.getElementById('meetingDate');
   const timeInput = document.getElementById('meetingTime');
+  const form = dateInput.closest('form');
 
-  // Set minimum date to today
-  const today = new Date();
-  const todayISO = today.toISOString().split('T')[0];
-  dateInput.min = todayISO;
-
-  // Set minimum time if date is today
+  // Get current date and time
   const now = new Date();
+  const todayISO = now.toISOString().split('T')[0];
   const currentTimeISO = now.toTimeString().slice(0, 5); // HH:MM format
 
+  // Set minimum date to today
+  dateInput.min = todayISO;
+
+  // Update time constraints when date changes
   dateInput.addEventListener('change', function() {
     if (this.value === todayISO) {
+      // For today, set min time to current time
       timeInput.min = currentTimeISO;
+      timeInput.max = '23:59';
     } else if (this.value > todayISO) {
+      // For future dates, allow any time
       timeInput.min = '00:00';
+      timeInput.max = '23:59';
     }
   });
 
@@ -174,6 +179,26 @@ document.addEventListener('DOMContentLoaded', function() {
     timeInput.min = currentTimeISO;
   } else if (dateInput.value && dateInput.value > todayISO) {
     timeInput.min = '00:00';
+  }
+
+  // Form submission validation - ensure date/time is not in the past
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      const selectedDate = dateInput.value;
+      const selectedTime = timeInput.value;
+
+      if (!selectedDate || !selectedTime) {
+        return; // Browser validation will handle this
+      }
+
+      const selectedDateTime = new Date(selectedDate + 'T' + selectedTime);
+
+      if (selectedDateTime < now) {
+        e.preventDefault();
+        alert('Please select a date and time in the future.');
+        return false;
+      }
+    });
   }
 });
 </script>
