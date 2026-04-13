@@ -56,7 +56,6 @@ class PollController extends Controller
             'type'        => 'required|in:poll,survey',
             'structure'   => 'required|in:single,multiple',
             'voting_type' => 'required|in:flat_based,user_based,owner_based,tenant_based',
-            'notify_role' => 'nullable|in:all,president,building_admin,owner,tenant',
             'questions'   => 'required|array|min:1',
             'questions.*.question' => 'required|string|max:500',
             'questions.*.options'  => 'required|array|min:2',
@@ -113,7 +112,6 @@ class PollController extends Controller
                 'type'           => $request->type,
                 'structure'      => $request->structure,
                 'voting_type'    => $request->voting_type,
-                'notify_role'    => $request->notify_role ?? 'all',
                 'status'         => 'draft',
                 'expiry_date'    => $request->expiry_date ? Carbon::parse($request->expiry_date) : null,
                 'created_by'     => $user->id,
@@ -410,8 +408,8 @@ class PollController extends Controller
             $building = Building::find($poll->building_id);
             if (! $building) return;
 
-            // Determine which users to notify based on notify_role
-            $notifyRole = $poll->notify_role ?? 'all';
+            // Determine which users to notify based on voting_type
+            $votingType = $poll->voting_type;
             $targetUsers = collect();
 
             $flats = Flat::where('building_id', $building->id)
@@ -419,32 +417,16 @@ class PollController extends Controller
                 ->get();
 
             foreach ($flats as $flat) {
-                if ($notifyRole === 'all') {
+                if ($votingType === 'user_based' || $votingType === 'flat_based') {
                     // Notify both owner and tenant
                     if ($flat->owner) $targetUsers->push($flat->owner);
                     if ($flat->tanent) $targetUsers->push($flat->tanent);
-                } elseif ($notifyRole === 'owner') {
+                } elseif ($votingType === 'owner_based') {
                     // Notify only owners
                     if ($flat->owner) $targetUsers->push($flat->owner);
-                } elseif ($notifyRole === 'tenant') {
+                } elseif ($votingType === 'tenant_based') {
                     // Notify only tenants
                     if ($flat->tanent) $targetUsers->push($flat->tanent);
-                } elseif ($notifyRole === 'president') {
-                    // Notify users with president role in this building
-                    $presidents = \App\Models\BuildingUser::where('building_id', $building->id)
-                        ->whereHas('role', function ($q) {
-                            $q->where('slug', 'president');
-                        })
-                        ->with('user')
-                        ->get()
-                        ->pluck('user');
-                    $targetUsers = $targetUsers->merge($presidents);
-                } elseif ($notifyRole === 'building_admin') {
-                    // Notify only building admins
-                    $admins = User::where('building_id', $building->id)
-                        ->where('role', 'BA')
-                        ->get();
-                    $targetUsers = $targetUsers->merge($admins);
                 }
             }
 
