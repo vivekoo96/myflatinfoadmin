@@ -31,21 +31,18 @@ class PollController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Determine if user is owner or tenant
-        $isOwner = $flat->owner_id === $user->id;
-        $isTenant = $flat->tanent_id === $user->id;
+        // Determine user's role in this flat
+        $isOwner = $flat->owner_id == $user->id;
+        $isTenant = $flat->tanent_id == $user->id;
 
         $data = $polls->filter(function (Poll $poll) use ($isOwner, $isTenant) {
-            // Filter polls based on voting type and user role
+            // Show polls based on voting type and user role
             if ($poll->voting_type === 'user_based') {
-                // Both owner and tenant can see
-                return true;
+                return true; // Both owner and tenant see
             } elseif ($poll->voting_type === 'owner_based') {
-                // Only owner can see
-                return $isOwner;
+                return $isOwner; // Only owner sees
             } elseif ($poll->voting_type === 'tenant_based') {
-                // Only tenant can see
-                return $isTenant;
+                return $isTenant; // Only tenant sees
             }
             return false;
         })->map(function (Poll $poll) use ($user, $flat) {
@@ -67,9 +64,9 @@ class PollController extends Controller
                 'questions_count'   => $poll->questions->count(),
                 'results_released'  => $poll->status === 'published',
             ];
-        });
+        })->values();
 
-        return response()->json(['polls' => $data->values()], 200);
+        return response()->json(['polls' => $data], 200);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -94,8 +91,8 @@ class PollController extends Controller
         }
 
         // Check if user is eligible to view this poll
-        $isOwner = $flat->owner_id === $user->id;
-        $isTenant = $flat->tanent_id === $user->id;
+        $isOwner = $flat->owner_id == $user->id;
+        $isTenant = $flat->tanent_id == $user->id;
 
         $canView = false;
         if ($poll->voting_type === 'user_based') {
@@ -310,8 +307,8 @@ class PollController extends Controller
         }
 
         // Check if user is eligible to view this poll
-        $isOwner = $flat->owner_id === $user->id;
-        $isTenant = $flat->tanent_id === $user->id;
+        $isOwner = $flat->owner_id == $user->id;
+        $isTenant = $flat->tanent_id == $user->id;
 
         $canView = false;
         if ($poll->voting_type === 'user_based') {
