@@ -35,7 +35,7 @@ class PollController extends Controller
         $isOwner = $flat->owner_id == $user->id;
         $isTenant = $flat->tanent_id == $user->id;
 
-        $filtered = $polls->filter(function (Poll $poll) use ($isOwner, $isTenant) {
+        $data = $polls->filter(function (Poll $poll) use ($isOwner, $isTenant) {
             // Show polls based on voting type and user role
             if ($poll->voting_type === 'user_based') {
                 return true; // Both owner and tenant see
@@ -45,9 +45,7 @@ class PollController extends Controller
                 return $isTenant; // Only tenant sees
             }
             return false;
-        })->values();
-
-        $data = $filtered->map(function (Poll $poll) use ($user, $flat) {
+        })->map(function (Poll $poll) use ($user, $flat) {
             $hasVoted = $this->hasUserVoted($poll, $user->id, $flat->id);
 
             return [
@@ -66,13 +64,9 @@ class PollController extends Controller
                 'questions_count'   => $poll->questions->count(),
                 'results_released'  => $poll->status === 'published',
             ];
-        });
+        })->values();
 
-        return response()->json([
-            'success' => true,
-            'polls' => $data,
-            'total' => $filtered->count(),
-        ], 200);
+        return response()->json(['polls' => $data], 200);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -154,7 +148,6 @@ class PollController extends Controller
         if ($participation > 100) $participation = 100;
 
         return response()->json([
-            'success' => true,
             'poll' => [
                 'id'                => $poll->id,
                 'title'             => $poll->title,
@@ -378,7 +371,6 @@ class PollController extends Controller
         });
 
         return response()->json([
-            'success' => true,
             'poll' => [
                 'id'                 => $poll->id,
                 'title'              => $poll->title,
