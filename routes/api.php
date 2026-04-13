@@ -317,20 +317,15 @@ use App\Http\Controllers\Api\VideoTutorialController;
 // });
 
 
-// Otherfun routes
-Route::prefix('otherfun')->group(function () {
+// Meetings routes
+Route::get('meetings', [MeetingController::class, 'index']);
+Route::post('meetings', [MeetingController::class, 'store']);
+Route::get('meetings/{id}', [MeetingController::class, 'show']);
 
-    // Meetings
-    Route::get('meetings', [MeetingController::class, 'index']);
-    Route::post('meetings', [MeetingController::class, 'store']);
-    Route::get('meetings/{id}', [MeetingController::class, 'show']);
-
-    // Video Tutorials
-    Route::post('video_tutorials/create_module', [VideoTutorialController::class, 'createModule']);
-    Route::get('video_tutorials/create_module', [VideoTutorialController::class, 'getModules']);
-    Route::post('video_tutorials/post_video', [VideoTutorialController::class, 'postVideo']);
-    Route::get('video_tutorials/post_video', [VideoTutorialController::class, 'getVideos']);
-
-});
+// Video Tutorials routes
+Route::post('video_tutorials/create_module', [VideoTutorialController::class, 'createModule']);
+Route::get('video_tutorials/create_module', [VideoTutorialController::class, 'getModules']);
+Route::post('video_tutorials/post_video', [VideoTutorialController::class, 'postVideo']);
+Route::get('video_tutorials/post_video', [VideoTutorialController::class, 'getVideos']);
 
 

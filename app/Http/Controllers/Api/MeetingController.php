@@ -9,7 +9,7 @@ use Carbon\Carbon;
 
 class MeetingController extends Controller
 {
-    // GET /otherfun/meetings
+    // GET /meetings
     public function index(Request $request)
     {
         $limit     = (int) ($request->query('limit', 10));
@@ -56,7 +56,7 @@ class MeetingController extends Controller
 
         return response()->json([
             'success'     => true,
-            'momList'     => $meetings,
+            'data'        => $meetings,
             'page'        => $page,
             'limit'       => $limit,
             'total'       => $total,
@@ -64,7 +64,7 @@ class MeetingController extends Controller
         ]);
     }
 
-    // POST /otherfun/meetings
+    // POST /meetings
     public function store(Request $request)
     {
         $request->validate([
@@ -94,7 +94,7 @@ class MeetingController extends Controller
         ], 201);
     }
 
-    // GET /otherfun/meetings/{id}
+    // GET /meetings/{id}
     public function show($id)
     {
         $meeting = Meeting::find($id);
