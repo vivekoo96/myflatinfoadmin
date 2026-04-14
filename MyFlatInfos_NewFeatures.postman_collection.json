@@ -23,7 +23,7 @@
                 { "key": "page",      "value": "1" },
                 { "key": "sortField", "value": "dateTime" },
                 { "key": "sortOrder", "value": "desc" },
-                { "key": "search",    "value": "",        "disabled": true },
+                { "key": "search",    "value": "",           "disabled": true },
                 { "key": "fromDate",  "value": "2026-01-01", "disabled": true },
                 { "key": "toDate",    "value": "2026-12-31", "disabled": true }
               ]
@@ -38,7 +38,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Monthly Society Meeting\",\n  \"description\": \"Discuss society matters\",\n  \"date\": \"2026-04-15\",\n  \"time\": \"10:00\",\n  \"createdBy\": \"1\"\n}",
+              "raw": "{\n  \"title\": \"Monthly Society Meeting\",\n  \"description\": \"Discuss society matters\",\n  \"datetime\": \"2026-04-15T10:00\",\n  \"created_by\": 1,\n  \"created_by_role\": \"Building Admin\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -91,8 +91,7 @@
                 { "key": "_token",      "value": "{{csrf_token}}" },
                 { "key": "title",       "value": "Monthly Society Meeting" },
                 { "key": "description", "value": "Agenda: parking, maintenance, events" },
-                { "key": "date",        "value": "2026-04-15" },
-                { "key": "time",        "value": "10:00" }
+                { "key": "datetime",    "value": "2026-04-15T10:00" }
               ]
             },
             "url": {
@@ -119,6 +118,98 @@
               "raw": "{{ADMIN_URL}}/meeting/1",
               "host": ["{{ADMIN_URL}}"],
               "path": ["meeting", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Video Tutorials (API) - Working",
+      "item": [
+        {
+          "name": "get-videos-grouped",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/video_tutorials/post_video?limit=10&page=1",
+              "host": ["{{BASE_URL}}"],
+              "path": ["video_tutorials", "post_video"],
+              "query": [
+                { "key": "limit",  "value": "10" },
+                { "key": "page",   "value": "1" },
+                { "key": "role",   "value": "BA",       "disabled": true },
+                { "key": "search", "value": "tutorial", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-videos-filter-by-role",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/video_tutorials/post_video?limit=3&page=1&role=BA&search=tutorial",
+              "host": ["{{BASE_URL}}"],
+              "path": ["video_tutorials", "post_video"],
+              "query": [
+                { "key": "limit",  "value": "3" },
+                { "key": "page",   "value": "1" },
+                { "key": "role",   "value": "BA" },
+                { "key": "search", "value": "tutorial" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create-video",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"moduleId\": 1,\n  \"title\": \"Intro to the Platform\",\n  \"text\": \"A quick overview of the app and its main features.\",\n  \"videoUrl\": \"https://youtu.be/zUfPhL_EU2Y\",\n  \"videoType\": \"youtube\",\n  \"interfaces\": [\"user\", \"BA\"]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/video_tutorials/post_video",
+              "host": ["{{BASE_URL}}"],
+              "path": ["video_tutorials", "post_video"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-modules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/video_tutorials/create_module",
+              "host": ["{{BASE_URL}}"],
+              "path": ["video_tutorials", "create_module"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create-module",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Getting Started\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/video_tutorials/create_module",
+              "host": ["{{BASE_URL}}"],
+              "path": ["video_tutorials", "create_module"]
             }
           },
           "response": []
@@ -218,29 +309,19 @@
   "event": [
     {
       "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [""]
-      }
+      "script": { "type": "text/javascript", "packages": {}, "exec": [""] }
     },
     {
       "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [""]
-      }
+      "script": { "type": "text/javascript", "packages": {}, "exec": [""] }
     }
   ],
   "variable": [
-    { "key": "BASE_URL",    "value": "" },
-    { "key": "ADMIN_URL",   "value": "" },
-    { "key": "SA_URL",      "value": "" },
-    { "key": "token",       "value": "" },
-    { "key": "csrf_token",  "value": "" },
-    { "key": "poll_id",     "value": "1" }
+    { "key": "BASE_URL",   "value": "" },
+    { "key": "ADMIN_URL",  "value": "" },
+    { "key": "SA_URL",     "value": "" },
+    { "key": "token",      "value": "" },
+    { "key": "csrf_token", "value": "" },
+    { "key": "poll_id",    "value": "1" }
   ]
 }
