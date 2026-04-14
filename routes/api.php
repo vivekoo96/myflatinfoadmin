@@ -69,7 +69,7 @@ use App\Http\Controllers\Api\VideoTutorialController;
             
             
             Route::post('get-staff-directory',[CustomerController::class,'get_staff_directory']);
-            Route::post('get-flat-directory',[CustomerController::class,'get_flats_directory']);
+            Route::get('get-flat-directory',[CustomerController::class,'get_flats_directory']);
             
             
             Route::post('raise-an-issue',[CustomerController::class,'raise_an_issue']);

@@ -222,20 +222,21 @@
         {
           "name": "get-flat-directory",
           "request": {
-            "method": "POST",
+            "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"limit\": 10,\n  \"page\": 1,\n  \"search\": \"\",\n  \"sortField\": \"name\",\n  \"sortOrder\": \"asc\"\n}",
-              "options": { "raw": { "language": "json" } }
-            },
             "url": {
-              "raw": "{{BASE_URL}}/get-flat-directory",
+              "raw": "{{BASE_URL}}/get-flat-directory?limit=10&page=1&search=&sortField=name&sortOrder=asc",
               "host": ["{{BASE_URL}}"],
-              "path": ["get-flat-directory"]
+              "path": ["get-flat-directory"],
+              "query": [
+                { "key": "limit", "value": "10" },
+                { "key": "page", "value": "1" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "sortField", "value": "name" },
+                { "key": "sortOrder", "value": "asc" }
+              ]
             }
           },
           "response": []
