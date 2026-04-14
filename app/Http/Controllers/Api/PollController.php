@@ -387,8 +387,9 @@ class PollController extends Controller
                 'participation_pct'  => $participation,
                 'results_released'   => $poll->status === 'published',
                 'result_released_at' => $poll->result_released_at ? $poll->result_released_at->toDateTimeString() : null,
+                'questions' => $questionsData,
             ],
-            'questions' => $questionsData,
+            
         ], 200);
     }
 

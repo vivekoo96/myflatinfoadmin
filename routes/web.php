@@ -277,6 +277,11 @@ Route::middleware('admin')->group(function () {
         // Guided Video Tutorials (read-only display for BA)
         Route::get('/guide-video', [GuideVideoController::class, 'index'])->name('guide-video.index');
 
+        // Video Tutorials (grouped display)
+        Route::get('/video-tutorials', function() {
+            return view('admin.video_tutorials');
+        })->name('video-tutorials.index');
+
         // Meeting Minutes
         Route::get('/meeting-minute', [MeetingMinuteController::class, 'index'])->name('meeting-minute.index');
         Route::post('/meeting-minute', [MeetingMinuteController::class, 'store'])->name('meeting-minute.store');

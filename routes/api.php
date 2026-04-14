@@ -6,7 +6,6 @@ use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\TruthScreenController;
 use App\Http\Controllers\Api\WebhookController;
 use App\Http\Controllers\Api\PollController;
-use App\Http\Controllers\Api\GuideVideoController;
 use App\Http\Controllers\Api\MeetingMinuteController;
 use App\Http\Controllers\Api\MeetingController;
 use App\Http\Controllers\Api\VideoTutorialController;
@@ -145,9 +144,6 @@ use App\Http\Controllers\Api\VideoTutorialController;
             Route::post('get-poll-detail', [PollController::class, 'getPollDetail']);
             Route::post('cast-vote', [PollController::class, 'castVote']);
             Route::post('get-poll-results', [PollController::class, 'getPollResults']);
-
-            // Guided Video Tutorials
-            Route::post('get-guide-videos', [GuideVideoController::class, 'getGuideVideos']);
 
             // Meeting Minutes
             Route::post('get-meeting-minutes', [MeetingMinuteController::class, 'getMeetingMinutes']);
