@@ -87,6 +87,8 @@ class MeetingMinuteController extends Controller
                     'screenTab' => 'MeetingMinutes',
                     'mom_id' => (string)$minute->id,
                     'building_id' => (string)$building->id,
+                    'flat_id' => (string)($buildingUser->flat_id ?? ''),
+                    'user_id' => (string)$userId,
                 ]),
             ];
 
