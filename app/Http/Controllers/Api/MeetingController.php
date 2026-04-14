@@ -18,17 +18,17 @@ class MeetingController extends Controller
             $search    = $request->query('search');
             $fromDate  = $request->query('fromDate');
             $toDate    = $request->query('toDate');
-            $sortField = $request->query('sortField', 'date');
+            $sortField = $request->query('sortField', 'datetime');
             $sortOrder = strtolower($request->query('sortOrder', 'desc')) === 'asc' ? 'asc' : 'desc';
 
             // Map sortField names to DB columns
             $columnMap = [
-                'dateTime'   => 'date',
-                'date'       => 'date',
+                'dateTime'   => 'datetime',
+                'date'       => 'datetime',
                 'title'      => 'title',
                 'created_at' => 'created_at',
             ];
-            $sortColumn = $columnMap[$sortField] ?? 'date';
+            $sortColumn = $columnMap[$sortField] ?? 'datetime';
 
             // Build query - MeetingMinute model
             $query = MeetingMinute::query();
@@ -42,11 +42,11 @@ class MeetingController extends Controller
             }
 
             if ($fromDate) {
-                $query->whereDate('date', '>=', $fromDate);
+                $query->whereDate('datetime', '>=', $fromDate);
             }
 
             if ($toDate) {
-                $query->whereDate('date', '<=', $toDate);
+                $query->whereDate('datetime', '<=', $toDate);
             }
 
             // Get total count
@@ -83,22 +83,19 @@ class MeetingController extends Controller
         $request->validate([
             'title'           => 'required|string|max:255',
             'description'     => 'required|string',
-            'date'            => 'nullable|date_format:Y-m-d',
-            'time'            => 'nullable|date_format:H:i',
+            'datetime'        => 'nullable|date_format:Y-m-d\TH:i',
             'created_by'      => 'required|integer',
             'created_by_role' => 'nullable|string',
         ]);
 
         try {
-            // Set default date/time to current if not provided
-            $date = $request->date ?? Carbon::now()->format('Y-m-d');
-            $time = $request->time ?? Carbon::now()->format('H:i');
+            // Set default datetime to current if not provided
+            $datetime = $request->datetime ?? Carbon::now()->format('Y-m-d\TH:i:s');
 
             $minute = MeetingMinute::create([
                 'title'           => $request->title,
                 'description'     => $request->description,
-                'date'            => $date,
-                'time'            => $time,
+                'datetime'        => $datetime,
                 'created_by'      => $request->created_by,
                 'created_by_role' => $request->created_by_role ?? 'User',
             ]);

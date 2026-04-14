@@ -14,10 +14,15 @@ class MeetingMinute extends Model
         'building_id',
         'title',
         'description',
-        'date',
-        'time',
+        'datetime',
         'created_by',
         'created_by_role',
+    ];
+
+    protected $casts = [
+        'datetime' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function building()

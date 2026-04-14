@@ -22,8 +22,7 @@ class MeetingController extends Controller
 
         if ($building) {
             $meetings = MeetingMinute::where('building_id', $building->id)
-                ->orderBy('date', 'desc')
-                ->orderBy('time', 'desc')
+                ->orderBy('datetime', 'desc')
                 ->get();
         }
 
@@ -39,8 +38,7 @@ class MeetingController extends Controller
         $request->validate([
             'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
-            'date'        => 'nullable|date_format:Y-m-d',
-            'time'        => 'nullable|date_format:H:i',
+            'datetime'    => 'nullable|date_format:Y-m-d\TH:i',
         ]);
 
         $building = $this->getCurrentBuilding();
@@ -48,9 +46,8 @@ class MeetingController extends Controller
             return redirect()->back()->with('error', 'Building context not found.');
         }
 
-        // Set default date/time to current if not provided
-        $date = $request->date ?? Carbon::now()->format('Y-m-d');
-        $time = $request->time ?? Carbon::now()->format('H:i');
+        // Set default datetime to current if not provided
+        $datetime = $request->datetime ?? Carbon::now()->format('Y-m-d\TH:i:s');
 
         // Get user role
         $user = Auth::user();
@@ -66,8 +63,7 @@ class MeetingController extends Controller
             'building_id'     => $building->id,
             'title'           => $request->title,
             'description'     => $request->description,
-            'date'            => $date,
-            'time'            => $time,
+            'datetime'        => $datetime,
             'created_by'      => $user->id,
             'created_by_role' => $role,
         ]);
