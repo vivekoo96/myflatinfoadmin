@@ -60,14 +60,9 @@
                   placeholder="Enter the full meeting minutes here..." required>{{ old('description') }}</textarea>
               </div>
               <div class="form-group">
-                <label>Date <span class="text-danger">*</span></label>
-                <input type="date" name="date" class="form-control" id="minuteDate"
-                  value="{{ old('date') }}" required>
-              </div>
-              <div class="form-group">
-                <label>Time <span class="text-danger">*</span></label>
-                <input type="time" name="time" class="form-control" id="minuteTime"
-                  value="{{ old('time') }}" required>
+                <label>Date & Time <span class="text-danger">*</span></label>
+                <input type="datetime-local" name="datetime" class="form-control" id="minuteDateTime"
+                  value="{{ old('datetime') }}" required>
               </div>
               <div class="alert alert-info py-2 small mb-3">
                 <i class="fa fa-info-circle mr-1"></i>
@@ -141,51 +136,36 @@
 <script>
 // Prevent past date/time selection
 document.addEventListener('DOMContentLoaded', function() {
-  const dateInput = document.getElementById('minuteDate');
-  const timeInput = document.getElementById('minuteTime');
-  const form = dateInput.closest('form');
+  const dateTimeInput = document.getElementById('minuteDateTime');
+  const form = dateTimeInput.closest('form');
 
   // Get current date and time
   const now = new Date();
-  const todayISO = now.toISOString().split('T')[0];
-  const currentTimeISO = now.toTimeString().slice(0, 5); // HH:MM format
 
-  // Set minimum date to today
-  dateInput.min = todayISO;
+  // Format current datetime to ISO 8601 format (YYYY-MM-DDTHH:MM) for comparison
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const nowISO = `${year}-${month}-${day}T${hours}:${minutes}`;
 
-  // Update time constraints when date changes
-  dateInput.addEventListener('change', function() {
-    if (this.value === todayISO) {
-      // For today, set min time to current time
-      timeInput.min = currentTimeISO;
-      timeInput.max = '23:59';
-    } else if (this.value > todayISO) {
-      // For future dates, allow any time
-      timeInput.min = '00:00';
-      timeInput.max = '23:59';
-    }
-  });
+  // Set minimum datetime to now
+  dateTimeInput.min = nowISO;
 
-  // Initial validation if date is pre-filled
-  if (dateInput.value === todayISO) {
-    timeInput.min = currentTimeISO;
-  } else if (dateInput.value && dateInput.value > todayISO) {
-    timeInput.min = '00:00';
-  }
-
-  // Form submission validation - ensure date/time is not in the past
+  // Form submission validation - ensure datetime is not in the past
   if (form) {
     form.addEventListener('submit', function(e) {
-      const selectedDate = dateInput.value;
-      const selectedTime = timeInput.value;
+      const selectedDateTime = dateTimeInput.value;
 
-      if (!selectedDate || !selectedTime) {
+      if (!selectedDateTime) {
         return; // Browser validation will handle this
       }
 
-      const selectedDateTime = new Date(selectedDate + 'T' + selectedTime);
+      // Parse the selected datetime (format: YYYY-MM-DDTHH:MM)
+      const selectedDate = new Date(selectedDateTime);
 
-      if (selectedDateTime < now) {
+      if (selectedDate < now) {
         e.preventDefault();
         alert('Please select a date and time in the future.');
         return false;

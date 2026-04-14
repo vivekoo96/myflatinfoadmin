@@ -61,14 +61,9 @@
                   placeholder="Agenda or details...">{{ old('description') }}</textarea>
               </div>
               <div class="form-group">
-                <label>Date <span class="text-danger">*</span></label>
-                <input type="date" name="date" class="form-control" id="meetingDate"
-                  value="{{ old('date') }}" required>
-              </div>
-              <div class="form-group">
-                <label>Time <span class="text-danger">*</span></label>
-                <input type="time" name="time" class="form-control" id="meetingTime"
-                  value="{{ old('time') }}" required>
+                <label>Date & Time <span class="text-danger">*</span></label>
+                <input type="datetime-local" name="datetime" class="form-control" id="meetingDateTime"
+                  value="{{ old('datetime') }}" required>
               </div>
               <button type="submit" class="btn btn-primary btn-block">
                 <i class="fa fa-save mr-1"></i> Save Meeting
@@ -109,15 +104,12 @@
                         <td>{{ $i + 1 }}</td>
                         <td class="font-weight-bold">{{ $meeting->title }}</td>
                         <td style="white-space:nowrap;">
-                          @if($meeting->date)
+                          @if($meeting->datetime)
                             <i class="fa fa-calendar mr-1 text-muted"></i>
-                            {{ \Carbon\Carbon::parse($meeting->date)->format('d M Y') }}
-                          @endif
-                          @if($meeting->time)
+                            {{ \Carbon\Carbon::parse($meeting->datetime)->format('d M Y') }}
                             <br><i class="fa fa-clock mr-1 text-muted"></i>
-                            {{ \Carbon\Carbon::parse($meeting->time)->format('h:i A') }}
-                          @endif
-                          @if(!$meeting->date && !$meeting->time)
+                            {{ \Carbon\Carbon::parse($meeting->datetime)->format('h:i A') }}
+                          @else
                             <span class="text-muted">—</span>
                           @endif
                         </td>
@@ -149,51 +141,36 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const dateInput = document.getElementById('meetingDate');
-  const timeInput = document.getElementById('meetingTime');
-  const form = dateInput.closest('form');
+  const dateTimeInput = document.getElementById('meetingDateTime');
+  const form = dateTimeInput.closest('form');
 
   // Get current date and time
   const now = new Date();
-  const todayISO = now.toISOString().split('T')[0];
-  const currentTimeISO = now.toTimeString().slice(0, 5); // HH:MM format
 
-  // Set minimum date to today
-  dateInput.min = todayISO;
+  // Format current datetime to ISO 8601 format (YYYY-MM-DDTHH:MM) for comparison
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const nowISO = `${year}-${month}-${day}T${hours}:${minutes}`;
 
-  // Update time constraints when date changes
-  dateInput.addEventListener('change', function() {
-    if (this.value === todayISO) {
-      // For today, set min time to current time
-      timeInput.min = currentTimeISO;
-      timeInput.max = '23:59';
-    } else if (this.value > todayISO) {
-      // For future dates, allow any time
-      timeInput.min = '00:00';
-      timeInput.max = '23:59';
-    }
-  });
+  // Set minimum datetime to now
+  dateTimeInput.min = nowISO;
 
-  // Initial validation if date is pre-filled
-  if (dateInput.value === todayISO) {
-    timeInput.min = currentTimeISO;
-  } else if (dateInput.value && dateInput.value > todayISO) {
-    timeInput.min = '00:00';
-  }
-
-  // Form submission validation - ensure date/time is not in the past
+  // Form submission validation - ensure datetime is not in the past
   if (form) {
     form.addEventListener('submit', function(e) {
-      const selectedDate = dateInput.value;
-      const selectedTime = timeInput.value;
+      const selectedDateTime = dateTimeInput.value;
 
-      if (!selectedDate || !selectedTime) {
+      if (!selectedDateTime) {
         return; // Browser validation will handle this
       }
 
-      const selectedDateTime = new Date(selectedDate + 'T' + selectedTime);
+      // Parse the selected datetime (format: YYYY-MM-DDTHH:MM)
+      const selectedDate = new Date(selectedDateTime);
 
-      if (selectedDateTime < now) {
+      if (selectedDate < now) {
         e.preventDefault();
         alert('Please select a date and time in the future.');
         return false;
