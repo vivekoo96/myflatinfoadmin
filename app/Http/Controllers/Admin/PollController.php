@@ -266,7 +266,7 @@ class PollController extends Controller
 
         // Notify all building users that results are out
         $this->notifyBuildingUsers($poll, ucfirst($poll->type) . ' Results: ' . $poll->title,
-            'Results for the ' . $poll->type . ' "' . $poll->title . '" have been released. Tap to view.');
+            'Results for the ' . $poll->type . ' "' . $poll->title . '" have been released. Tap to view.', 'Completed');
 
         return response()->json(['msg' => 'success', 'status' => 'published']);
     }
@@ -402,7 +402,7 @@ class PollController extends Controller
         return $results;
     }
 
-    private function notifyBuildingUsers(Poll $poll, string $title, string $body): void
+    private function notifyBuildingUsers(Poll $poll, string $title, string $body, string $screenTab = 'Active'): void
     {
         try {
             $building = Building::find($poll->building_id);
@@ -437,7 +437,7 @@ class PollController extends Controller
                 'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
                 'screen'       => 'PollsAndSurveys',
                 'params'       => json_encode([
-                    'ScreenTab'   => 'Polls',
+                    'ScreenTab'   => $screenTab,
                     'poll_id'     => (string) $poll->id,
                     'building_id' => (string) $poll->building_id,
                 ]),
