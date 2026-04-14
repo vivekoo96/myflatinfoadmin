@@ -217,6 +217,32 @@
       ]
     },
     {
+      "name": "Flat Directory (API) - Working",
+      "item": [
+        {
+          "name": "get-flat-directory",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"limit\": 10,\n  \"page\": 1,\n  \"search\": \"\",\n  \"sortField\": \"name\",\n  \"sortOrder\": \"asc\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/get-flat-directory",
+              "host": ["{{BASE_URL}}"],
+              "path": ["get-flat-directory"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Polls & Surveys (API) - Working",
       "item": [
         {

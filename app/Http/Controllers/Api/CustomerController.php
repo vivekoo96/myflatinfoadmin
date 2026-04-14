@@ -2030,61 +2030,53 @@ public function get_flats_directory(Request $request)
     if (!$flat) {
         return response()->json(['error' => 'User does not have a flat assigned.'], 404);
     }
-    
+
     $building = Building::find($flat->building_id);
     if (!$building) {
         return response()->json(['error' => 'Building not found.'], 404);
     }
-    
-    $flats = Flat::where('building_id',$flat->building_id)
-     ->with(['owner', 'tanent', 'block'])
-    // ->with([
-    //         'owner:id,name,email', 
-    //     ])
-    ->get();
-    // ->get(['name','area','owner:id']);
-    
-    //     $flats = Building::find($flat->building_id);
-    // if (!$building) {
-    //     return response()->json(['error' => 'Building not found.'], 404);
-    // }
-    
-    
-   return response()->json([
-        // 'residents'   => $grouped_residents,
-        'flat'     => $flats,
-        // 'building' => $building,
+
+    $limit = $request->get('limit', 10);
+    $page = $request->get('page', 1);
+    $search = $request->get('search', '');
+    $sortField = $request->get('sortField', 'name');
+    $sortOrder = $request->get('sortOrder', 'asc');
+
+    $columnMap = [
+        'name' => 'name',
+        'block' => 'block_id',
+    ];
+
+    $sortColumn = $columnMap[$sortField] ?? 'name';
+
+    $query = Flat::where('building_id', $flat->building_id)
+        ->with(['owner', 'tanent', 'block']);
+
+    if (!empty($search)) {
+        $query->where(function ($q) use ($search) {
+            $q->where('flats.name', 'LIKE', "%$search%")
+              ->orWhereHas('owner', function ($q) use ($search) {
+                  $q->where('first_name', 'LIKE', "%$search%")
+                    ->orWhere('last_name', 'LIKE', "%$search%");
+              })
+              ->orWhereHas('tanent', function ($q) use ($search) {
+                  $q->where('first_name', 'LIKE', "%$search%")
+                    ->orWhere('last_name', 'LIKE', "%$search%");
+              });
+        });
+    }
+
+    $query->orderBy($sortColumn, $sortOrder);
+
+    $paginated = $query->paginate($limit, ['*'], 'page', $page);
+
+    return response()->json([
+        'flat' => $paginated->items(),
+        'page' => $paginated->currentPage(),
+        'limit' => $paginated->perPage(),
+        'total' => $paginated->total(),
+        'totalPages' => $paginated->lastPage(),
     ], 200);
-    
-
-    // $building = Building::find($flat->building_id);
-    // if (!$building) {
-    //     return response()->json(['error' => 'Building not found.'], 404);
-    // }
-
-    // $residents = BuildingUser::where('building_id', $flat->building_id)
-    //     ->whereHas('role', function ($q) {
-    //         $q->where('slug', 'user'); // ✅ correct
-    //     })
-    //     ->with([
-    //         'flat:id,name',
-    //         'role:id,name,slug',
-    //         'user:id,first_name,last_name,email,phone,photo,created_type'
-    //     ])
-    //     ->get(['id', 'role_id', 'user_id']);
-
-    // // Group by role name
-    // $grouped_residents = [];
-    // foreach ($residents as $resident) {
-    //     $roleName = $resident->role->name ?? 'Resident';
-    //     $grouped_residents[$roleName][] = $resident;
-    // }
-
-    // return response()->json([
-    //     'residents'   => $grouped_residents,
-    //     'flat_id'     => $flat->id,
-    //     'building_id' => $flat->building_id,
-    // ], 200);
 }
 
 
