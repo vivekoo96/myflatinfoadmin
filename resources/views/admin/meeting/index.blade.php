@@ -155,10 +155,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const nowISO = `${year}-${month}-${day}T${hours}:${minutes}`;
 
-  // Set minimum datetime to now
-  dateTimeInput.min = nowISO;
+  // Set maximum datetime to now (prevent future dates)
+  dateTimeInput.max = nowISO;
 
-  // Form submission validation - ensure datetime is not in the past
+  // Form submission validation - ensure datetime is not in the future
   if (form) {
     form.addEventListener('submit', function(e) {
       const selectedDateTime = dateTimeInput.value;
@@ -170,9 +170,9 @@ document.addEventListener('DOMContentLoaded', function() {
       // Parse the selected datetime (format: YYYY-MM-DDTHH:MM)
       const selectedDate = new Date(selectedDateTime);
 
-      if (selectedDate < now) {
+      if (selectedDate > now) {
         e.preventDefault();
-        alert('Please select a date and time in the future.');
+        alert('Please select a date and time in the past or present.');
         return false;
       }
     });
