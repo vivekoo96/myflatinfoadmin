@@ -62,7 +62,7 @@ class VideoTutorialController extends Controller
         ], 201);
     }
 
-    // GET /otherfun/video_tutorials/post_video
+    // GET /api/video_tutorials/post_video
     public function getVideos(Request $request)
     {
         $limit  = (int) ($request->query('limit', 10));
@@ -89,15 +89,45 @@ class VideoTutorialController extends Controller
                         ->take($limit)
                         ->get();
 
+        // Group videos by module (category)
+        $groupedData = [];
+        foreach ($videos as $video) {
+            $moduleTitle = $video->module ? $video->module->title : 'Uncategorized';
+
+            if (!isset($groupedData[$moduleTitle])) {
+                $groupedData[$moduleTitle] = [];
+            }
+
+            $groupedData[$moduleTitle][] = [
+                '_id'         => $video->id,
+                'title'       => $video->title,
+                'text'        => $video->text,
+                'videoUrl'    => $video->video_url,
+                'videoType'   => $video->video_type,
+                'interfaces'  => $video->interfaces ?? [],
+                'createdAt'   => $video->created_at,
+            ];
+        }
+
+        // Convert to array format with title and data
+        $data = [];
+        foreach ($groupedData as $title => $videos) {
+            $data[] = [
+                'title' => $title,
+                'data'  => $videos,
+            ];
+        }
+
+        $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
+
         return response()->json([
-            'success' => true,
-            'data'    => $videos,
-            'meta'    => [
-                'total'        => $total,
-                'per_page'     => $limit,
-                'current_page' => $page,
-                'last_page'    => (int) ceil($total / $limit),
-            ],
+            'success'     => true,
+            'total'       => $total,
+            'totalPages'  => $totalPages,
+            'page'        => $page,
+            'limit'       => $limit,
+            'count'       => count($videos),
+            'data'        => $data,
         ]);
     }
 }
