@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\GuideVideo;
+use App\Models\VideoModule;
 use Illuminate\Support\Facades\Auth;
 
 class GuideVideoController extends Controller
 {
     /**
-     * Display building_admin category videos (read-only).
+     * Display video tutorials grouped by category (read-only).
      */
     public function index()
     {
@@ -17,13 +17,15 @@ class GuideVideoController extends Controller
             return redirect('permission-denied')->with('error', 'Permission denied!');
         }
 
-        $videos = GuideVideo::whereIn('category', ['building_admin', 'all'])
-            ->where('status', 'active')
-            ->whereNull('deleted_at')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $modules = VideoModule::with(['videos' => function ($q) {
+            $q->where(function ($query) {
+                $query->whereJsonContains('interfaces', 'BA')
+                      ->orWhereJsonContains('interfaces', 'user')
+                      ->orWhereNull('interfaces');
+            })->orderBy('created_at', 'asc');
+        }])->orderBy('created_at', 'asc')->get();
 
-        return view('admin.guide_video.index', compact('videos'));
+        return view('admin.guide_video.index', compact('modules'));
     }
 
     private function isAllowed(): bool

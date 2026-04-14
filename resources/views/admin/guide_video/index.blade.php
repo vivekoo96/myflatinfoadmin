@@ -26,7 +26,7 @@
       </div>
     @endif
 
-    @if($videos->isEmpty())
+    @if($modules->isEmpty())
       <div class="card">
         <div class="card-body text-center py-5">
           <i class="fa fa-play-circle fa-3x text-muted mb-3"></i>
@@ -34,37 +34,58 @@
         </div>
       </div>
     @else
-      <div class="row">
-        @foreach($videos as $video)
-          <div class="col-md-4 col-sm-6 mb-4">
-            <div class="card h-100 shadow-sm">
-              {{-- Thumbnail with play overlay --}}
-              <div class="position-relative" style="cursor:pointer;"
-                onclick="openVideo('{{ $video->embed_url }}', '{{ addslashes($video->title) }}')">
-                <img src="{{ $video->thumbnail ?: 'https://via.placeholder.com/480x270?text=No+Preview' }}"
-                  class="card-img-top" alt="{{ $video->title }}"
-                  style="height:180px;object-fit:cover;">
-                <div class="position-absolute d-flex align-items-center justify-content-center"
-                  style="top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.25);">
-                  <span style="font-size:48px;color:rgba(255,255,255,0.9);">&#9654;</span>
+      @foreach($modules as $module)
+        @if($module->videos->isNotEmpty())
+          <h4 class="mb-3">{{ $module->title }}</h4>
+          <div class="row mb-5">
+            @foreach($module->videos as $video)
+              @php
+                $url = $video->video_url;
+                $embedUrl = $url;
+                if ($video->video_type === 'youtube') {
+                    preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $url, $m);
+                    $videoId = $m[1] ?? null;
+                    $embedUrl = $videoId ? 'https://www.youtube.com/embed/' . $videoId : $url;
+                    $thumbnail = $videoId ? 'https://img.youtube.com/vi/' . $videoId . '/hqdefault.jpg' : null;
+                } elseif ($video->video_type === 'vimeo') {
+                    preg_match('/vimeo\.com\/(\d+)/', $url, $m);
+                    $videoId = $m[1] ?? null;
+                    $embedUrl = $videoId ? 'https://player.vimeo.com/video/' . $videoId : $url;
+                    $thumbnail = null;
+                } else {
+                    $thumbnail = null;
+                }
+              @endphp
+              <div class="col-md-4 col-sm-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                  <div class="position-relative" style="cursor:pointer;"
+                    onclick="openVideo('{{ $embedUrl }}', '{{ addslashes($video->title) }}')">
+                    <img src="{{ $thumbnail ?: 'https://via.placeholder.com/480x270?text=Video' }}"
+                      class="card-img-top" alt="{{ $video->title }}"
+                      style="height:180px;object-fit:cover;">
+                    <div class="position-absolute d-flex align-items-center justify-content-center"
+                      style="top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.25);">
+                      <span style="font-size:48px;color:rgba(255,255,255,0.9);">&#9654;</span>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <h6 class="card-title font-weight-bold mb-1">{{ $video->title }}</h6>
+                    @if($video->text)
+                      <p class="card-text text-muted small">{{ Str::limit($video->text, 100) }}</p>
+                    @endif
+                  </div>
+                  <div class="card-footer bg-white border-0 pt-0">
+                    <button class="btn btn-sm btn-outline-primary btn-block"
+                      onclick="openVideo('{{ $embedUrl }}', '{{ addslashes($video->title) }}')">
+                      <i class="fa fa-play mr-1"></i> Watch Video
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div class="card-body">
-                <h6 class="card-title font-weight-bold mb-1">{{ $video->title }}</h6>
-                @if($video->description)
-                  <p class="card-text text-muted small">{{ Str::limit($video->description, 100) }}</p>
-                @endif
-              </div>
-              <div class="card-footer bg-white border-0 pt-0">
-                <button class="btn btn-sm btn-outline-primary btn-block"
-                  onclick="openVideo('{{ $video->embed_url }}', '{{ addslashes($video->title) }}')">
-                  <i class="fa fa-play mr-1"></i> Watch Video
-                </button>
-              </div>
-            </div>
+            @endforeach
           </div>
-        @endforeach
-      </div>
+        @endif
+      @endforeach
     @endif
 
   </div>
