@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\MeetingMinute;
 use App\Models\Building;
+use App\Models\BuildingUser;
+use App\Helpers\NotificationHelper2;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -61,7 +63,7 @@ class MeetingMinuteController extends Controller
             $role = 'Building Admin';
         }
 
-        MeetingMinute::create([
+        $minute = MeetingMinute::create([
             'building_id'     => $building->id,
             'title'           => $request->title,
             'description'     => $request->description,
@@ -69,6 +71,34 @@ class MeetingMinuteController extends Controller
             'created_by'      => $user->id,
             'created_by_role' => $role,
         ]);
+
+        // Send notifications to all building users
+        $buildingUsers = BuildingUser::where('building_id', $building->id)
+            ->with('user')
+            ->get();
+
+        foreach ($buildingUsers as $buildingUser) {
+            $userId = $buildingUser->user_id;
+            if (!$userId) continue;
+
+            $dataPayload = [
+                'screen' => 'MeetingMinutes',
+                'params' => json_encode([
+                    'screenTab' => 'MeetingMinutes',
+                    'mom_id' => (string)$minute->id,
+                    'building_id' => (string)$building->id,
+                ]),
+            ];
+
+            NotificationHelper2::sendNotification(
+                $userId,
+                'Apartment Meeting Update',
+                'Minutes of the meeting have been uploaded. Don\'t forget to review them.',
+                $dataPayload,
+                ['type' => 'meeting_minute', 'building_id' => $building->id],
+                ['user']
+            );
+        }
 
         return redirect()->back()->with('success', 'Meeting minutes saved successfully.');
     }
