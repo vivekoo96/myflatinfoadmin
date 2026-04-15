@@ -331,6 +331,119 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Security Personal Notes (API) - Working",
+      "item": [
+        {
+          "name": "create-note",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Suspicious Activity at Gate 3\",\n  \"body\": \"White sedan parked near gate 3 without visitor pass at 10:30 PM. License plate not visible.\",\n  \"noted_at\": \"2026-04-15T22:30:00.000000Z\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/create-note",
+              "host": ["{{BASE_URL}}"],
+              "path": ["create-note"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-notes",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromdate\": \"15-04-2026\",\n  \"todate\": \"15-04-2026\",\n  \"count\": 10,\n  \"page\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/get-notes",
+              "host": ["{{BASE_URL}}"],
+              "path": ["get-notes"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-note",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/get-note",
+              "host": ["{{BASE_URL}}"],
+              "path": ["get-note"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update-note",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"title\": \"Suspicious Activity at Gate 3 - Updated\",\n  \"body\": \"White sedan parked near gate 3 without visitor pass at 10:30 PM. License plate: ABC-1234. Updated after checking CCTV.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/update-note",
+              "host": ["{{BASE_URL}}"],
+              "path": ["update-note"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Panel - Security Notes - Working",
+      "item": [
+        {
+          "name": "list-security-notes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ADMIN_URL}}/security-notes?guard_user_id=&gate_id=&from_date=&to_date=",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["security-notes"],
+              "query": [
+                { "key": "guard_user_id", "value": "",             "disabled": false },
+                { "key": "gate_id",       "value": "",             "disabled": false },
+                { "key": "from_date",     "value": "2026-04-15",   "disabled": true },
+                { "key": "to_date",       "value": "2026-04-15",   "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [

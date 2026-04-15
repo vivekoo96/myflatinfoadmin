@@ -980,6 +980,12 @@
               <p>Security Guard</p>
             </a>
           </li>
+          <li class="nav-item">
+            <a href="{{ route('security-notes.index') }}" class="nav-link {{ request()->is('security-notes*') ? 'active' : '' }} {{ getAccessControl($hasSecurityGuardAccess && $hasStaffFeature) }}">
+              <i class="nav-icon fa fa-clipboard"></i>
+              <p>Security Notes</p>
+            </a>
+          </li>
               </ul>
           </li>
           @endif
