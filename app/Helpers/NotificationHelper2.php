@@ -241,11 +241,12 @@ class NotificationHelper2
         array $dataPayload
     ): bool {
         try {
-            // Extract sound from dataPayload or use default
+            // Extract sound and image from dataPayload or use default
             $sound = !empty($dataPayload['sound']) ? $dataPayload['sound'] : 'default';
             $channelId = !empty($dataPayload['channelId']) ? $dataPayload['channelId'] : 'default';
+            $image = !empty($dataPayload['image']) ? $dataPayload['image'] : null;
 
-        
+
             // Android config: properly set notification to show when app is killed
             $androidConfig = [
                 'priority' => 'high',
@@ -253,9 +254,14 @@ class NotificationHelper2
                 'notification' => [
                     'sound' => $sound,
                     'channel_id' => $channelId,
-                    ]
+                ]
             ];
-            
+
+            // Add image to notification if available
+            if ($image) {
+                $androidConfig['notification']['image'] = $image;
+            }
+
             $message = CloudMessage::withTarget('token', $token)
                 ->withNotification(FirebaseNotification::create($title, $body))
                 ->withAndroidConfig($androidConfig)
