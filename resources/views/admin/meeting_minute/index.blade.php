@@ -97,8 +97,8 @@
                       <div class="flex-grow-1">
                         <h6 class="mb-1 font-weight-bold">{{ $minute->title }}</h6>
                         <div class="text-muted small mb-2">
-                          <i class="fa fa-clock mr-1"></i>
-                          {{ $minute->created_at->format('d M Y, h:i A') }}
+                          <i class="fa fa-calendar mr-1"></i>
+                          <strong>Meeting:</strong> {{ \Carbon\Carbon::parse($minute->datetime)->format('d M Y, h:i A') }}
                           &nbsp;•&nbsp;
                           <i class="fa fa-user mr-1"></i>
                           {{ $minute->creator ? $minute->creator->name : '—' }}
