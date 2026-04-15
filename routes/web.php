@@ -38,6 +38,7 @@ use App\Http\Controllers\Admin\PollController;
 use App\Http\Controllers\Admin\GuideVideoController;
 use App\Http\Controllers\Admin\MeetingMinuteController;
 use App\Http\Controllers\Admin\MeetingController;
+use App\Http\Controllers\Admin\SecurityNoteController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\Setting;
@@ -285,6 +286,9 @@ Route::middleware('admin')->group(function () {
         // Meeting Minutes
         Route::get('/meeting-minute', [MeetingMinuteController::class, 'index'])->name('meeting-minute.index');
         Route::post('/meeting-minute', [MeetingMinuteController::class, 'store'])->name('meeting-minute.store');
+
+        // Security Notes
+        Route::get('/security-notes', [SecurityNoteController::class, 'index'])->name('security-notes.index');
 
         // Meetings
         Route::get('/meeting', [MeetingController::class, 'index'])->name('meeting.index');

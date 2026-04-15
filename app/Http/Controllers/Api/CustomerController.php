@@ -10997,4 +10997,165 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
                 'building_policy' => $building_policy,
         ],200);
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // SECURITY PERSONAL NOTES
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Create a security note
+     */
+    public function create_security_note(Request $request)
+    {
+        $rules = [
+            'title'    => 'required|string|max:500',
+            'body'     => 'required|string',
+            'noted_at' => 'nullable|date_format:Y-m-d\TH:i:s.u\Z',
+        ];
+
+        $validation = \Validator::make($request->all(), $rules);
+        if ($validation->fails()) {
+            return response()->json(['error' => $validation->errors()->first()], 422);
+        }
+
+        $user = Auth::User();
+        $building = $user->gate->building;
+
+        $note = \App\Models\SecurityNote::create([
+            'building_id'   => $building->id,
+            'guard_user_id' => $user->id,
+            'gate_id'       => $user->gate_id,
+            'title'         => $request->title,
+            'body'          => $request->body,
+            'noted_at'      => $request->noted_at ? \Carbon\Carbon::createFromFormat('Y-m-d\TH:i:s.u\Z', $request->noted_at) : now(),
+        ]);
+
+        return response()->json([
+            'note'    => $note,
+            'message' => 'Note saved successfully'
+        ], 201);
+    }
+
+    /**
+     * Get security notes for authenticated guard
+     */
+    public function get_security_notes(Request $request)
+    {
+        $rules = [
+            'fromdate' => 'nullable|date_format:d-m-Y',
+            'todate'   => 'nullable|date_format:d-m-Y',
+            'count'    => 'nullable|integer|min:1',
+            'page'     => 'nullable|integer|min:1',
+        ];
+
+        $validation = \Validator::make($request->all(), $rules);
+        if ($validation->fails()) {
+            return response()->json(['error' => $validation->errors()->first()], 422);
+        }
+
+        $user = Auth::User();
+        $building = $user->gate->building;
+
+        $query = \App\Models\SecurityNote::where('building_id', $building->id)
+            ->where('guard_user_id', $user->id)
+            ->with(['gate']);
+
+        // Apply date filters
+        if ($request->filled('fromdate')) {
+            $from = \Carbon\Carbon::createFromFormat('d-m-Y', $request->fromdate)->startOfDay();
+            $query->whereDate('noted_at', '>=', $from);
+        }
+
+        if ($request->filled('todate')) {
+            $to = \Carbon\Carbon::createFromFormat('d-m-Y', $request->todate)->endOfDay();
+            $query->whereDate('noted_at', '<=', $to);
+        }
+
+        // Order by noted_at descending
+        $query->orderBy('noted_at', 'desc');
+
+        // Pagination
+        $count = $request->input('count');
+        $page = $request->input('page', 1);
+
+        if ($count) {
+            $result = $query->paginate($count, ['*'], 'page', $page);
+            return response()->json([
+                'notes'        => $result->items(),
+                'total'        => $result->total(),
+                'current_page' => $result->currentPage(),
+                'last_page'    => $result->lastPage(),
+            ], 200);
+        } else {
+            $result = $query->get();
+            return response()->json([
+                'notes'        => $result,
+                'total'        => $result->count(),
+                'current_page' => 1,
+                'last_page'    => 1,
+            ], 200);
+        }
+    }
+
+    /**
+     * Get single security note
+     */
+    public function get_security_note(Request $request)
+    {
+        $request->validate(['id' => 'required|integer']);
+
+        $user = Auth::User();
+        $building = $user->gate->building;
+
+        $note = \App\Models\SecurityNote::where('id', $request->id)
+            ->where('building_id', $building->id)
+            ->where('guard_user_id', $user->id)
+            ->with(['gate'])
+            ->first();
+
+        if (!$note) {
+            return response()->json(['error' => 'Note not found'], 404);
+        }
+
+        return response()->json(['note' => $note], 200);
+    }
+
+    /**
+     * Update security note
+     */
+    public function update_security_note(Request $request)
+    {
+        $rules = [
+            'id'    => 'required|integer',
+            'title' => 'required|string|max:500',
+            'body'  => 'required|string',
+        ];
+
+        $validation = \Validator::make($request->all(), $rules);
+        if ($validation->fails()) {
+            return response()->json(['error' => $validation->errors()->first()], 422);
+        }
+
+        $user = Auth::User();
+        $building = $user->gate->building;
+
+        $note = \App\Models\SecurityNote::where('id', $request->id)
+            ->where('building_id', $building->id)
+            ->where('guard_user_id', $user->id)
+            ->first();
+
+        if (!$note) {
+            return response()->json(['error' => 'Note not found'], 404);
+        }
+
+        $note->update([
+            'title' => $request->title,
+            'body'  => $request->body,
+        ]);
+
+        return response()->json([
+            'note'    => $note,
+            'message' => 'Note updated successfully'
+        ], 200);
+    }
 }

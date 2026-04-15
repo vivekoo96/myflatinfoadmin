@@ -208,9 +208,14 @@ use App\Http\Controllers\Api\VideoTutorialController;
             
             Route::post('extend-stay-time',[CustomerController::class,'extend_stay_time']);
             Route::post('missing-alert',[CustomerController::class,'missing_alert']);
-            
+
             Route::post('get-homepage-count',[CustomerController::class,'get_homepage_count']);
-            
+
+            Route::post('create-note',[CustomerController::class,'create_security_note']);
+            Route::post('get-notes',[CustomerController::class,'get_security_notes']);
+            Route::post('get-note',[CustomerController::class,'get_security_note']);
+            Route::post('update-note',[CustomerController::class,'update_security_note']);
+
         });
         
         // role route  //20nov2025 11:48
