@@ -1949,6 +1949,17 @@ public function get_staff_directoryx2(Request $request)
 
 public function get_staff_directory(Request $request)
 {
+    $rules = [
+        'search' => 'nullable|string',
+        'limit'  => 'nullable|integer|min:1',
+        'page'   => 'nullable|integer|min:1',
+    ];
+
+    $validation = \Validator::make($request->all(), $rules);
+    if ($validation->fails()) {
+        return response()->json(['error' => $validation->errors()->first()], 422);
+    }
+
     $flat = AuthHelper::flat();
 
     if (!$flat) {
@@ -1966,6 +1977,10 @@ public function get_staff_directory(Request $request)
     if (!$User) {
         return response()->json(['error' => 'Building admin not found.'], 404);
     }
+
+    $search = $request->get('search', '');
+    $limit = $request->get('limit', 10);
+    $page = $request->get('page', 1);
 
     // BA data
     $baData = [
@@ -1988,25 +2003,62 @@ public function get_staff_directory(Request $request)
         ]
     ];
 
-    // Fetch building users
-    $building_users = BuildingUser::where('building_id', $flat->building_id)
-    ->whereHas('role', function ($q) {
-        $q->where('slug', '!=', 'user');
-    })
-        // ->whereHas('user', function ($query) {
-        //     $query->where('created_type', '!=', 'direct');
-        // })
+    // Check if BA matches search
+    $ba_matches = false;
+    if ($search) {
+        $search_lower = strtolower($search);
+        $ba_full_name = strtolower($User->first_name . ' ' . $User->last_name);
+        $ba_email = strtolower($User->email);
+        $ba_phone = $User->phone ?? '';
+
+        if (strpos($ba_full_name, $search_lower) !== false ||
+            strpos($ba_email, $search_lower) !== false ||
+            strpos($ba_phone, $search_lower) !== false) {
+            $ba_matches = true;
+        }
+    } else {
+        $ba_matches = true;
+    }
+
+    // Fetch building users with search
+    $query = BuildingUser::where('building_id', $flat->building_id)
+        ->whereHas('role', function ($q) {
+            $q->where('slug', '!=', 'user');
+        })
         ->with([
             'role:id,name,slug',
             'user:id,first_name,last_name,email,phone,photo,created_type'
-        ])
-        ->get(['id', 'role_id', 'user_id']);
+        ]);
 
-    $building_users_array = array_merge([$baData],$building_users->toArray());
+    // Apply search filter
+    if ($search) {
+        $query->whereHas('user', function ($q) use ($search) {
+            $q->where(function ($subQ) use ($search) {
+                $subQ->where('first_name', 'LIKE', "%$search%")
+                     ->orWhere('last_name', 'LIKE', "%$search%")
+                     ->orWhere('email', 'LIKE', "%$search%")
+                     ->orWhere('phone', 'LIKE', "%$search%");
+            });
+        });
+    }
+
+    $building_users = $query->get(['id', 'role_id', 'user_id']);
+
+    // Build staff array with BA if it matches search
+    $building_users_array = [];
+    if ($ba_matches) {
+        $building_users_array[] = $baData;
+    }
+    $building_users_array = array_merge($building_users_array, $building_users->toArray());
+
+    // Apply pagination
+    $total = count($building_users_array);
+    $offset = ($page - 1) * $limit;
+    $paginated_staff = array_slice($building_users_array, $offset, $limit);
 
     // Group by role name
     $grouped_staffs = [];
-    foreach ($building_users_array as $staff) {
+    foreach ($paginated_staff as $staff) {
         $roleName = $staff['role']['name'] ?? 'Unknown';
         if (!isset($grouped_staffs[$roleName])) {
             $grouped_staffs[$roleName] = [];
@@ -2014,11 +2066,19 @@ public function get_staff_directory(Request $request)
         $grouped_staffs[$roleName][] = $staff;
     }
 
+    $last_page = ceil($total / $limit);
+
     return response()->json([
         'staffs' => $grouped_staffs,
         'flat_id' => $flat->id,
         'building_id' => $flat->building_id,
         'building_ba_id' => $building_ba_id,
+        'pagination' => [
+            'total' => $total,
+            'limit' => $limit,
+            'current_page' => (int)$page,
+            'last_page' => $last_page,
+        ]
     ], 200);
 }
 

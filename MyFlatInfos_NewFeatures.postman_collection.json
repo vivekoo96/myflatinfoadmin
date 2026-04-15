@@ -244,6 +244,31 @@
       ]
     },
     {
+      "name": "Staff Directory (API) - Working",
+      "item": [
+        {
+          "name": "get-staff-directory",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/get-staff-directory?limit=10&page=1&search=",
+              "host": ["{{BASE_URL}}"],
+              "path": ["get-staff-directory"],
+              "query": [
+                { "key": "limit",  "value": "10",  "disabled": false },
+                { "key": "page",   "value": "1",   "disabled": false },
+                { "key": "search", "value": "",    "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Polls & Surveys (API) - Working",
       "item": [
         {
