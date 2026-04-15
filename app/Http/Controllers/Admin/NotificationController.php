@@ -103,7 +103,11 @@ class NotificationController extends Controller
         }
 
         // Send notification to each user (saves per-user DB record + sends push)
-        $imageUrl = $imagePath ? asset('public/storage/' . $imagePath) : null;
+        $imageUrl = null;
+        if ($imagePath) {
+            $imageUrl = url('public/storage/' . $imagePath);
+        }
+
         $dataPayload = [
             'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
             'screen'       => 'Notifications',
@@ -113,7 +117,7 @@ class NotificationController extends Controller
             'sound'        => 'default',
         ];
 
-        // Add image to payload if it exists
+        // Add image to payload if it exists (absolute URL for mobile app)
         if ($imageUrl) {
             $dataPayload['image'] = $imageUrl;
         }
