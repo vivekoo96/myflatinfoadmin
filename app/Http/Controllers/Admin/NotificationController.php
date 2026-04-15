@@ -80,7 +80,7 @@ class NotificationController extends Controller
 
         if (in_array('issue_management', $targetRoles)) {
             $ids = BuildingUser::where('building_id', $buildingId)
-                ->whereHas('role', fn($q) => $q->where('type', 'issue'))
+                ->whereHas('role', fn($q) => $q->where('slug', 'issue_management'))
                 ->pluck('user_id');
             $userIds = $userIds->merge($ids);
         }
@@ -103,6 +103,7 @@ class NotificationController extends Controller
         }
 
         // Send notification to each user (saves per-user DB record + sends push)
+        $imageUrl = $imagePath ? asset('storage/' . $imagePath) : null;
         $dataPayload = [
             'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
             'screen'       => 'Notifications',
@@ -110,8 +111,12 @@ class NotificationController extends Controller
             'categoryId'   => 'broadcast',
             'channelId'    => 'default',
             'sound'        => 'default',
-            'image'        => $imagePath ? asset('storage/' . $imagePath) : '',
         ];
+
+        // Add image to payload if it exists
+        if ($imageUrl) {
+            $dataPayload['image'] = $imageUrl;
+        }
 
         $result = NotificationHelper::sendBulkNotifications(
             $userIds->toArray(),
