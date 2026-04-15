@@ -212,8 +212,8 @@ use App\Http\Controllers\Api\VideoTutorialController;
             Route::post('get-homepage-count',[CustomerController::class,'get_homepage_count']);
 
             Route::post('create-note',[CustomerController::class,'create_security_note']);
-            Route::post('get-notes',[CustomerController::class,'get_security_notes']);
-            Route::post('get-note',[CustomerController::class,'get_security_note']);
+            Route::get('get-notes',[CustomerController::class,'get_security_notes']);
+            Route::get('get-note',[CustomerController::class,'get_security_note']);
             Route::post('update-note',[CustomerController::class,'update_security_note']);
 
         });
