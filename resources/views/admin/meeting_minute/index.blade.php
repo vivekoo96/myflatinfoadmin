@@ -62,7 +62,7 @@
               <div class="form-group">
                 <label>Date & Time <span class="text-danger">*</span></label>
                 <input type="datetime-local" name="datetime" class="form-control" id="minuteDateTime"
-                  value="{{ old('datetime') }}" required>
+                  value="{{ old('datetime', '') }}" required>
               </div>
               <div class="alert alert-info py-2 small mb-3">
                 <i class="fa fa-info-circle mr-1"></i>
@@ -152,6 +152,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Set maximum datetime to now (prevent future dates)
   dateTimeInput.max = nowISO;
+
+  // Listen for input changes and ensure value is properly stored
+  dateTimeInput.addEventListener('change', function(e) {
+    const selectedDateTime = this.value;
+    if (selectedDateTime) {
+      console.log('Selected datetime:', selectedDateTime);
+    }
+  });
 
   // Form submission validation - ensure datetime is not in the future
   if (form) {
