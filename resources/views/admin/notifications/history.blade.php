@@ -56,19 +56,9 @@
                 <td>{{ Str::limit($n->body, 80) }}</td>
                 <td>
                   @if($n->image)
-                    @php
-                      $imageUrl = asset('storage/' . $n->image);
-                      $file = storage_path('app/public/' . $n->image);
-                    @endphp
-                    @if(file_exists($file))
-                      <a href="{{ $imageUrl }}" target="_blank" class="btn btn-xs btn-outline-secondary">
-                        <i class="fas fa-image"></i> View Image
-                      </a>
-                    @else
-                      <span class="text-muted small text-danger" title="Image file not found">
-                        <i class="fas fa-exclamation-circle"></i> Not Found
-                      </span>
-                    @endif
+                    <a href="{{ asset('storage/' . $n->image) }}" target="_blank" class="btn btn-xs btn-outline-secondary">
+                      <i class="fas fa-image"></i> View Image
+                    </a>
                   @else
                     <span class="text-muted small">No image</span>
                   @endif
