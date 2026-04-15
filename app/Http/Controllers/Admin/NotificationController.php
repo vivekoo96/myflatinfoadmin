@@ -103,7 +103,7 @@ class NotificationController extends Controller
         }
 
         // Send notification to each user (saves per-user DB record + sends push)
-        $imageUrl = $imagePath ? asset('storage/' . $imagePath) : null;
+        $imageUrl = $imagePath ? asset('public/storage/' . $imagePath) : null;
         $dataPayload = [
             'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
             'screen'       => 'Notifications',

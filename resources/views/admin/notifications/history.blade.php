@@ -56,7 +56,7 @@
                 <td>{{ Str::limit($n->body, 80) }}</td>
                 <td>
                   @if($n->image)
-                    <a href="{{ asset('storage/' . $n->image) }}" target="_blank" class="btn btn-xs btn-outline-secondary">
+                    <a href="{{ asset('public/storage/' . $n->image) }}" target="_blank" class="btn btn-xs btn-outline-secondary">
                       <i class="fas fa-image"></i> View Image
                     </a>
                   @else
