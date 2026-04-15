@@ -47,7 +47,7 @@ class SecurityNoteController extends Controller
 
         // Build the query
         $query = SecurityNote::where('building_id', $building->id)
-            ->with(['guard', 'gate']);
+            ->with(['guardUser', 'gate']);
 
         // Apply filters
         if ($request->filled('guard_user_id')) {

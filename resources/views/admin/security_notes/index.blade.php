@@ -103,7 +103,7 @@
                 <tr>
                   <td>{{ $notes->firstItem() + $i }}</td>
                   <td>
-                    <strong>{{ $note->guard ? $note->guard->name : '—' }}</strong>
+                    <strong>{{ $note->guardUser ? $note->guardUser->name : '—' }}</strong>
                   </td>
                   <td>
                     @if($note->gate)

@@ -980,6 +980,12 @@
               <p>Security Guard</p>
             </a>
           </li>
+          <li class="nav-item">
+            <a href="<?php echo e(route('security-notes.index')); ?>" class="nav-link <?php echo e(request()->is('security-notes*') ? 'active' : ''); ?> <?php echo e(getAccessControl($hasSecurityGuardAccess && $hasStaffFeature)); ?>">
+              <i class="nav-icon fa fa-clipboard"></i>
+              <p>Security Notes</p>
+            </a>
+          </li>
               </ul>
           </li>
           <?php endif; ?>

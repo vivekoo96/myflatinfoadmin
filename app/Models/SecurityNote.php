@@ -22,7 +22,7 @@ class SecurityNote extends Model
         return $this->belongsTo(Building::class)->withTrashed();
     }
 
-    public function guard()
+    public function guardUser()
     {
         return $this->belongsTo(User::class, 'guard_user_id')->withTrashed();
     }

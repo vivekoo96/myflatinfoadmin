@@ -54,19 +54,9 @@
                 <td><?php echo e(Str::limit($n->body, 80)); ?></td>
                 <td>
                   <?php if($n->image): ?>
-                    <?php
-                      $imageUrl = asset('storage/' . $n->image);
-                      $file = storage_path('app/public/' . $n->image);
-                    ?>
-                    <?php if(file_exists($file)): ?>
-                      <a href="<?php echo e($imageUrl); ?>" target="_blank" class="btn btn-xs btn-outline-secondary">
-                        <i class="fas fa-image"></i> View Image
-                      </a>
-                    <?php else: ?>
-                      <span class="text-muted small text-danger" title="Image file not found">
-                        <i class="fas fa-exclamation-circle"></i> Not Found
-                      </span>
-                    <?php endif; ?>
+                    <a href="<?php echo e(asset('public/storage/' . $n->image)); ?>" target="_blank" class="btn btn-xs btn-outline-secondary">
+                      <i class="fas fa-image"></i> View Image
+                    </a>
                   <?php else: ?>
                     <span class="text-muted small">No image</span>
                   <?php endif; ?>
