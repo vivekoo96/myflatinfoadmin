@@ -669,6 +669,32 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Parcels (API) - Delivery Entry Restriction",
+      "item": [
+        {
+          "name": "get-my-parcels",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"All\",\n  \"count\": 10,\n  \"page\": 1\n}\n\n// Response includes:\n// - delivery_entry_allowed: true/false (based on current time vs configured window)\n// - delivery_entry_window: {start_time, end_time, current_time}\n// Use delivery_entry_allowed flag to show/hide 'Allow Entry' button in app",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/get-my-parcels",
+              "host": ["{{BASE_URL}}"],
+              "path": ["get-my-parcels"]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
