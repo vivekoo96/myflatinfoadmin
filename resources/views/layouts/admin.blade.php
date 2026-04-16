@@ -986,6 +986,12 @@
               <p>Security Notes</p>
             </a>
           </li>
+          <li class="nav-item">
+            <a href="{{ route('delivery-restriction.index') }}" class="nav-link {{ request()->is('delivery-restriction*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-clock"></i>
+              <p>Delivery Entry Restriction</p>
+            </a>
+          </li>
               </ul>
           </li>
           @endif

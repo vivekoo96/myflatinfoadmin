@@ -9075,7 +9075,16 @@ public function get_my_parcels(Request $request)
     }
 
     $user = Auth::user();
-    $flat_id = AuthHelper::flat()->id;
+    $flat = AuthHelper::flat();
+    $flat_id = $flat->id;
+    $building = $flat->building;
+
+    // Check if current time is within delivery entry window
+    $now = \Carbon\Carbon::now();
+    $currentTime = $now->format('H:i:s');
+    $startTime = $building->delivery_entry_start_time ?? '08:00:00';
+    $endTime = $building->delivery_entry_end_time ?? '21:00:00';
+    $isDeliveryEntryAllowed = ($currentTime >= $startTime && $currentTime <= $endTime);
 
     // Start query from user's parcels, but ensure same flat_id too
     $query = \App\Models\Parcel::where('flat_id', $flat_id)
@@ -9110,6 +9119,12 @@ public function get_my_parcels(Request $request)
             'current_page' => $parcels->currentPage(),
             'last_page' => $parcels->lastPage(),
             'flat_id' => $flat_id,
+            'delivery_entry_allowed' => $isDeliveryEntryAllowed,
+            'delivery_entry_window' => [
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'current_time' => $currentTime,
+            ],
         ], 200);
     } else {
         // Return all if no pagination
@@ -9121,6 +9136,12 @@ public function get_my_parcels(Request $request)
             'current_page' => 1,
             'last_page' => 1,
             'flat_id' => $flat_id,
+            'delivery_entry_allowed' => $isDeliveryEntryAllowed,
+            'delivery_entry_window' => [
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'current_time' => $currentTime,
+            ],
         ], 200);
     }
 }

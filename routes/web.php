@@ -40,6 +40,7 @@ use App\Http\Controllers\Admin\MeetingMinuteController;
 use App\Http\Controllers\Admin\MeetingController;
 use App\Http\Controllers\Admin\SecurityNoteController;
 use App\Http\Controllers\Admin\ActivityAdminController;
+use App\Http\Controllers\Admin\DeliveryRestrictionController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\Setting;
@@ -290,6 +291,10 @@ Route::middleware('admin')->group(function () {
 
         // Security Notes
         Route::get('/security-notes', [SecurityNoteController::class, 'index'])->name('security-notes.index');
+
+        // Delivery Entry Restriction
+        Route::get('/delivery-restriction', [DeliveryRestrictionController::class, 'index'])->name('delivery-restriction.index');
+        Route::put('/delivery-restriction', [DeliveryRestrictionController::class, 'update'])->name('delivery-restriction.update');
 
         // Community Activities
         Route::get('/community-activities', [ActivityAdminController::class, 'index'])->name('activity.index');
