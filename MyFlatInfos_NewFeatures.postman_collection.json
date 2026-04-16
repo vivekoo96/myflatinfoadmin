@@ -587,6 +587,88 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Admin Panel - Community Activities - Working",
+      "item": [
+        {
+          "name": "list-activities-pending",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ADMIN_URL}}/community-activities?status=pending&search=",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["community-activities"],
+              "query": [
+                { "key": "status", "value": "pending", "disabled": false },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "view-activity-detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ADMIN_URL}}/community-activities/1",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["community-activities", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "approve-activity",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/community-activities/1/approve",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["community-activities", "1", "approve"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "reject-activity",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/community-activities/1/reject",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["community-activities", "1", "reject"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete-activity-admin",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "url": {
+              "raw": "{{ADMIN_URL}}/community-activities/1",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["community-activities", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
