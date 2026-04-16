@@ -480,7 +480,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Cricket Match at Sports Complex\",\n  \"description\": \"Friendly cricket match. Bring your own equipment.\",\n  \"activity_datetime\": \"2026-04-20T15:00:00\",\n  \"response_type\": \"simple\",\n  \"post_type\": \"slot\",\n  \"max_slots\": 12\n}",
+              "raw": "{\n  \"title\": \"Cricket Match at Sports Complex\",\n  \"description\": \"Friendly cricket match. Bring your own equipment.\",\n  \"activity_datetime\": \"2026-04-20T15:00:00\",\n  \"response_type\": \"simple\",\n  \"post_type\": \"slot\",\n  \"max_slots\": 12\n}\n\n// RESPONSE TYPES:\n// \"simple\" → Users respond with: Interested / Not Interested\n// \"detailed\" → Users respond with: Attending / Maybe / Not Attending\n\n// POST TYPES:\n// \"slot\" → Limited capacity (max_slots required)\n// \"unlimited\" → No limit (max_slots not needed)\n\n// STATUS:\n// Activity created with status='pending' (requires BA approval)\n// Only approved activities visible to other users",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -539,7 +539,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"activity_id\": 1,\n  \"response\": \"interested\"\n}",
+              "raw": "{\n  \"activity_id\": 1,\n  \"response\": \"interested\"\n}\n\n// VALID RESPONSE TYPES:\n// For response_type='simple': \"interested\" OR \"not_interested\"\n// For response_type='detailed': \"attending\" OR \"maybe\" OR \"not_attending\"\n// (Only use response matching the activity's response_type)\n\n// EXAMPLES:\n// Simple activity: {\"activity_id\": 1, \"response\": \"interested\"}\n// Detailed activity: {\"activity_id\": 2, \"response\": \"attending\"}\n// Detailed activity: {\"activity_id\": 2, \"response\": \"maybe\"}\n// Detailed activity: {\"activity_id\": 2, \"response\": \"not_attending\"}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
