@@ -29,8 +29,8 @@ class DeliveryRestrictionController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'delivery_entry_start_time' => 'required|regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/',
-            'delivery_entry_end_time' => 'required|regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/',
+            'delivery_entry_start_time' => 'required|regex:#^([0-1][0-9]|2[0-3]):[0-5][0-9]$#',
+            'delivery_entry_end_time' => 'required|regex:#^([0-1][0-9]|2[0-3]):[0-5][0-9]$#',
         ]);
 
         $user = Auth::user();
