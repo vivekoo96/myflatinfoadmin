@@ -42,6 +42,8 @@ use App\Http\Controllers\Admin\SecurityNoteController;
 use App\Http\Controllers\Admin\ActivityAdminController;
 use App\Http\Controllers\Admin\DeliveryRestrictionController;
 use App\Http\Controllers\Admin\GstController;
+use App\Http\Controllers\Admin\AssetController;
+use App\Http\Controllers\Admin\AssetAmcController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\Setting;
@@ -266,6 +268,19 @@ Route::middleware('admin')->group(function () {
         Route::get('/account/pending-bills',[AccountController::class, 'pending_bills']);
         Route::post('/account/send-due-notifications',[AccountController::class, 'send_due_notifications']);
         Route::get('/account/gst',[GstController::class, 'index'])->name('gst.index');
+
+        // Asset & Inventory Management
+        Route::get('/asset', [AssetController::class, 'index'])->name('asset.index');
+        Route::post('/asset', [AssetController::class, 'store'])->name('asset.store');
+        Route::post('/asset/update-status', [AssetController::class, 'updateStatus'])->name('asset.updateStatus');
+        Route::post('/asset/update-stock', [AssetController::class, 'updateStock'])->name('asset.updateStock');
+        Route::get('/asset/inventory', [AssetController::class, 'inventory'])->name('asset.inventory');
+        Route::delete('/asset/{id}', [AssetController::class, 'destroy'])->name('asset.destroy');
+
+        // AMC Tracking
+        Route::get('/asset-amc', [AssetAmcController::class, 'index'])->name('asset-amc.index');
+        Route::post('/asset-amc', [AssetAmcController::class, 'store'])->name('asset-amc.store');
+        Route::delete('/asset-amc/{id}', [AssetAmcController::class, 'destroy'])->name('asset-amc.destroy');
 
         //
         

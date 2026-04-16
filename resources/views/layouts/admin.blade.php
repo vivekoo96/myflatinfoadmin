@@ -1090,7 +1090,36 @@
             </a>
           </li>
           @endif
-          
+
+          @php
+            $isAssetOpen = request()->is('asset*') || request()->is('asset-amc*');
+          @endphp
+          @if($user->role == 'BA')
+          <li class="nav-item has-treeview {{ $isAssetOpen ? 'menu-open' : '' }}">
+            <a href="#" class="nav-link {{ $isAssetOpen ? 'active' : '' }}">
+              <i class="nav-icon fas fa-boxes"></i>
+              <p>Assets & Inventory<i class="right fas fa-angle-left"></i></p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="{{ route('asset.index') }}" class="nav-link {{ request()->is('asset') && !request()->is('asset/inventory') && !request()->is('asset-amc*') ? 'second-active' : '' }}">
+                  <i class="far fa-circle nav-icon"></i><p>Assets</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{{ route('asset.inventory') }}" class="nav-link {{ request()->is('asset/inventory*') ? 'second-active' : '' }}">
+                  <i class="far fa-circle nav-icon"></i><p>Inventory</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{{ route('asset-amc.index') }}" class="nav-link {{ request()->is('asset-amc*') ? 'second-active' : '' }}">
+                  <i class="far fa-circle nav-icon"></i><p>AMC Tracking</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+          @endif
+
           <!--@if($user->role == 'BA' || $user->hasRole('president') || $user->hasRole('accounts') || $user->hasPermission('feature.societyfund'))-->
           <!--<li class="nav-item">-->
           <!-- <a href="{{url('orders')}}" class="nav-link {{ request()->is('orders*') ? 'active' : '' }}">-->
