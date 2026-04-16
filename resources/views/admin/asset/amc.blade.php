@@ -124,7 +124,7 @@
                                 title="Edit">
                           <i class="fas fa-edit"></i>
                         </button>
-                        <form action="{{ route('asset-amc.destroy') }}" method="POST" class="d-inline">
+                        <form action="{{ route('asset-amc.destroy', $amc->id) }}" method="POST" class="d-inline">
                           @csrf
                           @method('DELETE')
                           <input type="hidden" name="id" value="{{ $amc->id }}">

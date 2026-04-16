@@ -107,7 +107,7 @@
                                 data-id="{{ $asset->id }}" data-status="{{ $asset->status }}" title="Change Status">
                           <i class="fas fa-exchange-alt"></i>
                         </button>
-                        <form action="{{ route('asset.destroy') }}" method="POST" class="d-inline">
+                        <form action="{{ route('asset.destroy', $asset->id) }}" method="POST" class="d-inline">
                           @csrf
                           @method('DELETE')
                           <input type="hidden" name="id" value="{{ $asset->id }}">
