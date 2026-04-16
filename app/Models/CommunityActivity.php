@@ -20,6 +20,7 @@ class CommunityActivity extends Model
         'response_type',
         'post_type',
         'max_slots',
+        'status',
     ];
 
     protected $casts = [

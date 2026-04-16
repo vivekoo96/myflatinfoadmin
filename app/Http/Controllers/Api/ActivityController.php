@@ -62,11 +62,12 @@ class ActivityController extends Controller
             'response_type'      => $request->response_type,
             'post_type'          => $request->post_type,
             'max_slots'          => $request->post_type === 'slot' ? $request->max_slots : null,
+            'status'             => 'pending',
         ]);
 
         return response()->json([
             'activity' => $activity,
-            'message'  => 'Activity created successfully'
+            'message'  => 'Activity created successfully and is pending approval'
         ], 201);
     }
 
@@ -97,6 +98,10 @@ class ActivityController extends Controller
         $page = $request->get('page', 1);
 
         $query = CommunityActivity::where('building_id', $flat->building_id)
+            ->where(function ($q) use ($user) {
+                $q->where('status', 'approved')
+                  ->orWhere('user_id', $user->id);
+            })
             ->with(['creator', 'responses'])
             ->orderBy('activity_datetime', 'desc');
 
@@ -154,11 +159,15 @@ class ActivityController extends Controller
 
         $activity = CommunityActivity::where('id', $request->id)
             ->where('building_id', $flat->building_id)
+            ->where(function ($q) use ($user) {
+                $q->where('status', 'approved')
+                  ->orWhere('user_id', $user->id);
+            })
             ->with(['creator', 'responses'])
             ->first();
 
         if (!$activity) {
-            return response()->json(['error' => 'Activity not found'], 404);
+            return response()->json(['error' => 'Activity not found or not visible'], 404);
         }
 
         $userResponse = $activity->responses()

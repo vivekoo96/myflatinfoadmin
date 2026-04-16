@@ -39,6 +39,7 @@ use App\Http\Controllers\Admin\GuideVideoController;
 use App\Http\Controllers\Admin\MeetingMinuteController;
 use App\Http\Controllers\Admin\MeetingController;
 use App\Http\Controllers\Admin\SecurityNoteController;
+use App\Http\Controllers\Admin\ActivityAdminController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\Setting;
@@ -289,6 +290,13 @@ Route::middleware('admin')->group(function () {
 
         // Security Notes
         Route::get('/security-notes', [SecurityNoteController::class, 'index'])->name('security-notes.index');
+
+        // Community Activities
+        Route::get('/community-activities', [ActivityAdminController::class, 'index'])->name('activity.index');
+        Route::get('/community-activities/{id}', [ActivityAdminController::class, 'show'])->name('activity.show');
+        Route::post('/community-activities/{id}/approve', [ActivityAdminController::class, 'approve'])->name('activity.approve');
+        Route::post('/community-activities/{id}/reject', [ActivityAdminController::class, 'reject'])->name('activity.reject');
+        Route::delete('/community-activities/{id}', [ActivityAdminController::class, 'delete'])->name('activity.delete');
 
         // Meetings
         Route::get('/meeting', [MeetingController::class, 'index'])->name('meeting.index');
