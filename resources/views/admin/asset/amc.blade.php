@@ -223,20 +223,24 @@
 $('#amcModal').on('show.bs.modal', function(e) {
   var button = $(e.relatedTarget);
   var id = button.data('id');
+  var modal = $(this);
+
+  // Reset form
+  modal.find('form')[0].reset();
 
   if(id) {
-    $('.modal-title').text('Edit AMC');
+    modal.find('.modal-title').text('Edit AMC');
   } else {
-    $('.modal-title').text('Add AMC');
+    modal.find('.modal-title').text('Add AMC');
   }
 
-  $('#amc-id').val(id || '');
-  $('#amc-asset_id').val(button.data('asset_id') || '');
-  $('#amc-provider_name').val(button.data('provider_name') || '');
-  $('#amc-start_date').val(button.data('start_date') || '');
-  $('#amc-end_date').val(button.data('end_date') || '');
-  $('#amc-service_frequency').val(button.data('service_frequency') || '');
-  $('#amc-notes').val(button.data('notes') || '');
+  modal.find('#amc-id').val(id || '');
+  modal.find('#amc-asset_id').val(button.data('asset_id') || '');
+  modal.find('#amc-provider_name').val(button.data('provider_name') || '');
+  modal.find('#amc-start_date').val(button.data('start_date') || '');
+  modal.find('#amc-end_date').val(button.data('end_date') || '');
+  modal.find('#amc-service_frequency').val(button.data('service_frequency') || '');
+  modal.find('#amc-notes').val(button.data('notes') || '');
 });
 
 // Handle form deletion via AJAX

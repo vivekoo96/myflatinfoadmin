@@ -194,11 +194,21 @@
 // Populate Stock Modal
 $('#stockModal').on('show.bs.modal', function(e) {
   var button = $(e.relatedTarget);
-  $('#stock-modal-title').text('Update Stock - ' + button.data('name'));
-  $('#stock-asset-id').val(button.data('id'));
-  $('#stock-available').text(button.data('available_qty'));
-  $('#stock-used').text(button.data('used_qty'));
-  $('#stock-damaged').text(button.data('damaged_qty'));
+  var modal = $(this);
+  var assetId = button.data('id');
+
+  modal.find('#stock-modal-title').text('Update Stock - ' + button.data('name'));
+  modal.find('#stock-asset-id').val(assetId);
+
+  // Clear the input fields (but not the hidden asset ID)
+  modal.find('input[name="add_qty"]').val('');
+  modal.find('input[name="used_qty"]').val('');
+  modal.find('input[name="damaged_qty"]').val('');
+
+  // Update current levels display
+  modal.find('#stock-available').text(button.data('available_qty'));
+  modal.find('#stock-used').text(button.data('used_qty'));
+  modal.find('#stock-damaged').text(button.data('damaged_qty'));
 });
 </script>
 

@@ -267,25 +267,29 @@
 $('#assetModal').on('show.bs.modal', function(e) {
   var button = $(e.relatedTarget);
   var id = button.data('id');
+  var modal = $(this);
+
+  // Reset form
+  modal.find('form')[0].reset();
 
   if(id) {
-    $('.modal-title').text('Edit Asset');
+    modal.find('.modal-title').text('Edit Asset');
   } else {
-    $('.modal-title').text('Add Asset');
+    modal.find('.modal-title').text('Add Asset');
   }
 
-  $('#asset-id').val(id || '');
-  $('#asset-name').val(button.data('name') || '');
-  $('#asset-category').val(button.data('category') || '');
-  $('#asset-location').val(button.data('location') || '');
-  $('#asset-total_quantity').val(button.data('total_quantity') || 1);
-  $('#asset-available_qty').val(button.data('available_qty') || 0);
-  $('#asset-used_qty').val(button.data('used_qty') || 0);
-  $('#asset-damaged_qty').val(button.data('damaged_qty') || 0);
-  $('#asset-low_stock_threshold').val(button.data('low_stock_threshold') || 2);
-  $('#asset-purchase_date').val(button.data('purchase_date') || '');
-  $('#asset-vendor_name').val(button.data('vendor_name') || '');
-  $('#asset-vendor_contact').val(button.data('vendor_contact') || '');
+  modal.find('#asset-id').val(id || '');
+  modal.find('#asset-name').val(button.data('name') || '');
+  modal.find('#asset-category').val(button.data('category') || '');
+  modal.find('#asset-location').val(button.data('location') || '');
+  modal.find('#asset-total_quantity').val(button.data('total_quantity') || 1);
+  modal.find('#asset-available_qty').val(button.data('available_qty') || 0);
+  modal.find('#asset-used_qty').val(button.data('used_qty') || 0);
+  modal.find('#asset-damaged_qty').val(button.data('damaged_qty') || 0);
+  modal.find('#asset-low_stock_threshold').val(button.data('low_stock_threshold') || 2);
+  modal.find('#asset-purchase_date').val(button.data('purchase_date') || '');
+  modal.find('#asset-vendor_name').val(button.data('vendor_name') || '');
+  modal.find('#asset-vendor_contact').val(button.data('vendor_contact') || '');
 });
 
 // Populate Status Modal
