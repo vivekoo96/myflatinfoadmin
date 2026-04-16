@@ -28,16 +28,15 @@ class DeliveryRestrictionController extends Controller
      */
     public function update(Request $request)
     {
-        $request->validate([
-            'delivery_entry_start_time' => 'required|regex:#^([0-1][0-9]|2[0-3]):[0-5][0-9]$#',
-            'delivery_entry_end_time' => 'required|regex:#^([0-1][0-9]|2[0-3]):[0-5][0-9]$#',
-        ]);
-
         $user = Auth::user();
         $building = $user->building;
 
         if (!$building) {
             return redirect('permission-denied')->with('error', 'Building context not found.');
+        }
+
+        if (!$request->filled('delivery_entry_start_time') || !$request->filled('delivery_entry_end_time')) {
+            return redirect()->back()->with('error', 'Both times are required');
         }
 
         $building->delivery_entry_start_time = $request->delivery_entry_start_time;
