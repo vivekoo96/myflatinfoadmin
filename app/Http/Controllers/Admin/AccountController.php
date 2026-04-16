@@ -465,6 +465,7 @@ class AccountController extends Controller
             $transaction->type = 'Credit';
             $transaction->payment_type = $request->payment_type;
             $transaction->amount = $request->amount;
+            $transaction->gst_amount = $gst;
             $transaction->reciept_no = rand();
             $transaction->desc = 'Maintenance Payment paid by flat number '.$flat->name .' through BA: '.Auth::User()->name;
             $transaction->status = 'Success';

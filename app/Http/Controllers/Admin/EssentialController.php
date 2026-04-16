@@ -441,6 +441,7 @@ class EssentialController extends Controller
         $transaction->type = 'Credit';
         $transaction->payment_type = $request->payment_type;
         $transaction->amount = $request->amount;
+        $transaction->gst_amount = $total_gst;
         $transaction->reciept_no = rand();
         $transaction->desc = 'Essential Payment paid by flat number '.$flat->name .' Through BA: '.Auth::User()->name;
         $transaction->status = 'Success';

@@ -41,6 +41,7 @@ use App\Http\Controllers\Admin\MeetingController;
 use App\Http\Controllers\Admin\SecurityNoteController;
 use App\Http\Controllers\Admin\ActivityAdminController;
 use App\Http\Controllers\Admin\DeliveryRestrictionController;
+use App\Http\Controllers\Admin\GstController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\Setting;
@@ -264,7 +265,7 @@ Route::middleware('admin')->group(function () {
         
         Route::get('/account/pending-bills',[AccountController::class, 'pending_bills']);
         Route::post('/account/send-due-notifications',[AccountController::class, 'send_due_notifications']);
-        
+        Route::get('/account/gst',[GstController::class, 'index'])->name('gst.index');
 
         //
         

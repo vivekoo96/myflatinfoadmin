@@ -649,6 +649,7 @@
               $isStatementOpen = request()->is('account/statement/*');
               $isIncomeActive = request()->is('account/statement/income-and-expenditure*');
                $isPendingBillsActive = request()->is('account/pending-bills*');
+              $isGstActive = request()->is('account/gst*');
               @endphp
                @if(Auth::User()->role == 'BA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'Accounts') || $role == 'President' )
               <ul class="nav nav-treeview second">
@@ -662,16 +663,25 @@
               @endif
                        <ul class="nav nav-treeview third">
     <li class="nav-item">
-        <a href="{{ url('account/pending-bills') }}" 
+        <a href="{{ url('account/pending-bills') }}"
            class="nav-link {{ $isPendingBillsActive ? 'third-active' : '' }} {{ getAccessControl($hasStatementsAccess) }}">
-           
+
             <i class="fas fa-bell nav-icon"></i>
             <p>Pending Bills</p>
         </a>
     </li>
+    @if(Auth::user()->building && (Auth::user()->building->gst_maintenance_enabled == 'Yes' || Auth::user()->building->gst_essentials_enabled == 'Yes' || Auth::user()->building->gst_bookings_enabled == 'Yes'))
+    <li class="nav-item">
+        <a href="{{ route('gst.index') }}"
+           class="nav-link {{ $isGstActive ? 'third-active' : '' }} {{ getAccessControl($hasStatementsAccess) }}">
+            <i class="fas fa-percent nav-icon"></i>
+            <p>GST Billing</p>
+        </a>
+    </li>
+    @endif
 </ul>
 
-          
+
               <ul class="nav nav-treeview second">
                   <li class="nav-item has-treeview {{ $isStatementOpen ? 'menu-open' : '' }}">
                       <a href="#" class="nav-link {{ $isStatementOpen ? 'second-active' : '' }} {{ getAccessControl($hasStatementsAccess) }}">
