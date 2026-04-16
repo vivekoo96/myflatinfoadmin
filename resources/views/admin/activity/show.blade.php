@@ -15,7 +15,7 @@
       </div>
       <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="{{route('dashboard')}}">Home</a></li>
+          <li class="breadcrumb-item"><a href="#">Home</a></li>
           <li class="breadcrumb-item"><a href="{{route('activity.index')}}">Community Activities</a></li>
           <li class="breadcrumb-item active">{{$activity->title}}</li>
         </ol>
