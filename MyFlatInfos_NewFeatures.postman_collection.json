@@ -466,6 +466,127 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Community Activities (API) - Working",
+      "item": [
+        {
+          "name": "create-activity",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Cricket Match at Sports Complex\",\n  \"description\": \"Friendly cricket match. Bring your own equipment.\",\n  \"activity_datetime\": \"2026-04-20T15:00:00\",\n  \"response_type\": \"simple\",\n  \"post_type\": \"slot\",\n  \"max_slots\": 12\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/create-activity",
+              "host": ["{{BASE_URL}}"],
+              "path": ["create-activity"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-activities",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/get-activities?search=&count=10&page=1",
+              "host": ["{{BASE_URL}}"],
+              "path": ["get-activities"],
+              "query": [
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "count",  "value": "10", "disabled": true },
+                { "key": "page",   "value": "1", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-activity",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/get-activity?id=1",
+              "host": ["{{BASE_URL}}"],
+              "path": ["get-activity"],
+              "query": [
+                { "key": "id", "value": "1" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "respond-activity",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activity_id\": 1,\n  \"response\": \"interested\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/respond-activity",
+              "host": ["{{BASE_URL}}"],
+              "path": ["respond-activity"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete-activity",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/delete-activity?id=1",
+              "host": ["{{BASE_URL}}"],
+              "path": ["delete-activity"],
+              "query": [
+                { "key": "id", "value": "1" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "activity-stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/activity-stats?id=1",
+              "host": ["{{BASE_URL}}"],
+              "path": ["activity-stats"],
+              "query": [
+                { "key": "id", "value": "1" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\PollController;
 use App\Http\Controllers\Api\MeetingMinuteController;
 use App\Http\Controllers\Api\MeetingController;
 use App\Http\Controllers\Api\VideoTutorialController;
+use App\Http\Controllers\Api\ActivityController;
 
 // Route::prefix('customer')->group(function () {
     Route::post('register',[CustomerController::class,'register']);
@@ -147,6 +148,14 @@ use App\Http\Controllers\Api\VideoTutorialController;
 
             // Meeting Minutes
             Route::post('get-meeting-minutes', [MeetingMinuteController::class, 'getMeetingMinutes']);
+
+            // Community Activities
+            Route::post('create-activity', [ActivityController::class, 'create']);
+            Route::get('get-activities', [ActivityController::class, 'index']);
+            Route::get('get-activity', [ActivityController::class, 'show']);
+            Route::post('respond-activity', [ActivityController::class, 'respond']);
+            Route::delete('delete-activity', [ActivityController::class, 'delete']);
+            Route::get('activity-stats', [ActivityController::class, 'stats']);
 
         });
         //Route::post('create-razorpay-order', [CustomerController::class,'create_razorpay_order']);
