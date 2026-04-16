@@ -1024,6 +1024,12 @@
             </a>
           </li>
           <li class="nav-item">
+            <a href="{{ route('activity.index') }}" class="nav-link {{ request()->is('community-activities*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-calendar-alt"></i>
+              <p>Community Activities</p>
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="{{ route('guide-video.index') }}" class="nav-link {{ request()->is('guide-video*') ? 'active' : '' }}">
               <i class="nav-icon fas fa-play-circle"></i>
               <p>How to Use</p>
