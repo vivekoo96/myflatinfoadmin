@@ -22,6 +22,7 @@ class ActivityController extends Controller
         $rules = [
             'title'              => 'required|string|max:255',
             'description'        => 'nullable|string',
+            'location'           => 'nullable|string|max:255',
             'activity_datetime'  => 'required|date_format:Y-m-d\TH:i:s',
             'response_type'      => 'required|in:simple,detailed',
             'post_type'          => 'required|in:slot,unlimited',
@@ -58,6 +59,7 @@ class ActivityController extends Controller
             'flat_id'            => $flat->id,
             'title'              => $request->title,
             'description'        => $request->description,
+            'location'           => $request->location,
             'activity_datetime'  => Carbon::createFromFormat('Y-m-d\TH:i:s', $request->activity_datetime),
             'response_type'      => $request->response_type,
             'post_type'          => $request->post_type,

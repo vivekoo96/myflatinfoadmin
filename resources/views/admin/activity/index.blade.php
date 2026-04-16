@@ -72,6 +72,7 @@
                   <tr>
                     <th>#</th>
                     <th>Title</th>
+                    <th>Location</th>
                     <th>Creator</th>
                     <th>Type</th>
                     <th>Date & Time</th>
@@ -85,6 +86,9 @@
                     <tr>
                       <td>{{$activity->id}}</td>
                       <td>{{$activity->title}}</td>
+                      <td>
+                        <small>{{$activity->location ?? 'N/A'}}</small>
+                      </td>
                       <td>
                         <small>{{$activity->creator->first_name}} {{$activity->creator->last_name}}</small><br>
                         <small class="text-muted">{{$activity->creator->email}}</small>
@@ -140,7 +144,7 @@
                     </tr>
                   @empty
                     <tr>
-                      <td colspan="8" class="text-center text-muted">No activities found</td>
+                      <td colspan="9" class="text-center text-muted">No activities found</td>
                     </tr>
                   @endforelse
                 </tbody>

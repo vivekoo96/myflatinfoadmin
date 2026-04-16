@@ -71,6 +71,11 @@
 
             <hr>
 
+            <p><strong>Location:</strong></p>
+            <p>{{$activity->location ?: 'No location specified'}}</p>
+
+            <hr>
+
             <p><strong>Description:</strong></p>
             <p>{{$activity->description ?: 'No description provided'}}</p>
           </div>

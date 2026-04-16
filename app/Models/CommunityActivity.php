@@ -16,6 +16,7 @@ class CommunityActivity extends Model
         'flat_id',
         'title',
         'description',
+        'location',
         'activity_datetime',
         'response_type',
         'post_type',
