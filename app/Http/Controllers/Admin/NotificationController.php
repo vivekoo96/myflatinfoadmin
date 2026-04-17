@@ -73,21 +73,21 @@ class NotificationController extends Controller
 
         if (in_array('security', $targetRoles)) {
             $ids = BuildingUser::where('building_id', $buildingId)
-                ->whereHas('role', fn($q) => $q->where('slug', 'security'))
+                ->whereHas('role', fn($q) => $q->whereRaw("LOWER(slug) LIKE ?", ['%security%']))
                 ->pluck('user_id');
             $userIds = $userIds->merge($ids);
         }
 
         if (in_array('issue_management', $targetRoles)) {
             $ids = BuildingUser::where('building_id', $buildingId)
-                ->whereHas('role', fn($q) => $q->where('slug', 'issue_management'))
+                ->whereHas('role', fn($q) => $q->whereRaw("LOWER(slug) LIKE ? OR LOWER(name) LIKE ?", ['%issue%', '%issue%']))
                 ->pluck('user_id');
             $userIds = $userIds->merge($ids);
         }
 
         if (in_array('accounts', $targetRoles)) {
             $ids = BuildingUser::where('building_id', $buildingId)
-                ->whereHas('role', fn($q) => $q->where('slug', 'accounts'))
+                ->whereHas('role', fn($q) => $q->whereRaw("LOWER(slug) LIKE ? OR LOWER(name) LIKE ?", ['%account%', '%account%']))
                 ->pluck('user_id');
             $userIds = $userIds->merge($ids);
         }

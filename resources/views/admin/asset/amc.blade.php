@@ -120,7 +120,7 @@
                                 data-start_date="{{ $amc->start_date->format('Y-m-d') }}"
                                 data-end_date="{{ $amc->end_date->format('Y-m-d') }}"
                                 data-service_frequency="{{ $amc->service_frequency }}"
-                                data-notes="{{ $amc->notes }}"
+                                data-notes="{{ htmlspecialchars($amc->notes ?? '', ENT_QUOTES, 'UTF-8') }}"
                                 title="Edit">
                           <i class="fas fa-edit"></i>
                         </button>
@@ -225,22 +225,26 @@ $('#amcModal').on('show.bs.modal', function(e) {
   var id = button.data('id');
   var modal = $(this);
 
-  // Reset form
-  modal.find('form')[0].reset();
-
   if(id) {
     modal.find('.modal-title').text('Edit AMC');
   } else {
     modal.find('.modal-title').text('Add AMC');
   }
 
+  // Populate fields
   modal.find('#amc-id').val(id || '');
-  modal.find('#amc-asset_id').val(button.data('asset_id') || '');
+  modal.find('#amc-asset_id').val(button.data('asset_id') || '').change();
   modal.find('#amc-provider_name').val(button.data('provider_name') || '');
   modal.find('#amc-start_date').val(button.data('start_date') || '');
   modal.find('#amc-end_date').val(button.data('end_date') || '');
-  modal.find('#amc-service_frequency').val(button.data('service_frequency') || '');
+  modal.find('#amc-service_frequency').val(button.data('service_frequency') || '').change();
   modal.find('#amc-notes').val(button.data('notes') || '');
+
+  // Clear fields when adding new
+  if(!id) {
+    modal.find('input[type="text"], input[type="date"], textarea').val('');
+    modal.find('select').val('');
+  }
 });
 
 // Handle form deletion via AJAX
