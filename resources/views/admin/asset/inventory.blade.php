@@ -116,7 +116,7 @@
                       <td>
                         <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#stockModal"
                                 data-id="{{ $asset->id }}"
-                                data-name="{{ $asset->name }}"
+                                data-name="{{ htmlspecialchars($asset->name ?? '', ENT_QUOTES, 'UTF-8') }}"
                                 data-available_qty="{{ $asset->available_qty }}"
                                 data-used_qty="{{ $asset->used_qty }}"
                                 data-damaged_qty="{{ $asset->damaged_qty }}"
@@ -209,6 +209,19 @@ $('#stockModal').on('show.bs.modal', function(e) {
   modal.find('#stock-available').text(button.data('available_qty'));
   modal.find('#stock-used').text(button.data('used_qty'));
   modal.find('#stock-damaged').text(button.data('damaged_qty'));
+});
+
+// Handle stock update form submission
+$('#stockModal form').on('submit', function(e) {
+  var assetId = $(this).find('#stock-asset-id').val();
+
+  if(!assetId) {
+    e.preventDefault();
+    alert('Error: Asset ID not set. Please close and try again.');
+    return false;
+  }
+
+  // Form will submit normally and redirect with success message
 });
 </script>
 

@@ -116,10 +116,10 @@
                         <button class="btn btn-sm btn-info" data-toggle="modal" data-target="#amcModal"
                                 data-id="{{ $amc->id }}"
                                 data-asset_id="{{ $amc->asset_id }}"
-                                data-provider_name="{{ $amc->provider_name }}"
+                                data-provider_name="{{ htmlspecialchars($amc->provider_name ?? '', ENT_QUOTES, 'UTF-8') }}"
                                 data-start_date="{{ $amc->start_date->format('Y-m-d') }}"
                                 data-end_date="{{ $amc->end_date->format('Y-m-d') }}"
-                                data-service_frequency="{{ $amc->service_frequency }}"
+                                data-service_frequency="{{ htmlspecialchars($amc->service_frequency ?? '', ENT_QUOTES, 'UTF-8') }}"
                                 data-notes="{{ htmlspecialchars($amc->notes ?? '', ENT_QUOTES, 'UTF-8') }}"
                                 title="Edit">
                           <i class="fas fa-edit"></i>
@@ -246,23 +246,33 @@ $('#amcModal').on('show.bs.modal', function(e) {
 
 // Handle form deletion via AJAX
 $('form').on('submit', function(e) {
-  if($(this).attr('action').includes('destroy')) {
-    e.preventDefault();
-    var form = this;
-    $.ajax({
-      type: 'POST',
-      url: $(this).attr('action'),
-      data: $(this).serialize(),
-      success: function(response) {
-        if(response.msg === 'success') {
-          window.location.reload();
+  var action = $(this).attr('action');
+  var method = $(this).attr('method');
+
+  // Check if this is a delete form (contains asset-amc and is a POST with DELETE method)
+  if(action.includes('asset-amc') && method === 'POST') {
+    // Also check for _method=DELETE in the serialized form
+    var formData = $(this).serialize();
+    if(formData.includes('_method=DELETE')) {
+      e.preventDefault();
+      var form = this;
+      $.ajax({
+        type: 'POST',
+        url: action,
+        data: formData,
+        success: function(response) {
+          if(response.msg === 'success') {
+            window.location.reload();
+          } else if(response.error) {
+            alert('Error: ' + response.error);
+          }
+        },
+        error: function(xhr) {
+          alert('Error deleting AMC: ' + (xhr.responseJSON?.error || 'Unknown error'));
+          console.log(xhr);
         }
-      },
-      error: function(xhr) {
-        alert('Error deleting AMC');
-        console.log(xhr);
-      }
-    });
+      });
+    }
   }
 });
 </script>

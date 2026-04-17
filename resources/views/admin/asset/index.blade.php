@@ -87,19 +87,19 @@
                       </td>
                       <td><small>{{ $asset->purchase_date ? $asset->purchase_date->format('d M Y') : 'N/A' }}</small></td>
                       <td>
-                        <button class="btn btn-sm btn-info" data-toggle="modal" data-target="#assetModal"
+                        <button class="btn btn-sm btn-info edit-asset-btn" data-toggle="modal" data-target="#assetModal"
                                 data-id="{{ $asset->id }}"
-                                data-name="{{ $asset->name }}"
-                                data-category="{{ $asset->category }}"
-                                data-location="{{ $asset->location }}"
+                                data-name="{{ htmlspecialchars($asset->name ?? '', ENT_QUOTES, 'UTF-8') }}"
+                                data-category="{{ htmlspecialchars($asset->category ?? '', ENT_QUOTES, 'UTF-8') }}"
+                                data-location="{{ htmlspecialchars($asset->location ?? '', ENT_QUOTES, 'UTF-8') }}"
                                 data-total_quantity="{{ $asset->total_quantity }}"
                                 data-available_qty="{{ $asset->available_qty }}"
                                 data-used_qty="{{ $asset->used_qty }}"
                                 data-damaged_qty="{{ $asset->damaged_qty }}"
                                 data-low_stock_threshold="{{ $asset->low_stock_threshold }}"
                                 data-purchase_date="{{ $asset->purchase_date ? $asset->purchase_date->format('Y-m-d') : '' }}"
-                                data-vendor_name="{{ $asset->vendor_name }}"
-                                data-vendor_contact="{{ $asset->vendor_contact }}"
+                                data-vendor_name="{{ htmlspecialchars($asset->vendor_name ?? '', ENT_QUOTES, 'UTF-8') }}"
+                                data-vendor_contact="{{ htmlspecialchars($asset->vendor_contact ?? '', ENT_QUOTES, 'UTF-8') }}"
                                 title="Edit">
                           <i class="fas fa-edit"></i>
                         </button>
@@ -307,19 +307,27 @@ $('#statusModal').on('show.bs.modal', function(e) {
   modal.find('#status-select').val(status);
 });
 
-// Handle form deletion via AJAX
+// Handle form submissions via AJAX (delete and status update)
 $('form').on('submit', function(e) {
-  if($(this).attr('action').includes('destroy')) {
+  var action = $(this).attr('action');
+
+  if(action.includes('destroy') || action.includes('update-status')) {
     e.preventDefault();
     var form = this;
+
     $.ajax({
       type: 'POST',
-      url: $(this).attr('action'),
+      url: action,
       data: $(this).serialize(),
       success: function(response) {
-        if(response.msg === 'success') {
+        if(response.msg === 'success' || response.success) {
           window.location.reload();
+        } else if(response.error) {
+          alert('Error: ' + response.error);
         }
+      },
+      error: function(xhr) {
+        alert('Error: ' + (xhr.responseJSON?.error || 'Operation failed'));
       }
     });
   }
