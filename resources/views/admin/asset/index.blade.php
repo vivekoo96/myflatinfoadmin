@@ -294,6 +294,8 @@ $('#assetModal').on('show.bs.modal', function(e) {
   }
 });
 </script>
+
+<script>
 // Populate Status Modal
 $('#statusModal').on('show.bs.modal', function(e) {
   var button = $(e.relatedTarget);
