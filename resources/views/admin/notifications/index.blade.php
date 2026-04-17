@@ -123,12 +123,12 @@
                 </div>
 
                 {{-- Accounts --}}
-                <div class="form-check mb-2">
+                {{-- <div class="form-check mb-2">
                   <input class="form-check-input" type="checkbox" name="target_roles[]" value="accounts" id="role_accounts" {{ in_array('accounts', old('target_roles', [])) ? 'checked' : '' }}>
                   <label class="form-check-label font-weight-bold" for="role_accounts">
                     <i class="fas fa-calculator mr-1 text-success"></i> Accounts App Users
                   </label>
-                </div>
+                </div> --}}
 
               </div>
             </div>
