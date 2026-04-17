@@ -5714,16 +5714,19 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
 				"color"             => "#3399cc"
             ],
             "order_id"          => $razorpayOrderId,
+            "taxable_amount"    => round($total_payment, 2),
+            "gst_amount"        => round($gst, 2),
+            "total_amount"      => $item_amount,
         ];
-                    
+
         if ($this->displayCurrency !== 'INR')
         {
             $data['display_currency']  = $this->displayCurrency;
             $data['display_amount']    = $displayAmount;
         }
-                    
+
         $displayCurrency = $this->displayCurrency;
-        
+
         $order = new Order();
         $order->user_id = $user->id;
         $order->order_id = $razorpayOrderId;
@@ -5733,12 +5736,16 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
         $order->flat_id = $maintenance_payment->flat_id;
         $order->desc = 'Creating order for maintenance payment from '.$maintenance_payment->from_date. ' to '.$maintenance_payment->to_date;
         $order->amount = $item_amount;
+        $order->gst_amount = round($gst, 2);
         $order->status = 'Created';
         $order->save();
-        
+
         return response()->json([
                 'data' => $data,
-                'displayCurrency' => $displayCurrency
+                'displayCurrency' => $displayCurrency,
+                'gst_amount' => round($gst, 2),
+                'taxable_amount' => round($total_payment, 2),
+                'total_amount' => $item_amount
         ],200);
     }
     
@@ -5814,7 +5821,7 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
              
             $transaction = new Transaction();
             $transaction->building_id = AuthHelper::flat()->building_id;
-          
+
             $transaction->user_id = $user->id;
             $transaction->flat_id = $flat->id;
             $transaction->block_id = $flat->block_id;
@@ -5825,6 +5832,7 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
             $transaction->type = 'Credit';
             $transaction->payment_type = 'InBank';
             $transaction->amount = $order->amount;
+            $transaction->gst_amount = $order->gst_amount ?? 0;
             $transaction->reciept_no = $reciept;
             $transaction->desc = 'Maintenance Payment paid by flat number '. AuthHelper::flat()->name;
             $transaction->status = 'Success';
