@@ -15,7 +15,7 @@ class AddGstAmountToOrdersTable extends Migration
     {
         Schema::table('orders', function (Blueprint $table) {
             if (!Schema::hasColumn('orders', 'gst_amount')) {
-                $table->decimal('gst_amount', 10, 2)->default(0)->after('amount');
+                $table->decimal('gst_amount', 10, 2)->nullable()->default(0)->after('amount');
             }
         });
     }
