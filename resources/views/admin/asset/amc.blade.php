@@ -218,9 +218,12 @@
   </div>
 </div>
 
+@endsection
+
+@section('script')
 <script>
 // Populate AMC Modal on edit
-$('#amcModal').on('show.bs.modal', function(e) {
+$(document).on('show.bs.modal', '#amcModal', function(e) {
   var button = $(e.relatedTarget);
   var id = button.data('id');
   var modal = $(this);
@@ -245,7 +248,7 @@ $('#amcModal').on('show.bs.modal', function(e) {
 });
 
 // Handle form deletion via AJAX
-$('form').on('submit', function(e) {
+$(document).on('submit', 'form', function(e) {
   var action = $(this).attr('action');
   var method = $(this).attr('method');
 
@@ -276,5 +279,4 @@ $('form').on('submit', function(e) {
   }
 });
 </script>
-
 @endsection

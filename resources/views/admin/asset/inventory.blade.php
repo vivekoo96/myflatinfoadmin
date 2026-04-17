@@ -190,9 +190,12 @@
   </div>
 </div>
 
+@endsection
+
+@section('script')
 <script>
 // Populate Stock Modal
-$('#stockModal').on('show.bs.modal', function(e) {
+$(document).on('show.bs.modal', '#stockModal', function(e) {
   var button = $(e.relatedTarget);
   var modal = $(this);
   var assetId = button.data('id');
@@ -212,7 +215,7 @@ $('#stockModal').on('show.bs.modal', function(e) {
 });
 
 // Handle stock update form submission
-$('#stockModal form').on('submit', function(e) {
+$(document).on('submit', '#stockModal form', function(e) {
   var assetId = $(this).find('#stock-asset-id').val();
 
   if(!assetId) {
@@ -224,5 +227,4 @@ $('#stockModal form').on('submit', function(e) {
   // Form will submit normally and redirect with success message
 });
 </script>
-
 @endsection

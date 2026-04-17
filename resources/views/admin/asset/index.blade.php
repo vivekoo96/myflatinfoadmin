@@ -87,7 +87,7 @@
                       </td>
                       <td><small>{{ $asset->purchase_date ? $asset->purchase_date->format('d M Y') : 'N/A' }}</small></td>
                       <td>
-                        <button class="btn btn-sm btn-info edit-asset-btn" data-toggle="modal" data-target="#assetModal"
+                        <button class="btn btn-sm btn-info" data-toggle="modal" data-target="#assetModal"
                                 data-id="{{ $asset->id }}"
                                 data-name="{{ htmlspecialchars($asset->name ?? '', ENT_QUOTES, 'UTF-8') }}"
                                 data-category="{{ htmlspecialchars($asset->category ?? '', ENT_QUOTES, 'UTF-8') }}"
@@ -262,9 +262,12 @@
   </div>
 </div>
 
+@endsection
+
+@section('script')
 <script>
 // Populate Asset Modal on edit
-$('#assetModal').on('show.bs.modal', function(e) {
+$(document).on('show.bs.modal', '#assetModal', function(e) {
   var button = $(e.relatedTarget);
   var id = button.data('id');
   var modal = $(this);
@@ -293,11 +296,9 @@ $('#assetModal').on('show.bs.modal', function(e) {
     modal.find('#asset-low_stock_threshold').val(2);
   }
 });
-</script>
 
-<script>
 // Populate Status Modal
-$('#statusModal').on('show.bs.modal', function(e) {
+$(document).on('show.bs.modal', '#statusModal', function(e) {
   var button = $(e.relatedTarget);
   var modal = $(this);
   var assetId = button.data('id');
@@ -308,7 +309,7 @@ $('#statusModal').on('show.bs.modal', function(e) {
 });
 
 // Handle form submissions via AJAX (delete and status update)
-$('form').on('submit', function(e) {
+$(document).on('submit', 'form', function(e) {
   var action = $(this).attr('action');
 
   if(action.includes('destroy') || action.includes('update-status')) {
@@ -333,5 +334,4 @@ $('form').on('submit', function(e) {
   }
 });
 </script>
-
 @endsection
