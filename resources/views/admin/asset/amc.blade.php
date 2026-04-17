@@ -227,21 +227,18 @@ $('#amcModal').on('show.bs.modal', function(e) {
 
   if(id) {
     modal.find('.modal-title').text('Edit AMC');
+    // Populate fields for edit
+    modal.find('#amc-id').val(id);
+    modal.find('#amc-asset_id').val(button.data('asset_id') || '');
+    modal.find('#amc-provider_name').val(button.data('provider_name') || '');
+    modal.find('#amc-start_date').val(button.data('start_date') || '');
+    modal.find('#amc-end_date').val(button.data('end_date') || '');
+    modal.find('#amc-service_frequency').val(button.data('service_frequency') || '');
+    modal.find('#amc-notes').val(button.data('notes') || '');
   } else {
     modal.find('.modal-title').text('Add AMC');
-  }
-
-  // Populate fields
-  modal.find('#amc-id').val(id || '');
-  modal.find('#amc-asset_id').val(button.data('asset_id') || '').change();
-  modal.find('#amc-provider_name').val(button.data('provider_name') || '');
-  modal.find('#amc-start_date').val(button.data('start_date') || '');
-  modal.find('#amc-end_date').val(button.data('end_date') || '');
-  modal.find('#amc-service_frequency').val(button.data('service_frequency') || '').change();
-  modal.find('#amc-notes').val(button.data('notes') || '');
-
-  // Clear fields when adding new
-  if(!id) {
+    // Clear fields for new
+    modal.find('#amc-id').val('');
     modal.find('input[type="text"], input[type="date"], textarea').val('');
     modal.find('select').val('');
   }
@@ -260,6 +257,10 @@ $('form').on('submit', function(e) {
         if(response.msg === 'success') {
           window.location.reload();
         }
+      },
+      error: function(xhr) {
+        alert('Error deleting AMC');
+        console.log(xhr);
       }
     });
   }

@@ -269,34 +269,40 @@ $('#assetModal').on('show.bs.modal', function(e) {
   var id = button.data('id');
   var modal = $(this);
 
-  // Reset form
-  modal.find('form')[0].reset();
-
   if(id) {
     modal.find('.modal-title').text('Edit Asset');
+    // Populate fields for edit
+    modal.find('#asset-id').val(id);
+    modal.find('#asset-name').val(button.data('name') || '');
+    modal.find('#asset-category').val(button.data('category') || '');
+    modal.find('#asset-location').val(button.data('location') || '');
+    modal.find('#asset-total_quantity').val(button.data('total_quantity') || '');
+    modal.find('#asset-available_qty').val(button.data('available_qty') || '');
+    modal.find('#asset-used_qty').val(button.data('used_qty') || '');
+    modal.find('#asset-damaged_qty').val(button.data('damaged_qty') || '');
+    modal.find('#asset-low_stock_threshold').val(button.data('low_stock_threshold') || '');
+    modal.find('#asset-purchase_date').val(button.data('purchase_date') || '');
+    modal.find('#asset-vendor_name').val(button.data('vendor_name') || '');
+    modal.find('#asset-vendor_contact').val(button.data('vendor_contact') || '');
   } else {
     modal.find('.modal-title').text('Add Asset');
+    // Clear all fields for new
+    modal.find('form')[0].reset();
+    modal.find('#asset-id').val('');
+    modal.find('#asset-total_quantity').val(1);
+    modal.find('#asset-low_stock_threshold').val(2);
   }
-
-  modal.find('#asset-id').val(id || '');
-  modal.find('#asset-name').val(button.data('name') || '');
-  modal.find('#asset-category').val(button.data('category') || '');
-  modal.find('#asset-location').val(button.data('location') || '');
-  modal.find('#asset-total_quantity').val(button.data('total_quantity') || 1);
-  modal.find('#asset-available_qty').val(button.data('available_qty') || 0);
-  modal.find('#asset-used_qty').val(button.data('used_qty') || 0);
-  modal.find('#asset-damaged_qty').val(button.data('damaged_qty') || 0);
-  modal.find('#asset-low_stock_threshold').val(button.data('low_stock_threshold') || 2);
-  modal.find('#asset-purchase_date').val(button.data('purchase_date') || '');
-  modal.find('#asset-vendor_name').val(button.data('vendor_name') || '');
-  modal.find('#asset-vendor_contact').val(button.data('vendor_contact') || '');
 });
-
+</script>
 // Populate Status Modal
 $('#statusModal').on('show.bs.modal', function(e) {
   var button = $(e.relatedTarget);
-  $('#status-asset-id').val(button.data('id'));
-  $('#status-select').val(button.data('status'));
+  var modal = $(this);
+  var assetId = button.data('id');
+  var status = button.data('status');
+
+  modal.find('#status-asset-id').val(assetId);
+  modal.find('#status-select').val(status);
 });
 
 // Handle form deletion via AJAX
