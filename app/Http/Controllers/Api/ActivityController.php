@@ -104,8 +104,7 @@ class ActivityController extends Controller
                 $q->where('status', 'approved')
                   ->orWhere('user_id', $user->id);
             })
-            ->with(['creator', 'responses'])
-            ->orderBy('activity_datetime', 'desc');
+            ->with(['creator', 'responses']);
 
         if ($search) {
             $query->where('title', 'LIKE', "%{$search}%");
