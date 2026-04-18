@@ -116,8 +116,8 @@ class ActivityController extends Controller
             $lastPage = ceil($total / $count);
             $currentPage = max(1, min($page, $lastPage));
 
-            $result = $query->forPage($currentPage, $count)->get();
-            $activities = $result;
+            $offset = ($currentPage - 1) * $count;
+            $activities = $query->offset($offset)->limit($count)->get();
         } else {
             $activities = $query->get();
             $total = $activities->count();
