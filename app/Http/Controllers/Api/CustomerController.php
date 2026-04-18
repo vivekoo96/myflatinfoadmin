@@ -3218,16 +3218,19 @@ if($notify_id){
 				"color"             => "#3399cc"
             ],
             "order_id"          => $razorpayOrderId,
+            "taxable_amount"    => round($grand_total, 2),
+            "gst_amount"        => round($gst, 2),
+            "total_amount"      => $item_amount,
         ];
-                    
+
         if ($this->displayCurrency !== 'INR')
         {
             $data['display_currency']  = $this->displayCurrency;
             $data['display_amount']    = $displayAmount;
         }
-                    
+
         $displayCurrency = $this->displayCurrency;
-        
+
         $order = new Order();
         $order->user_id = $user->id;
         $order->order_id = $razorpayOrderId;
@@ -3237,6 +3240,7 @@ if($notify_id){
         $order->flat_id = AuthHelper::flat()->id;
         $order->desc = 'Creating order for facility '.$facility->name;
         $order->amount = $item_amount;
+        $order->gst_amount = round($gst, 2);
         $order->refund_amount = $refund_amount;
         $order->status = 'Created';
         $order->save();
@@ -3261,11 +3265,13 @@ if($notify_id){
             }
     
             DB::commit();
-            
-            // 
+
             return response()->json([
                 'data' => $data,
-                'displayCurrency' => $displayCurrency
+                'displayCurrency' => $displayCurrency,
+                'gst_amount' => round($gst, 2),
+                'taxable_amount' => round($grand_total, 2),
+                'total_amount' => $item_amount
             ],200);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -3355,6 +3361,7 @@ if($notify_id){
             $transaction->type = 'Credit';
             $transaction->payment_type = 'InBank';
             $transaction->amount = $order->amount;
+            $transaction->gst_amount = $order->gst_amount ?? 0;
             $transaction->reciept_no = $reciept;
             $transaction->desc = 'Facility Booking paid by flat number '.$flat->name;
             $transaction->status = 'Success';
@@ -6204,16 +6211,19 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
 				"color"             => "#3399cc"
             ],
             "order_id"          => $razorpayOrderId,
+            "taxable_amount"    => round($total_amount, 2),
+            "gst_amount"        => round($total_gst, 2),
+            "total_amount"      => $item_amount,
         ];
-                    
+
         if ($this->displayCurrency !== 'INR')
         {
             $data['display_currency']  = $this->displayCurrency;
             $data['display_amount']    = $displayAmount;
         }
-                    
+
         $displayCurrency = $this->displayCurrency;
-        
+
         $order = new Order();
         $order->user_id = $user->id;
         $order->order_id = $razorpayOrderId;
@@ -6223,12 +6233,16 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
         $order->flat_id = $essential_payment->flat_id;
         $order->desc = 'Creating order for essential payment for '.$essential_payment->flat->name;
         $order->amount = $item_amount;
+        $order->gst_amount = round($total_gst, 2);
         $order->status = 'Created';
         $order->save();
-        
+
         return response()->json([
                 'data' => $data,
-                'displayCurrency' => $displayCurrency
+                'displayCurrency' => $displayCurrency,
+                'gst_amount' => round($total_gst, 2),
+                'taxable_amount' => round($total_amount, 2),
+                'total_amount' => $item_amount
         ],200);
     }
     
@@ -6312,6 +6326,7 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
             $transaction->type = 'Credit';
             $transaction->payment_type = 'InBank';
             $transaction->amount = $order->amount;
+            $transaction->gst_amount = $order->gst_amount ?? 0;
             $transaction->reciept_no = $reciept;
             $transaction->desc = 'Essential Payment paid by flat number '.$flat->name;
             $transaction->status = 'Success';
