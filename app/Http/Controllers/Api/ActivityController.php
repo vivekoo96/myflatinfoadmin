@@ -112,11 +112,12 @@ class ActivityController extends Controller
         }
 
         if ($count) {
-            $result = $query->paginate($count, ['*'], 'page', $page);
-            $activities = $result->items();
-            $total = $result->total();
-            $currentPage = $result->currentPage();
-            $lastPage = $result->lastPage();
+            $total = $query->count();
+            $lastPage = ceil($total / $count);
+            $currentPage = max(1, min($page, $lastPage));
+
+            $result = $query->forPage($currentPage, $count)->get();
+            $activities = $result;
         } else {
             $activities = $query->get();
             $total = $activities->count();
