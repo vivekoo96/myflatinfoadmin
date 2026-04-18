@@ -104,7 +104,7 @@ class ActivityController extends Controller
                 $q->where('status', 'approved')
                   ->orWhere('user_id', $user->id);
             })
-            ->with(['creator', 'responses']);
+            ->orderBy('created_at', 'desc');
 
         if ($search) {
             $query->where('title', 'LIKE', "%{$search}%");
@@ -116,9 +116,9 @@ class ActivityController extends Controller
             $currentPage = max(1, min($page, $lastPage));
 
             $offset = ($currentPage - 1) * $count;
-            $activities = $query->offset($offset)->limit($count)->get();
+            $activities = $query->offset($offset)->limit($count)->with(['creator', 'responses'])->get();
         } else {
-            $activities = $query->get();
+            $activities = $query->with(['creator', 'responses'])->get();
             $total = $activities->count();
             $currentPage = 1;
             $lastPage = 1;
