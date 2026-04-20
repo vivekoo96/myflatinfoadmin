@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\GuardPatrol;
 use App\Models\PatrolLocation;
+use App\Models\BuildingShift;
 use App\Models\Guard;
 use App\Models\BuildingUser;
 use App\Models\Role;
@@ -80,7 +81,12 @@ class GuardPatrolController extends Controller
             ->where('status', 'Active')
             ->get();
 
-        return view('admin.guard_patrols.checkin', compact('locations', 'building'));
+        $shifts = BuildingShift::where('building_id', $building->id)
+            ->where('status', 'Active')
+            ->orderBy('start_time')
+            ->get();
+
+        return view('admin.guard_patrols.checkin', compact('locations', 'shifts', 'building'));
     }
 
     public function submitCheckin(Request $request)
@@ -88,7 +94,7 @@ class GuardPatrolController extends Controller
         $rules = [
             'patrol_location_id' => 'required|exists:patrol_locations,id',
             'checkin_type' => 'required|in:photo,qr',
-            'shift' => 'required|in:Day,Night',
+            'building_shift_id' => 'required|exists:building_shifts,id',
             'photo' => 'required_if:checkin_type,photo|nullable|image|mimes:jpg,jpeg,png|max:4096',
             'qr_scanned_value' => 'required_if:checkin_type,qr|nullable|string',
         ];

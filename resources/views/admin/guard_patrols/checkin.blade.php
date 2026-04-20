@@ -50,10 +50,13 @@
 
                   <div class="form-group">
                     <label>Shift: <span class="text-red">*</span></label>
-                    <select name="shift" id="shift" class="form-control" required>
+                    <select name="building_shift_id" id="shift" class="form-control" required>
                       <option value="">-- Select Shift --</option>
-                      <option value="Day">Day</option>
-                      <option value="Night">Night</option>
+                      @forelse($shifts as $shift)
+                        <option value="{{ $shift->id }}">{{ $shift->name }} ({{ $shift->start_time }} - {{ $shift->end_time }})</option>
+                      @empty
+                        <option disabled>No shifts configured for this building</option>
+                      @endforelse
                     </select>
                   </div>
 
