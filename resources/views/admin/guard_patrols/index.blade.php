@@ -49,7 +49,7 @@
                         <select name="guard_user_id" class="form-control">
                           <option value="">-- All Guards --</option>
                           @foreach($guards as $id => $user)
-                            <option value="{{ $id }}" {{ $filters['guard_user_id'] == $id ? 'selected' : '' }}>
+                            <option value="{{ $id }}" {{ ($filters['guard_user_id'] ?? '') == $id ? 'selected' : '' }}>
                               {{ $user->name ?? ($user->first_name ?? '') . ' ' . ($user->last_name ?? '') }}
                             </option>
                           @endforeach
@@ -62,7 +62,7 @@
                         <select name="patrol_location_id" class="form-control">
                           <option value="">-- All Locations --</option>
                           @foreach($locations as $location)
-                            <option value="{{ $location->id }}" {{ $filters['patrol_location_id'] == $location->id ? 'selected' : '' }}>
+                            <option value="{{ $location->id }}" {{ ($filters['patrol_location_id'] ?? '') == $location->id ? 'selected' : '' }}>
                               {{ $location->name }}
                             </option>
                           @endforeach
@@ -74,8 +74,8 @@
                         <label>Shift:</label>
                         <select name="shift" class="form-control">
                           <option value="">-- All --</option>
-                          <option value="Day" {{ $filters['shift'] == 'Day' ? 'selected' : '' }}>Day</option>
-                          <option value="Night" {{ $filters['shift'] == 'Night' ? 'selected' : '' }}>Night</option>
+                          <option value="Day" {{ ($filters['shift'] ?? '') == 'Day' ? 'selected' : '' }}>Day</option>
+                          <option value="Night" {{ ($filters['shift'] ?? '') == 'Night' ? 'selected' : '' }}>Night</option>
                         </select>
                       </div>
                     </div>
@@ -84,8 +84,8 @@
                         <label>Type:</label>
                         <select name="checkin_type" class="form-control">
                           <option value="">-- All --</option>
-                          <option value="photo" {{ $filters['checkin_type'] == 'photo' ? 'selected' : '' }}>Photo</option>
-                          <option value="qr" {{ $filters['checkin_type'] == 'qr' ? 'selected' : '' }}>QR</option>
+                          <option value="photo" {{ ($filters['checkin_type'] ?? '') == 'photo' ? 'selected' : '' }}>Photo</option>
+                          <option value="qr" {{ ($filters['checkin_type'] ?? '') == 'qr' ? 'selected' : '' }}>QR</option>
                         </select>
                       </div>
                     </div>

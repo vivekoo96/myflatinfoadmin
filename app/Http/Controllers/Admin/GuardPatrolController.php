@@ -59,7 +59,10 @@ class GuardPatrolController extends Controller
             ->paginate(20)
             ->appends($request->query());
 
-        $filters = $request->only(['guard_user_id', 'patrol_location_id', 'shift', 'checkin_type', 'date']);
+        $filters = array_merge(
+            ['guard_user_id' => '', 'patrol_location_id' => '', 'shift' => '', 'checkin_type' => '', 'date' => ''],
+            $request->only(['guard_user_id', 'patrol_location_id', 'shift', 'checkin_type', 'date'])
+        );
 
         return view('admin.guard_patrols.index', compact('patrols', 'guards', 'locations', 'filters'));
     }
