@@ -36,9 +36,9 @@
         <div class="row">
           <div class="col-12">
             <!-- Filter Card -->
-            <div class="card card-secondary">
-              <div class="card-header">
-                <h3 class="card-title">Filters</h3>
+            <div class="card">
+              <div class="card-header with-border">
+                <h3 class="card-title"><i class="nav-icon fas fa-filter"></i> Filters</h3>
               </div>
               <form method="GET" action="{{ route('guard-patrol.index') }}" class="form-horizontal">
                 <div class="card-body">
@@ -106,8 +106,8 @@
 
             <!-- Results Card -->
             <div class="card">
-              <div class="card-header">
-                <h3 class="card-title">Patrol Records (Total: {{ $patrols->total() }})</h3>
+              <div class="card-header with-border">
+                <h3 class="card-title"><i class="nav-icon fas fa-list"></i> Patrol Records (Total: {{ $patrols->total() }})</h3>
               </div>
               <div class="card-body">
                 <div class="table-responsive">

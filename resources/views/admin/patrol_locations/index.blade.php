@@ -36,10 +36,15 @@
         <div class="row">
           <div class="col-12">
             <div class="card">
-              <div class="card-header">
-                @if(Auth::User()->role == 'BA')
-                <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#addLocationModal">Add Patrol Location</button>
-                @endif
+              <div class="card-header with-border">
+                <h3 class="card-title"><i class="nav-icon fas fa-map-marker-alt"></i> Patrol Locations</h3>
+                <div class="card-tools pull-right">
+                  @if(Auth::User()->role == 'BA')
+                  <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#addLocationModal">
+                    <i class="fa fa-plus"></i> Add Location
+                  </button>
+                  @endif
+                </div>
               </div>
               <div class="card-body">
                 <div class="table-responsive">

@@ -40,9 +40,9 @@
             </div>
             @endif
 
-            <div class="card card-primary">
-              <div class="card-header">
-                <h3 class="card-title">Check-in Form</h3>
+            <div class="card">
+              <div class="card-header with-border">
+                <h3 class="card-title"><i class="nav-icon fas fa-check-circle"></i> Guard Check-in Form</h3>
               </div>
               <form action="{{ route('guard-patrol.submit') }}" method="POST" enctype="multipart/form-data">
                 @csrf
