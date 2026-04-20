@@ -8,16 +8,23 @@ class AddIdProofToGuardsTable extends Migration
 {
     public function up()
     {
-        Schema::table('guards', function (Blueprint $table) {
-            $table->string('id_proof_type')->nullable()->after('status');
-            $table->string('id_proof_number')->nullable()->after('id_proof_type');
-        });
+        if (!Schema::hasColumn('guards', 'id_proof_type')) {
+            Schema::table('guards', function (Blueprint $table) {
+                $table->string('id_proof_type')->nullable();
+                $table->string('id_proof_number')->nullable();
+            });
+        }
     }
 
     public function down()
     {
         Schema::table('guards', function (Blueprint $table) {
-            $table->dropColumn(['id_proof_type', 'id_proof_number']);
+            if (Schema::hasColumn('guards', 'id_proof_type')) {
+                $table->dropColumn('id_proof_type');
+            }
+            if (Schema::hasColumn('guards', 'id_proof_number')) {
+                $table->dropColumn('id_proof_number');
+            }
         });
     }
 }
