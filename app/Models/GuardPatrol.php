@@ -11,7 +11,7 @@ class GuardPatrol extends Model
 
     protected $fillable = [
         'building_id', 'guard_user_id', 'patrol_location_id',
-        'checkin_type', 'shift', 'photo_url', 'qr_scanned_value', 'checked_in_at',
+        'checkin_type', 'shift', 'building_shift_id', 'photo_url', 'qr_scanned_value', 'checked_in_at',
     ];
 
     protected $casts = [
@@ -31,5 +31,10 @@ class GuardPatrol extends Model
     public function patrolLocation()
     {
         return $this->belongsTo(PatrolLocation::class)->withTrashed();
+    }
+
+    public function buildingShift()
+    {
+        return $this->belongsTo(BuildingShift::class, 'building_shift_id')->withTrashed();
     }
 }

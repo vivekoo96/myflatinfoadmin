@@ -41,6 +41,7 @@ use App\Http\Controllers\Admin\MeetingController;
 use App\Http\Controllers\Admin\SecurityNoteController;
 use App\Http\Controllers\Admin\PatrolLocationController;
 use App\Http\Controllers\Admin\GuardPatrolController;
+use App\Http\Controllers\Admin\BuildingShiftController;
 use App\Http\Controllers\Admin\ActivityAdminController;
 use App\Http\Controllers\Admin\DeliveryRestrictionController;
 use App\Http\Controllers\Admin\GstController;
@@ -321,6 +322,11 @@ Route::middleware('admin')->group(function () {
         Route::get('/guard-patrol/checkin', [GuardPatrolController::class, 'checkin'])->name('guard-patrol.checkin');
         Route::post('/guard-patrol/checkin', [GuardPatrolController::class, 'submitCheckin'])->name('guard-patrol.submit');
         Route::get('/guard-patrol/resolve-qr', [GuardPatrolController::class, 'resolveQr'])->name('guard-patrol.resolveQr');
+
+        // Building Shifts
+        Route::get('/building-shift', [BuildingShiftController::class, 'index'])->name('building-shift.index');
+        Route::post('/building-shift', [BuildingShiftController::class, 'store'])->name('building-shift.store');
+        Route::delete('/building-shift/{id}', [BuildingShiftController::class, 'destroy'])->name('building-shift.destroy');
 
         // Delivery Entry Restriction
         Route::get('/delivery-restriction', [DeliveryRestrictionController::class, 'index'])->name('delivery-restriction.index');

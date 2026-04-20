@@ -736,6 +736,19 @@
           "response": []
         },
         {
+          "name": "Note: Dynamic Shifts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "Response includes: 'shifts[]' (available shifts for building) and 'current_shift' (detected based on current time)",
+              "host": [],
+              "path": []
+            }
+          },
+          "response": []
+        },
+        {
           "name": "submit-checkin-photo",
           "request": {
             "method": "POST",
@@ -746,7 +759,7 @@
               "mode": "formdata",
               "formdata": [
                 { "key": "patrol_location_id", "value": "1", "type": "text" },
-                { "key": "shift", "value": "Day", "type": "text" },
+                { "key": "building_shift_id", "value": "1", "type": "text" },
                 { "key": "checkin_type", "value": "photo", "type": "text" },
                 { "key": "photo", "value": "", "type": "file", "disabled": false }
               ]
@@ -769,7 +782,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"patrol_location_id\": 1,\n  \"shift\": \"Day\",\n  \"checkin_type\": \"qr\",\n  \"qr_scanned_value\": \"abc123def456ghi789\"\n}\n\n// qr_scanned_value = the unique QR string for that location (from get-patrol-locations)\n// shift = Day or Night\n// Location must exist in the same building as the authenticated guard",
+              "raw": "{\n  \"patrol_location_id\": 1,\n  \"building_shift_id\": 1,\n  \"checkin_type\": \"qr\",\n  \"qr_scanned_value\": \"abc123def456ghi789\"\n}\n\n// building_shift_id = ID from shifts[] in get-patrol-locations response\n// qr_scanned_value = the unique QR string for that location (from get-patrol-locations)\n// Location must exist in the same building as the authenticated guard\n// Shift must be active for this building (no overlapping shifts allowed)",
               "options": { "raw": { "language": "json" } }
             },
             "url": {

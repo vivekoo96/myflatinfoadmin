@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\GuardPatrol;
 use App\Models\PatrolLocation;
+use App\Models\BuildingShift;
 use Illuminate\Http\Request;
 use Auth;
 
@@ -29,9 +30,26 @@ class GuardPatrolController extends Controller
             ->select('id', 'name', 'description', 'qr_string')
             ->get();
 
+        // Get available shifts for the building
+        $shifts = BuildingShift::where('building_id', $building->id)
+            ->where('status', 'Active')
+            ->select('id', 'name', 'start_time', 'end_time')
+            ->get();
+
+        // Detect current shift based on current time
+        $now = now()->format('H:i:s');
+        $currentShift = $shifts->first(function ($shift) use ($now) {
+            if ($shift->start_time <= $shift->end_time) {
+                return $now >= $shift->start_time && $now < $shift->end_time;
+            }
+            return $now >= $shift->start_time || $now < $shift->end_time;
+        });
+
         return response()->json([
             'success' => true,
             'data' => $locations,
+            'shifts' => $shifts,
+            'current_shift' => $currentShift,
         ]);
     }
 
@@ -40,7 +58,7 @@ class GuardPatrolController extends Controller
         $rules = [
             'patrol_location_id' => 'required|exists:patrol_locations,id',
             'checkin_type' => 'required|in:photo,qr',
-            'shift' => 'required|in:Day,Night',
+            'building_shift_id' => 'required|exists:building_shifts,id',
             'photo' => 'required_if:checkin_type,photo|nullable|image|mimes:jpg,jpeg,png|max:4096',
             'qr_scanned_value' => 'required_if:checkin_type,qr|nullable|string',
         ];
@@ -75,6 +93,16 @@ class GuardPatrolController extends Controller
             return response()->json(['success' => false, 'message' => 'Location not found'], 404);
         }
 
+        // Validate shift belongs to this building
+        $buildingShift = BuildingShift::where('id', $request->building_shift_id)
+            ->where('building_id', $building->id)
+            ->where('status', 'Active')
+            ->first();
+
+        if (!$buildingShift) {
+            return response()->json(['success' => false, 'message' => 'Shift not found or not active for this building'], 404);
+        }
+
         $photo_url = null;
         if ($request->checkin_type === 'photo' && $request->hasFile('photo')) {
             if (!file_exists(public_path('/images/patrols/'))) {
@@ -104,7 +132,8 @@ class GuardPatrolController extends Controller
                 'guard_user_id' => $user->id,
                 'patrol_location_id' => $request->patrol_location_id,
                 'checkin_type' => $request->checkin_type,
-                'shift' => $request->shift,
+                'shift' => $buildingShift->name,
+                'building_shift_id' => $buildingShift->id,
                 'photo_url' => $photo_url,
                 'qr_scanned_value' => $request->checkin_type === 'qr' ? $request->qr_scanned_value : null,
                 'checked_in_at' => now(),
@@ -145,7 +174,7 @@ class GuardPatrolController extends Controller
 
         $query = GuardPatrol::where('building_id', $building->id)
             ->where('guard_user_id', $user->id)
-            ->with(['patrolLocation']);
+            ->with(['patrolLocation', 'buildingShift']);
 
         // Optional filters
         if ($request->filled('shift')) {
@@ -170,6 +199,9 @@ class GuardPatrolController extends Controller
                     'id' => $patrol->id,
                     'location' => $patrol->patrolLocation ? $patrol->patrolLocation->name : 'N/A',
                     'shift' => $patrol->shift,
+                    'shift_id' => $patrol->building_shift_id,
+                    'shift_start' => $patrol->buildingShift ? $patrol->buildingShift->start_time : null,
+                    'shift_end' => $patrol->buildingShift ? $patrol->buildingShift->end_time : null,
                     'type' => $patrol->checkin_type,
                     'checked_in_at' => $patrol->checked_in_at->format('Y-m-d H:i:s'),
                     'photo_url' => $patrol->photo_url ? asset('/public/images/' . $patrol->photo_url) : null,
