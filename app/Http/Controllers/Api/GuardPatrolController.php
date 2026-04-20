@@ -11,21 +11,6 @@ use Auth;
 
 class GuardPatrolController extends Controller
 {
-    protected function getBuildingId()
-    {
-        $flat = AuthHelper::flat();
-        if ($flat && $flat->building_id) {
-            return $flat->building_id;
-        }
-
-        $user = Auth::user();
-        if ($user && $user->building_id) {
-            return $user->building_id;
-        }
-
-        return null;
-    }
-
     public function getLocations(Request $request)
     {
         $user = Auth::user();
@@ -33,12 +18,14 @@ class GuardPatrolController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
-        $buildingId = $this->getBuildingId();
-        if (!$buildingId) {
+        $flat = AuthHelper::flat();
+        if (!$flat || !$flat->building) {
             return response()->json(['success' => false, 'message' => 'Building context not found'], 403);
         }
 
-        $locations = PatrolLocation::where('building_id', $buildingId)
+        $building = $flat->building;
+
+        $locations = PatrolLocation::where('building_id', $building->id)
             ->where('status', 'Active')
             ->select('id', 'name', 'description', 'qr_string')
             ->get();
@@ -73,14 +60,16 @@ class GuardPatrolController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
-        $buildingId = $this->getBuildingId();
-        if (!$buildingId) {
+        $flat = AuthHelper::flat();
+        if (!$flat || !$flat->building) {
             return response()->json(['success' => false, 'message' => 'Building context not found'], 403);
         }
 
+        $building = $flat->building;
+
         // Ensure location belongs to this building
         $location = PatrolLocation::where('id', $request->patrol_location_id)
-            ->where('building_id', $buildingId)
+            ->where('building_id', $building->id)
             ->first();
 
         if (!$location) {
@@ -112,7 +101,7 @@ class GuardPatrolController extends Controller
 
         try {
             $patrol = GuardPatrol::create([
-                'building_id' => $buildingId,
+                'building_id' => $building->id,
                 'guard_user_id' => $user->id,
                 'patrol_location_id' => $request->patrol_location_id,
                 'checkin_type' => $request->checkin_type,
@@ -148,12 +137,14 @@ class GuardPatrolController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
-        $buildingId = $this->getBuildingId();
-        if (!$buildingId) {
+        $flat = AuthHelper::flat();
+        if (!$flat || !$flat->building) {
             return response()->json(['success' => false, 'message' => 'Building context not found'], 403);
         }
 
-        $query = GuardPatrol::where('building_id', $buildingId)
+        $building = $flat->building;
+
+        $query = GuardPatrol::where('building_id', $building->id)
             ->where('guard_user_id', $user->id)
             ->with(['patrolLocation']);
 
