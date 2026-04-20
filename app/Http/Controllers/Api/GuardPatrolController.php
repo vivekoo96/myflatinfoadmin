@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\GuardPatrol;
 use App\Models\PatrolLocation;
-use App\Helpers\AuthHelper;
 use Illuminate\Http\Request;
 use Auth;
 
@@ -18,12 +17,12 @@ class GuardPatrolController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
-        $flat = AuthHelper::flat();
-        if (!$flat || !$flat->building) {
-            return response()->json(['success' => false, 'message' => 'Building context not found'], 403);
+        $gate = $user->gate;
+        if (!$gate || !$gate->building) {
+            return response()->json(['success' => false, 'message' => 'Please select a gate first using select-gate endpoint'], 403);
         }
 
-        $building = $flat->building;
+        $building = $gate->building;
 
         $locations = PatrolLocation::where('building_id', $building->id)
             ->where('status', 'Active')
@@ -60,12 +59,12 @@ class GuardPatrolController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
-        $flat = AuthHelper::flat();
-        if (!$flat || !$flat->building) {
-            return response()->json(['success' => false, 'message' => 'Building context not found'], 403);
+        $gate = $user->gate;
+        if (!$gate || !$gate->building) {
+            return response()->json(['success' => false, 'message' => 'Please select a gate first using select-gate endpoint'], 403);
         }
 
-        $building = $flat->building;
+        $building = $gate->building;
 
         // Ensure location belongs to this building
         $location = PatrolLocation::where('id', $request->patrol_location_id)
@@ -137,12 +136,12 @@ class GuardPatrolController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
-        $flat = AuthHelper::flat();
-        if (!$flat || !$flat->building) {
-            return response()->json(['success' => false, 'message' => 'Building context not found'], 403);
+        $gate = $user->gate;
+        if (!$gate || !$gate->building) {
+            return response()->json(['success' => false, 'message' => 'Please select a gate first using select-gate endpoint'], 403);
         }
 
-        $building = $flat->building;
+        $building = $gate->building;
 
         $query = GuardPatrol::where('building_id', $building->id)
             ->where('guard_user_id', $user->id)
