@@ -39,6 +39,8 @@ use App\Http\Controllers\Admin\GuideVideoController;
 use App\Http\Controllers\Admin\MeetingMinuteController;
 use App\Http\Controllers\Admin\MeetingController;
 use App\Http\Controllers\Admin\SecurityNoteController;
+use App\Http\Controllers\Admin\PatrolLocationController;
+use App\Http\Controllers\Admin\GuardPatrolController;
 use App\Http\Controllers\Admin\ActivityAdminController;
 use App\Http\Controllers\Admin\DeliveryRestrictionController;
 use App\Http\Controllers\Admin\GstController;
@@ -307,6 +309,18 @@ Route::middleware('admin')->group(function () {
 
         // Security Notes
         Route::get('/security-notes', [SecurityNoteController::class, 'index'])->name('security-notes.index');
+
+        // Patrol Locations
+        Route::get('/patrol-location', [PatrolLocationController::class, 'index'])->name('patrol-location.index');
+        Route::post('/patrol-location', [PatrolLocationController::class, 'store'])->name('patrol-location.store');
+        Route::get('/patrol-location/{id}', [PatrolLocationController::class, 'show'])->name('patrol-location.show');
+        Route::delete('/patrol-location/{id}', [PatrolLocationController::class, 'destroy'])->name('patrol-location.destroy');
+
+        // Guard Patrols
+        Route::get('/guard-patrol', [GuardPatrolController::class, 'index'])->name('guard-patrol.index');
+        Route::get('/guard-patrol/checkin', [GuardPatrolController::class, 'checkin'])->name('guard-patrol.checkin');
+        Route::post('/guard-patrol/checkin', [GuardPatrolController::class, 'submitCheckin'])->name('guard-patrol.submit');
+        Route::get('/guard-patrol/resolve-qr', [GuardPatrolController::class, 'resolveQr'])->name('guard-patrol.resolveQr');
 
         // Delivery Entry Restriction
         Route::get('/delivery-restriction', [DeliveryRestrictionController::class, 'index'])->name('delivery-restriction.index');

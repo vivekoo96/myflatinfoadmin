@@ -695,6 +695,181 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Guard Patrol (API) - NEW",
+      "item": [
+        {
+          "name": "get-patrol-locations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/guard-patrol-locations",
+              "host": ["{{BASE_URL}}"],
+              "path": ["guard-patrol-locations"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "submit-checkin-photo",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "patrol_location_id", "value": "1", "type": "text" },
+                { "key": "shift", "value": "Day", "type": "text" },
+                { "key": "checkin_type", "value": "photo", "type": "text" },
+                { "key": "photo", "value": "", "type": "file", "disabled": false }
+              ]
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/guard-patrol-checkin",
+              "host": ["{{BASE_URL}}"],
+              "path": ["guard-patrol-checkin"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "submit-checkin-qr",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patrol_location_id\": 1,\n  \"shift\": \"Day\",\n  \"checkin_type\": \"qr\",\n  \"qr_scanned_value\": \"abc123def456ghi789\"\n}\n\n// qr_scanned_value = the unique QR string for that location (from get-patrol-locations)\n// shift = Day or Night\n// Location must exist in the same building as the authenticated guard",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/guard-patrol-checkin",
+              "host": ["{{BASE_URL}}"],
+              "path": ["guard-patrol-checkin"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-patrol-history",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/guard-patrol-history?shift=Day&date=2026-04-20&days=7",
+              "host": ["{{BASE_URL}}"],
+              "path": ["guard-patrol-history"],
+              "query": [
+                { "key": "shift", "value": "Day", "disabled": true },
+                { "key": "date", "value": "2026-04-20", "disabled": true },
+                { "key": "days", "value": "7", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Panel - Guard Patrol - NEW",
+      "item": [
+        {
+          "name": "list-patrol-locations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ADMIN_URL}}/patrol-location",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["patrol-location"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create-patrol-location",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "_token", "value": "{{csrf_token}}" },
+                { "key": "name", "value": "Main Gate" },
+                { "key": "description", "value": "Primary entrance to building" },
+                { "key": "status", "value": "Active" }
+              ]
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/patrol-location",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["patrol-location"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-qr-code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ADMIN_URL}}/patrol-location/1",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["patrol-location", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete-patrol-location",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/patrol-location/1",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["patrol-location", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list-patrol-logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ADMIN_URL}}/guard-patrol?guard_user_id=&patrol_location_id=&shift=&checkin_type=&date=",
+              "host": ["{{ADMIN_URL}}"],
+              "path": ["guard-patrol"],
+              "query": [
+                { "key": "guard_user_id", "value": "", "disabled": true },
+                { "key": "patrol_location_id", "value": "", "disabled": true },
+                { "key": "shift", "value": "Day", "disabled": true },
+                { "key": "checkin_type", "value": "photo", "disabled": true },
+                { "key": "date", "value": "2026-04-20", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [

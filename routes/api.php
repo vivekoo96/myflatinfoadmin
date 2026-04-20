@@ -225,6 +225,11 @@ use App\Http\Controllers\Api\ActivityController;
             Route::get('get-note',[CustomerController::class,'get_security_note']);
             Route::post('update-note',[CustomerController::class,'update_security_note']);
 
+            // Guard Patrol Check-in API
+            Route::post('guard-patrol-checkin',[App\Http\Controllers\Api\GuardPatrolController::class,'submitCheckin']);
+            Route::get('guard-patrol-locations',[App\Http\Controllers\Api\GuardPatrolController::class,'getLocations']);
+            Route::get('guard-patrol-history',[App\Http\Controllers\Api\GuardPatrolController::class,'history']);
+
         });
         
         // role route  //20nov2025 11:48

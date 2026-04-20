@@ -942,7 +942,7 @@
          
           
           @php
-            $isVehicleOpen = request()->is('vehicles*') || request()->is('vehicle-inout*') || request()->is('visitor*');
+            $isVehicleOpen = request()->is('vehicles*') || request()->is('vehicle-inout*') || request()->is('visitor*') || request()->is('patrol-location*') || request()->is('guard-patrol*');
             $isVehicleActive = request()->is('vehicles*');
             $isInoutActive = request()->is('vehicle-inouts*');
             $isVisitorActive = request()->is('visitor*');
@@ -996,6 +996,28 @@
               <p>Security Notes</p>
             </a>
           </li>
+          @if(Auth::User()->role == 'BA')
+          <li class="nav-item">
+            <a href="{{ route('patrol-location.index') }}" class="nav-link {{ request()->is('patrol-location*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-map-marker-alt"></i>
+              <p>Patrol Locations</p>
+            </a>
+          </li>
+          @endif
+          <li class="nav-item">
+            <a href="{{ route('guard-patrol.index') }}" class="nav-link {{ request()->is('guard-patrol') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-shoe-prints"></i>
+              <p>Patrol Logs</p>
+            </a>
+          </li>
+          @if(Auth::User()->hasRole('security') || Auth::User()->role == 'BA')
+          <li class="nav-item">
+            <a href="{{ route('guard-patrol.checkin') }}" class="nav-link {{ request()->is('guard-patrol/checkin*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-check-circle"></i>
+              <p>Guard Check-in</p>
+            </a>
+          </li>
+          @endif
           <li class="nav-item">
             <a href="{{ route('delivery-restriction.index') }}" class="nav-link {{ request()->is('delivery-restriction*') ? 'active' : '' }}">
               <i class="nav-icon fas fa-clock"></i>

@@ -94,6 +94,8 @@ class GuardController extends Controller
             'status' => 'required|in:Active,Inactive',
             'company_name' => 'nullable|string|max:40',
             'password' => 'nullable|string|min:6',
+            'id_proof_type' => 'nullable|in:Aadhaar,PAN,Voter ID,Passport,Driving License',
+            'id_proof_number' => 'nullable|string|max:30',
         ];
         $messages = [
             'user_id.unique' => 'This user is already a security guard in another place you cant be restore or update anymore',
@@ -122,6 +124,8 @@ class GuardController extends Controller
         $guard->user_id = $request->user_id;
         $guard->shift = $request->shift;
         $guard->status = $request->status;
+        $guard->id_proof_type = $request->id_proof_type;
+        $guard->id_proof_number = $request->id_proof_number;
         $guard->save();
         
         // Also save/update in building_users table with guard role
@@ -299,6 +303,8 @@ class GuardController extends Controller
             'gate_id' => 'required|exists:gates,id',
             'shift' => 'required|in:Day,Night',
             'status' => 'required|in:Active,Inactive',
+            'id_proof_type' => 'nullable|in:Aadhaar,PAN,Voter ID,Passport,Driving License',
+            'id_proof_number' => 'nullable|string|max:30',
         ];
         
         $validation = Validator::make($request->all(), $rules_guard);
@@ -318,6 +324,8 @@ class GuardController extends Controller
         $guard->user_id = $user->id;
         $guard->shift = $request->shift;
         $guard->status = $request->status;
+        $guard->id_proof_type = $request->id_proof_type;
+        $guard->id_proof_number = $request->id_proof_number;
         $guard->save();
         
         // Also save/update in building_users table with guard role

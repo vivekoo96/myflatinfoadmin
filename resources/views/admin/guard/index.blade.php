@@ -100,9 +100,10 @@
                        @if(Auth::User()->role == 'BA')
                     <td>
                    @if(Auth::User()->role == 'BA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'security'))
-                        <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#addModal" data-id="{{$guard->id}}" data-building_id="{{$guard->building_id}}" 
-                          data-block_id="{{$guard->block_id}}" data-gate_id="{{$guard->gate_id}}" data-shift="{{$guard->shift}}" data-user_email="{{$bu->user->email}}" 
-                          data-user_id="{{$bu->user->id}}" data-user_name="{{ $bu->user->name ?? $bu->user->first_name }}" data-company_name="{{$bu->user->company_name}}" data-status="{{$bu->status}}"><i class="fa fa-edit"></i></button>
+                        <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#addModal" data-id="{{$guard->id}}" data-building_id="{{$guard->building_id}}"
+                          data-block_id="{{$guard->block_id}}" data-gate_id="{{$guard->gate_id}}" data-shift="{{$guard->shift}}" data-user_email="{{$bu->user->email}}"
+                          data-user_id="{{$bu->user->id}}" data-user_name="{{ $bu->user->name ?? $bu->user->first_name }}" data-company_name="{{$bu->user->company_name}}" data-status="{{$bu->status}}"
+                          data-id_proof_type="{{$guard->id_proof_type}}" data-id_proof_number="{{$guard->id_proof_number}}"><i class="fa fa-edit"></i></button>
                         @if($guard->deleted_at)
                           <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#deleteModal" data-id="{{$guard->id}}" data-action="restore"><i class="fa fa-undo"></i></button>
                         @else
@@ -192,7 +193,23 @@
             <label for="email" class="col-form-label">Company Name:</label>
             <input type="company_name" name="company_name" class="form-control" id="company_name" maxlength="40" placeholder="Company Name">
           </div>
-          
+
+          <div class="form-group">
+            <label class="col-form-label">ID Proof Type:</label>
+            <select name="id_proof_type" class="form-control" id="id_proof_type">
+              <option value="">-- Select (Optional) --</option>
+              <option value="Aadhaar">Aadhaar</option>
+              <option value="PAN">PAN</option>
+              <option value="Voter ID">Voter ID</option>
+              <option value="Passport">Passport</option>
+              <option value="Driving License">Driving License</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="col-form-label">ID Proof Number:</label>
+            <input type="text" name="id_proof_number" class="form-control" id="id_proof_number" maxlength="30" placeholder="ID Number">
+          </div>
+
           <input type="hidden" name="role" id="role" value="user">
           
            
@@ -296,6 +313,23 @@
             <label for="company_name" class="col-form-label">Company Name:</label>
             <input type="text" name="company_name" class="form-control" id="company_name_guard" maxlength="40" placeholder="Company Name">
           </div>
+
+          <div class="form-group">
+            <label class="col-form-label">ID Proof Type:</label>
+            <select name="id_proof_type" class="form-control" id="id_proof_type_guard">
+              <option value="">-- Select (Optional) --</option>
+              <option value="Aadhaar">Aadhaar</option>
+              <option value="PAN">PAN</option>
+              <option value="Voter ID">Voter ID</option>
+              <option value="Passport">Passport</option>
+              <option value="Driving License">Driving License</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="col-form-label">ID Proof Number:</label>
+            <input type="text" name="id_proof_number" class="form-control" id="id_proof_number_guard" maxlength="30" placeholder="ID Number">
+          </div>
+
           <div class="form-group">
             <label for="password_guard" class="col-form-label">New Password:</label>
             <input type="password" name="password" class="form-control" id="password_guard" placeholder="Leave blank to keep current password" minlength="6">
@@ -487,6 +521,8 @@
       $('#password_guard').val('');
       $('#shift').val('');
       $('#status').val('');
+      $('#id_proof_type_guard').val('');
+      $('#id_proof_number_guard').val('');
       
       $('.modal-title').text('Add New Guard');
       
@@ -505,6 +541,8 @@
             $('#gate_id').val(button.data('gate_id'));
             $('#shift').val(button.data('shift'));
             $('#status').val(button.data('status'));
+            $('#id_proof_type_guard').val(button.data('id_proof_type'));
+            $('#id_proof_number_guard').val(button.data('id_proof_number'));
           }, 100);
       }
       var block_id = button.data('block_id');

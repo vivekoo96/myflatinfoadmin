@@ -9,7 +9,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Guard extends Model
 {
     use HasFactory,SoftDeletes;
-    
+
+    protected $fillable = [
+        'building_id', 'block_id', 'gate_id', 'user_id',
+        'shift', 'status', 'id_proof_type', 'id_proof_number',
+    ];
+
     public function building()
     {
         return $this->belongsTo('App\Models\Building')->withTrashed();
