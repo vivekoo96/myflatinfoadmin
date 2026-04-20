@@ -151,7 +151,11 @@ use App\Http\Controllers\Api\ActivityController;
 
             // Community Activities
             Route::post('create-activity', [ActivityController::class, 'create']);
-            Route::get('get-activities', [ActivityController::class, 'index']);
+            Route::get('get-activities', [ActivityController::class, 'index']); // type=active (default) or type=my
+            Route::get('get-my-activities', function (Request $request) {
+                $request->merge(['type' => 'my']);
+                return app(ActivityController::class)->index($request);
+            });
             Route::get('get-activity', [ActivityController::class, 'show']);
             Route::post('respond-activity', [ActivityController::class, 'respond']);
             Route::delete('delete-activity', [ActivityController::class, 'delete']);
@@ -225,12 +229,12 @@ use App\Http\Controllers\Api\ActivityController;
             Route::get('get-note',[CustomerController::class,'get_security_note']);
             Route::post('update-note',[CustomerController::class,'update_security_note']);
 
-            // Guard Patrol Check-in API
-            Route::post('guard-patrol-checkin',[App\Http\Controllers\Api\GuardPatrolController::class,'submitCheckin']);
-            Route::get('guard-patrol-locations',[App\Http\Controllers\Api\GuardPatrolController::class,'getLocations']);
-            Route::get('guard-patrol-history',[App\Http\Controllers\Api\GuardPatrolController::class,'history']);
-
         });
+
+        // Guard Patrol Check-in API (accessible to any authenticated user with building_id)
+        Route::post('guard-patrol-checkin',[App\Http\Controllers\Api\GuardPatrolController::class,'submitCheckin']);
+        Route::get('guard-patrol-locations',[App\Http\Controllers\Api\GuardPatrolController::class,'getLocations']);
+        Route::get('guard-patrol-history',[App\Http\Controllers\Api\GuardPatrolController::class,'history']);
         
         // role route  //20nov2025 11:48
         Route::post('my-departments',[CustomerController::class,'my_departments']);

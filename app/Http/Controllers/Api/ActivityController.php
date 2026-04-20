@@ -75,10 +75,13 @@ class ActivityController extends Controller
 
     /**
      * Get community activities for the building
+     * type=active: approved activities by others
+     * type=my: activities posted by current user (all statuses)
      */
     public function index(Request $request)
     {
         $rules = [
+            'type'   => 'nullable|in:active,my',
             'search' => 'nullable|string',
             'count'  => 'nullable|integer|min:1',
             'page'   => 'nullable|integer|min:1',
@@ -95,16 +98,23 @@ class ActivityController extends Controller
         }
 
         $user = Auth::user();
+        $type = $request->get('type', 'active');
         $search = $request->get('search', '');
         $count = $request->get('count');
         $page = $request->get('page', 1);
 
-        $query = CommunityActivity::where('building_id', $flat->building_id)
-            ->where(function ($q) use ($user) {
-                $q->where('status', 'approved')
-                  ->orWhere('user_id', $user->id);
-            })
-            ->orderBy('created_at', 'desc');
+        $query = CommunityActivity::where('building_id', $flat->building_id);
+
+        if ($type === 'my') {
+            // User's own activities (all statuses)
+            $query->where('user_id', $user->id);
+        } else {
+            // Active activities by others (approved only)
+            $query->where('status', 'approved')
+                  ->where('user_id', '!=', $user->id);
+        }
+
+        $query->orderBy('created_at', 'desc');
 
         if ($search) {
             $query->where('title', 'LIKE', "%{$search}%");
@@ -142,6 +152,7 @@ class ActivityController extends Controller
             'total'        => $total,
             'current_page' => $currentPage,
             'last_page'    => $lastPage,
+            'type'         => $type,
         ], 200);
     }
 

@@ -492,16 +492,37 @@
           "response": []
         },
         {
-          "name": "get-activities",
+          "name": "get-activities (Active Activities by Others)",
           "request": {
             "method": "GET",
             "header": [
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
-              "raw": "{{BASE_URL}}/get-activities?search=&count=10&page=1",
+              "raw": "{{BASE_URL}}/get-activities?type=active&search=&count=10&page=1",
               "host": ["{{BASE_URL}}"],
               "path": ["get-activities"],
+              "query": [
+                { "key": "type",   "value": "active", "disabled": false },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "count",  "value": "10", "disabled": true },
+                { "key": "page",   "value": "1", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-my-activities (Your Activities)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/get-my-activities?search=&count=10&page=1",
+              "host": ["{{BASE_URL}}"],
+              "path": ["get-my-activities"],
               "query": [
                 { "key": "search", "value": "", "disabled": true },
                 { "key": "count",  "value": "10", "disabled": true },
