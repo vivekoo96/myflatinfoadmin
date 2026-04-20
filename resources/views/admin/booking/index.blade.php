@@ -109,9 +109,9 @@
                     <!--<th>Transaction Id</th>-->
                     <th>Booked on</th>
                     <th>Status</th>
-                    <!-- @if( (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'Accounts')|| Auth::User()->role == 'BA' || Auth::User()->selectedRole->name == 'Facility' ) -->
-                    <!--<th>Action</th>-->
-                    <!--@endif-->
+                    @if( (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'Accounts')|| Auth::User()->role == 'BA' || Auth::User()->selectedRole->name == 'Facility' )
+                    <th>Action</th>
+                    @endif
                   </tr>
                   </thead>
                   <tbody>
@@ -136,21 +136,21 @@
                     <!--<td>{{$booking->transaction_id}}</td>-->
                     <td>{{$booking->created_at->diffForHumans()}}</td>
                     <td>{{$booking->status}}</td>
-                    <!--@if( (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'Accounts')|| Auth::User()->role == 'BA' || Auth::User()->selectedRole->name == 'Facility' ) -->
-                    <!--<td>-->
-                    <!--    @if($booking->type == 'Offline' && $booking->status == 'Created')-->
-                    <!--    <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#verifyModal" data-id="{{$booking->id}}" data-status="{{$booking->status}}" -->
-                    <!--    data-amount="{{$booking->amount}}" data-payable_amount="{{$booking->payable_amount}}" data-paid_amount="{{$booking->paid_amount}}">-->
-                    <!--      Verify</button>-->
-                    <!--    @endif-->
-                        
-                    <!--    @if($booking->status == 'Success' || $booking->status == 'Cancel Request')-->
-                    <!--    <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#cancelModal" data-id="{{$booking->id}}" data-status="{{$booking->status}}" -->
-                    <!--    data-amount="{{$booking->amount}}" data-payable_amount="{{$booking->payable_amount}}" data-paid_amount="{{$booking->paid_amount}}" data-refundable_amount="{{$booking->refundable_amount}}" -->
-                    <!--    data-cancellation_type="{{$booking->timing->cancellation_type}}">Cancel</button>-->
-                    <!--    @endif-->
-                    <!--</td>-->
-                    <!--@endif-->
+                    @if( (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'Accounts')|| Auth::User()->role == 'BA' || Auth::User()->selectedRole->name == 'Facility' )
+                    <td>
+                        @if($booking->type == 'Offline' && $booking->status == 'Created')
+                        <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#verifyModal" data-id="{{$booking->id}}" data-status="{{$booking->status}}"
+                        data-amount="{{$booking->amount}}" data-payable_amount="{{$booking->payable_amount}}" data-paid_amount="{{$booking->paid_amount}}">
+                          Verify</button>
+                        @endif
+
+                        @if($booking->status == 'Success' || $booking->status == 'Cancel Request')
+                        <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#cancelModal" data-id="{{$booking->id}}" data-status="{{$booking->status}}"
+                        data-amount="{{$booking->amount}}" data-payable_amount="{{$booking->payable_amount}}" data-paid_amount="{{$booking->paid_amount}}" data-refundable_amount="{{$booking->refundable_amount}}"
+                        data-cancellation_type="{{$booking->timing->cancellation_type}}">Cancel</button>
+                        @endif
+                    </td>
+                    @endif
                   </tr>
                   @empty
                   @endforelse
