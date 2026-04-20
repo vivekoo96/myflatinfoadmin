@@ -230,8 +230,12 @@
             <div class="form-group">
             <label for="name" class="col-form-label">Shift:</label>
             <select name="shift" class="form-control" id="user-shift" required>
-              <option value="Day">Day</option>
-              <option value="Night">Night</option>
+              <option value="">-- Select Shift --</option>
+              @forelse($shifts as $shift)
+                <option value="{{ $shift->name }}">{{ $shift->name }} ({{ $shift->start_time }} - {{ $shift->end_time }})</option>
+              @empty
+                <option disabled>No shifts configured</option>
+              @endforelse
             </select>
           </div>
           
@@ -338,11 +342,15 @@
           <div class="form-group">
             <label for="name" class="col-form-label">Shift:</label>
             <select name="shift" class="form-control" id="shift" required>
-              <option value="Day">Day</option>
-              <option value="Night">Night</option>
+              <option value="">-- Select Shift --</option>
+              @forelse($shifts as $shift)
+                <option value="{{ $shift->name }}">{{ $shift->name }} ({{ $shift->start_time }} - {{ $shift->end_time }})</option>
+              @empty
+                <option disabled>No shifts configured</option>
+              @endforelse
             </select>
           </div>
-          
+
           <div class="form-group">
             <label for="name" class="col-form-label">Building:</label>
             <select name="building_id" id="building_id" class="form-control" required>

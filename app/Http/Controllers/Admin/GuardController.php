@@ -27,7 +27,7 @@ class GuardController extends Controller
     public function index()
     {
         if(Auth::User()->role == 'BA' || Auth::user()->selectedRole->name == "President" ||  Auth::user()->selectedRole->name == "Security" || Auth::User()->hasPermission('custom.roles') )
-        
+
         {
             //
         }else{
@@ -58,7 +58,13 @@ class GuardController extends Controller
             }
         }
 
-        return view('admin.guard.index', compact('building', 'guardsData'));
+        // Fetch dynamic shifts for this building
+        $shifts = \App\Models\BuildingShift::where('building_id', $building->id)
+            ->where('status', 'Active')
+            ->orderBy('start_time')
+            ->get();
+
+        return view('admin.guard.index', compact('building', 'guardsData', 'shifts'));
     }
 
 

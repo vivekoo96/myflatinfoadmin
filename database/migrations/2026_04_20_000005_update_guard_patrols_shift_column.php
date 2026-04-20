@@ -9,10 +9,16 @@ class UpdateGuardPatrolsShiftColumn extends Migration
 {
     public function up()
     {
+        if (!Schema::hasTable('guard_patrols')) {
+            return;
+        }
+
         DB::statement("ALTER TABLE guard_patrols MODIFY COLUMN shift VARCHAR(100) NOT NULL");
         Schema::table('guard_patrols', function (Blueprint $table) {
-            $table->unsignedBigInteger('building_shift_id')->nullable()->after('shift');
-            $table->index('building_shift_id');
+            if (!Schema::hasColumn('guard_patrols', 'building_shift_id')) {
+                $table->unsignedBigInteger('building_shift_id')->nullable()->after('shift');
+                $table->index('building_shift_id');
+            }
         });
     }
 
