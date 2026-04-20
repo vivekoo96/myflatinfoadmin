@@ -77,14 +77,14 @@ class GuardPatrolController extends Controller
 
         $photo_url = null;
         if ($request->checkin_type === 'photo' && $request->hasFile('photo')) {
-            if (!file_exists(public_path('/images/patrols/'))) {
-                mkdir(public_path('/images/patrols/'), 0755, true);
+            if (!file_exists(public_path('/public/images/patrols/'))) {
+                mkdir(public_path('/public/images/patrols/'), 0755, true);
             }
 
             $file = $request->file('photo');
             $ext = $file->getClientOriginalExtension();
             $filename = 'patrols/' . uniqid() . '.' . $ext;
-            $file->move(public_path('/images/patrols/'), $filename);
+            $file->move(public_path('/public/images/patrols/'), $filename);
             $photo_url = $filename;
         }
 
