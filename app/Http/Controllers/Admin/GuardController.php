@@ -96,7 +96,7 @@ class GuardController extends Controller
                     }),
             ],
             'gate_id' => 'required|exists:gates,id',
-            'shift' => 'required|in:Day,Night',
+            'shift' => 'required|string|max:100',
             'status' => 'required|in:Active,Inactive',
             'company_name' => 'nullable|string|max:40',
             'password' => 'nullable|string|min:6',
@@ -115,10 +115,28 @@ class GuardController extends Controller
         }
     
         $validation = \Validator::make($request->all(), $rules,$messages);
-    
+
         if ($validation->fails()) {
             return redirect()->back()->with('error', $validation->errors()->first());
         }
+
+        // Check if gate is already assigned to another active guard
+        $existingGuard = Guard::where('gate_id', $request->gate_id)
+            ->where('building_id', $request->building_id)
+            ->where('status', 'Active')
+            ->whereNull('deleted_at');
+
+        if ($request->id) {
+            $existingGuard = $existingGuard->where('id', '!=', $request->id);
+        }
+
+        $existingGuard = $existingGuard->first();
+
+        if ($existingGuard) {
+            $guardUser = User::find($existingGuard->user_id);
+            return redirect()->back()->with('error', 'This gate is already assigned to ' . ($guardUser->name ?? $guardUser->first_name) . '. Please select a different gate or change the existing guard\'s assignment.');
+        }
+
         $building = Auth::User()->building;
         $total_other_users = User::where('created_by', Auth::User()->building_id)->where('created_type','other')->withTrashed()->count();
         if($building->no_of_other_users <= $total_other_users){
@@ -245,7 +263,7 @@ class GuardController extends Controller
                 'building_id' => 'required|exists:buildings,id',
                 'block_id' => 'required|exists:blocks,id',
                 'gate_id' => 'required|exists:gates,id',
-                'shift' => 'required|in:Day,Night',
+                'shift' => 'required|string|max:100',
                 'status' => 'required|in:Active,Inactive',
             ];
             // Validate the request
@@ -307,7 +325,7 @@ class GuardController extends Controller
             'building_id' => 'required|exists:buildings,id',
             'block_id' => 'required|exists:blocks,id',
             'gate_id' => 'required|exists:gates,id',
-            'shift' => 'required|in:Day,Night',
+            'shift' => 'required|string|max:100',
             'status' => 'required|in:Active,Inactive',
             'id_proof_type' => 'nullable|in:Aadhaar,PAN,Voter ID,Passport,Driving License',
             'id_proof_number' => 'nullable|string|max:30',
@@ -317,13 +335,30 @@ class GuardController extends Controller
         if ($validation->fails()) {
             return redirect()->back()->with('error', $validation->errors()->first());
         }
-        
+
+        // Check if gate is already assigned to another active guard
+        $existingGuard = Guard::where('gate_id', $request->gate_id)
+            ->where('building_id', $request->building_id)
+            ->where('status', 'Active')
+            ->whereNull('deleted_at');
+
+        if ($request->id) {
+            $existingGuard = $existingGuard->where('id', '!=', $request->id);
+        }
+
+        $existingGuard = $existingGuard->first();
+
+        if ($existingGuard) {
+            $guardUser = User::find($existingGuard->user_id);
+            return redirect()->back()->with('error', 'This gate is already assigned to ' . ($guardUser->name ?? $guardUser->first_name) . '. Please select a different gate or change the existing guard\'s assignment.');
+        }
+
         $guard = new Guard();
-    
+
         if ($request->id) {
             $guard = Guard::withTrashed()->find($request->id);
         }
-    
+
         $guard->building_id = $request->building_id;
         $guard->block_id = $request->block_id;
         $guard->gate_id = $request->gate_id;
