@@ -92,6 +92,68 @@
               </div>
             </div>
           </div>
+
+          <!-- Patrol Location Assignments Section -->
+          <div class="col-md-12 mt-4">
+            <div class="card">
+              <div class="card-header with-border">
+                <h3 class="card-title"><i class="nav-icon fas fa-route"></i> Location Gate & Shift Assignments</h3>
+                <div class="card-tools pull-right">
+                  @if(Auth::User()->role == 'BA')
+                  <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#assignLocationModal">
+                    <i class="fa fa-plus"></i> Assign Location
+                  </button>
+                  @endif
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                <table id="example2" class="table table-bordered table-striped">
+                  <thead>
+                  <tr>
+                    <th>S No</th>
+                    <th>Location</th>
+                    <th>Gate</th>
+                    <th>Shift</th>
+                    <th>Patrol Time</th>
+                    @if(Auth::User()->role == 'BA')
+                    <th>Actions</th>
+                    @endif
+                  </tr>
+                  </thead>
+                  <tbody>
+                    <?php $j = 0; ?>
+                  @forelse($locations->where('gate_id', '!=', null) as $loc)
+                  <?php $j++; ?>
+                  <tr>
+                    <td>{{$j}}</td>
+                    <td>{{ $loc->name }}</td>
+                    <td>{{ $loc->gate->name ?? '-' }}</td>
+                    <td>{{ $loc->buildingShift ? $loc->buildingShift->name . ' (' . $loc->buildingShift->start_time . '-' . $loc->buildingShift->end_time . ')' : '-' }}</td>
+                    <td>{{ $loc->patrol_time ?? '-' }}</td>
+                    @if(Auth::User()->role == 'BA')
+                    <td>
+                        <button class="btn btn-sm btn-primary edit-assignment" data-toggle="modal" data-target="#assignLocationModal"
+                          data-id="{{ $loc->id }}" data-name="{{ $loc->name }}"
+                          data-gate_id="{{ $loc->gate_id }}" data-building_shift_id="{{ $loc->building_shift_id }}"
+                          data-patrol_time="{{ $loc->patrol_time }}">
+                          <i class="fa fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger remove-assignment" data-id="{{ $loc->id }}">
+                          <i class="fa fa-times"></i>
+                        </button>
+                    </td>
+                    @endif
+                  </tr>
+                  @empty
+                  <tr><td colspan="6" class="text-center">No assignments yet</td></tr>
+                  @endforelse
+                  </tbody>
+                </table>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -153,6 +215,65 @@
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         <button type="button" class="btn btn-primary" onclick="window.print()">Print QR</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Location Modal -->
+<div class="modal fade" id="assignLocationModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Assign Location to Gate & Shift</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form action="{{route('patrol-location.store')}}" method="post">
+        @csrf
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="col-form-label">Patrol Location:</label>
+            <select name="patrol_location_id" id="assign_location_id" class="form-control" required>
+              <option value="">-- Select Location --</option>
+              @foreach($locations as $loc)
+              <option value="{{ $loc->id }}">{{ $loc->name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="col-form-label">Gate:</label>
+            <select name="gate_id" id="assign_gate_id" class="form-control" required>
+              <option value="">-- Select Gate --</option>
+              @if(isset($gates))
+                @foreach($gates as $gate)
+                <option value="{{ $gate->id }}">{{ $gate->name }}</option>
+                @endforeach
+              @endif
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="col-form-label">Shift:</label>
+            <select name="building_shift_id" id="assign_shift_id" class="form-control" required>
+              <option value="">-- Select Shift --</option>
+              @if(isset($shifts))
+                @foreach($shifts as $shift)
+                <option value="{{ $shift->id }}">{{ $shift->name }} ({{ $shift->start_time }} - {{ $shift->end_time }})</option>
+                @endforeach
+              @endif
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="col-form-label">Patrol Time:</label>
+            <input type="time" name="patrol_time" id="assign_patrol_time" class="form-control" required>
+          </div>
+          <input type="hidden" name="id" id="assign_location_hidden_id">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Save Assignment</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -224,6 +345,54 @@
             $('#location_id').val('');
             $('#addLocationModal form')[0].reset();
         }
+    });
+
+    // Edit Assignment
+    $(document).on('click', '.edit-assignment', function(){
+        var id = $(this).data('id');
+        var name = $(this).data('name');
+        var gate_id = $(this).data('gate_id');
+        var shift_id = $(this).data('building_shift_id');
+        var patrol_time = $(this).data('patrol_time');
+
+        $('#assign_location_hidden_id').val(id);
+        $('#assign_location_id').val(id);
+        $('#assign_gate_id').val(gate_id);
+        $('#assign_shift_id').val(shift_id);
+        $('#assign_patrol_time').val(patrol_time);
+        $('#assignLocationModal .modal-title').text('Edit Location Assignment');
+    });
+
+    // Clear assignment modal on open
+    $('#assignLocationModal').on('show.bs.modal', function(e){
+        var btn = $(e.relatedTarget);
+        if (!btn.hasClass('edit-assignment')) {
+            $('#assign_location_hidden_id').val('');
+            $('#assign_location_id').val('');
+            $('#assign_gate_id').val('');
+            $('#assign_shift_id').val('');
+            $('#assign_patrol_time').val('');
+            $('#assignLocationModal .modal-title').text('Assign Location to Gate & Shift');
+        }
+    });
+
+    // Remove Assignment
+    $(document).on('click', '.remove-assignment', function(){
+        var id = $(this).data('id');
+        if (!confirm('Remove this assignment?')) return;
+        $.ajax({
+            url: '{{ route("patrol-location.destroy", "") }}/' + id,
+            type: 'DELETE',
+            data: {'_token': token, 'remove_assignment': true},
+            success: function(data){
+                if(data.msg === 'success') {
+                    window.location.reload();
+                }
+            },
+            error: function() {
+                alert('Error removing assignment');
+            }
+        });
     });
   });
 </script>

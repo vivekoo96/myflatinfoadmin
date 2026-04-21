@@ -11,12 +11,22 @@ class PatrolLocation extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'building_id', 'name', 'description', 'qr_string', 'status',
+        'building_id', 'gate_id', 'building_shift_id', 'name', 'description', 'qr_string', 'status', 'patrol_time',
     ];
 
     public function building()
     {
         return $this->belongsTo(Building::class)->withTrashed();
+    }
+
+    public function gate()
+    {
+        return $this->belongsTo(Gate::class);
+    }
+
+    public function buildingShift()
+    {
+        return $this->belongsTo(BuildingShift::class);
     }
 
     public function patrols()
