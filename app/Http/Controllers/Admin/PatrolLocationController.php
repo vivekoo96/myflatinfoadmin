@@ -68,6 +68,11 @@ class PatrolLocationController extends Controller
                 return redirect()->back()->with('error', 'Shift not found for this building');
             }
 
+            // Validate patrol_time is within shift hours
+            if ($request->patrol_time < $shift->start_time || $request->patrol_time > $shift->end_time) {
+                return redirect()->back()->with('error', 'Patrol time must be between ' . $shift->start_time . ' and ' . $shift->end_time);
+            }
+
             $location = PatrolLocation::where('id', $request->patrol_location_id)->where('building_id', $building->id)->first();
             if (!$location) {
                 return redirect()->back()->with('error', 'Location not found for this building');

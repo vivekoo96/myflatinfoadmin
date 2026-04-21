@@ -108,7 +108,7 @@
               </div>
               <div class="card-body">
                 <div class="table-responsive">
-                <table id="example2" class="table table-bordered table-striped">
+                <table class="table table-bordered table-striped">
                   <thead>
                   <tr>
                     <th>S No</th>
@@ -374,6 +374,32 @@
             $('#assign_patrol_time').val('');
             $('#assignLocationModal .modal-title').text('Assign Location to Gate & Shift');
         }
+    });
+
+    // Update patrol time min/max based on shift selection
+    $(document).on('change', '#assign_shift_id', function(){
+        var shiftId = $(this).val();
+        if (!shiftId) {
+            $('#assign_patrol_time').removeAttr('min').removeAttr('max');
+            return;
+        }
+
+        // Extract shift times from the selected option
+        var selectedText = $(this).find('option:selected').text();
+        var timeMatch = selectedText.match(/\((\d{2}:\d{2})-(\d{2}:\d{2})\)/);
+
+        if (timeMatch) {
+            var startTime = timeMatch[1];
+            var endTime = timeMatch[2];
+
+            $('#assign_patrol_time').attr('min', startTime).attr('max', endTime);
+            $('#assign_patrol_time').attr('placeholder', startTime + ' to ' + endTime);
+        }
+    });
+
+    // Trigger shift change on modal open to set time restrictions
+    $('#assignLocationModal').on('shown.bs.modal', function(){
+        $('#assign_shift_id').trigger('change');
     });
 
     // Remove Assignment
