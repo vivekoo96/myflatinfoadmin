@@ -985,6 +985,12 @@
                       </a>
                   </li>
                    <li class="nav-item">
+            <a href="{{ route('building-shift.index') }}" class="nav-link {{ request()->is('building-shift*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-clock"></i>
+              <p>Shifts</p>
+            </a>
+          </li>
+                   <li class="nav-item">
             <a href="{{url('guard')}}" class="nav-link {{ request()->is('guard*') ? 'active' : '' }} {{ getAccessControl($hasSecurityGuardAccess && $hasStaffFeature) }}">
               <i class="nav-icon fa fa-shield"></i>
               <p>Security Guard</p>
@@ -1003,12 +1009,7 @@
               <p>Patrol Locations</p>
             </a>
           </li>
-          <li class="nav-item">
-            <a href="{{ route('building-shift.index') }}" class="nav-link {{ request()->is('building-shift*') ? 'active' : '' }}">
-              <i class="nav-icon fas fa-clock"></i>
-              <p>Shifts</p>
-            </a>
-          </li>
+         
           <li class="nav-item">
             <a href="{{ route('building-shift.index') }}" class="nav-link {{ request()->is('building-shift*') ? 'active' : '' }}">
               <i class="nav-icon fas fa-user-shield"></i>
