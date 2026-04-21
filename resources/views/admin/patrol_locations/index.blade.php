@@ -97,11 +97,11 @@
           <div class="col-md-12 mt-4">
             <div class="card">
               <div class="card-header with-border">
-                <h3 class="card-title"><i class="nav-icon fas fa-route"></i> Location Gate & Shift Assignments</h3>
+                <h3 class="card-title"><i class="nav-icon fas fa-route"></i> Patrol Schedule</h3>
                 <div class="card-tools pull-right">
                   @if(Auth::User()->role == 'BA')
                   <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#assignLocationModal">
-                    <i class="fa fa-plus"></i> Assign Location
+                    <i class="fa fa-plus"></i> Add Schedule
                   </button>
                   @endif
                 </div>
@@ -112,7 +112,6 @@
                   <thead>
                   <tr>
                     <th>S No</th>
-                    <th>Location</th>
                     <th>Gate</th>
                     <th>Shift</th>
                     <th>Patrol Time</th>
@@ -127,7 +126,6 @@
                   <?php $j++; ?>
                   <tr>
                     <td>{{$j}}</td>
-                    <td>{{ $loc->name }}</td>
                     <td>{{ $loc->gate->name ?? '-' }}</td>
                     <td>{{ $loc->buildingShift ? $loc->buildingShift->name . ' (' . $loc->buildingShift->start_time . '-' . $loc->buildingShift->end_time . ')' : '-' }}</td>
                     <td>{{ $loc->patrol_time ?? '-' }}</td>
@@ -146,7 +144,7 @@
                     @endif
                   </tr>
                   @empty
-                  <tr><td colspan="6" class="text-center">No assignments yet</td></tr>
+                  <tr><td colspan="5" class="text-center">No schedules yet</td></tr>
                   @endforelse
                   </tbody>
                 </table>
@@ -224,7 +222,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Assign Location to Gate & Shift</h5>
+        <h5 class="modal-title">Add Patrol Schedule</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -232,15 +230,6 @@
       <form action="{{route('patrol-location.store')}}" method="post">
         @csrf
         <div class="modal-body">
-          <div class="form-group">
-            <label class="col-form-label">Patrol Location:</label>
-            <select name="patrol_location_id" id="assign_location_id" class="form-control" required>
-              <option value="">-- Select Location --</option>
-              @foreach($locations as $loc)
-              <option value="{{ $loc->id }}">{{ $loc->name }}</option>
-              @endforeach
-            </select>
-          </div>
           <div class="form-group">
             <label class="col-form-label">Gate:</label>
             <select name="gate_id" id="assign_gate_id" class="form-control" required>
@@ -271,7 +260,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-primary">Save Assignment</button>
+          <button type="submit" class="btn btn-primary">Save Schedule</button>
         </div>
       </form>
     </div>
@@ -350,17 +339,15 @@
     // Edit Assignment
     $(document).on('click', '.edit-assignment', function(){
         var id = $(this).data('id');
-        var name = $(this).data('name');
         var gate_id = $(this).data('gate_id');
         var shift_id = $(this).data('building_shift_id');
         var patrol_time = $(this).data('patrol_time');
 
         $('#assign_location_hidden_id').val(id);
-        $('#assign_location_id').val(id);
         $('#assign_gate_id').val(gate_id);
         $('#assign_shift_id').val(shift_id);
         $('#assign_patrol_time').val(patrol_time);
-        $('#assignLocationModal .modal-title').text('Edit Location Assignment');
+        $('#assignLocationModal .modal-title').text('Edit Patrol Schedule');
     });
 
     // Clear assignment modal on open
@@ -368,11 +355,10 @@
         var btn = $(e.relatedTarget);
         if (!btn.hasClass('edit-assignment')) {
             $('#assign_location_hidden_id').val('');
-            $('#assign_location_id').val('');
             $('#assign_gate_id').val('');
             $('#assign_shift_id').val('');
             $('#assign_patrol_time').val('');
-            $('#assignLocationModal .modal-title').text('Assign Location to Gate & Shift');
+            $('#assignLocationModal .modal-title').text('Add Patrol Schedule');
         }
     });
 
