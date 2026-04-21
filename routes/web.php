@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\CommentController;
 use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\GuardController;
+use App\Http\Controllers\Admin\GuardPatrolAssignmentController;
 use App\Http\Controllers\Admin\EssentialController;
 use App\Http\Controllers\Admin\FundController;
 use App\Http\Controllers\Admin\GateController;
@@ -327,6 +328,11 @@ Route::middleware('admin')->group(function () {
         Route::get('/building-shift', [BuildingShiftController::class, 'index'])->name('building-shift.index');
         Route::post('/building-shift', [BuildingShiftController::class, 'store'])->name('building-shift.store');
         Route::delete('/building-shift/{id}', [BuildingShiftController::class, 'destroy'])->name('building-shift.destroy');
+
+        // Guard Patrol Assignments
+        Route::get('/patrol-assignment', [GuardPatrolAssignmentController::class, 'index'])->name('patrol-assignment.index');
+        Route::post('/patrol-assignment', [GuardPatrolAssignmentController::class, 'store'])->name('patrol-assignment.store');
+        Route::delete('/patrol-assignment/{id}', [GuardPatrolAssignmentController::class, 'destroy'])->name('patrol-assignment.destroy');
 
         // Delivery Entry Restriction
         Route::get('/delivery-restriction', [DeliveryRestrictionController::class, 'index'])->name('delivery-restriction.index');

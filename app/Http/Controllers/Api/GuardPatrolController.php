@@ -214,4 +214,45 @@ class GuardPatrolController extends Controller
             'count' => $patrols->count(),
         ]);
     }
+
+    public function getMyAssignments(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $gate = $user->gate;
+        if (!$gate || !$gate->building) {
+            return response()->json(['success' => false, 'message' => 'Please select a gate first using select-gate endpoint'], 403);
+        }
+
+        $building = $gate->building;
+
+        $assignments = \App\Models\GuardPatrolAssignment::where('guard_user_id', $user->id)
+            ->where('building_id', $building->id)
+            ->where('status', 'Active')
+            ->whereNull('deleted_at')
+            ->with(['patrolLocation', 'buildingShift'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($assignment) {
+                return [
+                    'id' => $assignment->id,
+                    'location' => $assignment->patrolLocation->name,
+                    'location_id' => $assignment->patrol_location_id,
+                    'shift' => $assignment->buildingShift->name,
+                    'shift_id' => $assignment->building_shift_id,
+                    'shift_start' => $assignment->buildingShift->start_time,
+                    'shift_end' => $assignment->buildingShift->end_time,
+                    'notes' => $assignment->notes,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $assignments,
+            'count' => $assignments->count(),
+        ]);
+    }
 }

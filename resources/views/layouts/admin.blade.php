@@ -942,7 +942,7 @@
          
           
           @php
-            $isVehicleOpen = request()->is('vehicles*') || request()->is('vehicle-inout*') || request()->is('visitor*') || request()->is('patrol-location*') || request()->is('guard-patrol*') || request()->is('building-shift*');
+            $isVehicleOpen = request()->is('vehicles*') || request()->is('vehicle-inout*') || request()->is('visitor*') || request()->is('patrol-location*') || request()->is('guard-patrol*') || request()->is('building-shift*') || request()->is('patrol-assignment*');
             $isVehicleActive = request()->is('vehicles*');
             $isInoutActive = request()->is('vehicle-inouts*');
             $isVisitorActive = request()->is('visitor*');
@@ -1007,6 +1007,12 @@
             <a href="{{ route('building-shift.index') }}" class="nav-link {{ request()->is('building-shift*') ? 'active' : '' }}">
               <i class="nav-icon fas fa-clock"></i>
               <p>Shifts</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('patrol-assignment.index') }}" class="nav-link {{ request()->is('patrol-assignment*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-user-shield"></i>
+              <p>Patrol Assignments</p>
             </a>
           </li>
           @endif
