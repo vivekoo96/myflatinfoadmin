@@ -11,7 +11,7 @@ class UpdateGuardPatrolAssignmentsAddGate extends Migration
         Schema::table('guard_patrol_assignments', function (Blueprint $table) {
             $table->unsignedBigInteger('gate_id')->nullable()->after('building_shift_id');
             $table->index('gate_id');
-            $table->change('patrol_location_id')->nullable()->change();
+            $table->unsignedBigInteger('patrol_location_id')->nullable()->change();
         });
     }
 
