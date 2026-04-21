@@ -93,19 +93,19 @@ class GuardPatrolAssignmentController extends Controller
             return redirect()->back()->with('error', 'Shift not found for this building');
         }
 
-        // Check for duplicate assignment
-        $duplicate = GuardPatrolAssignment::where('guard_user_id', $request->guard_user_id)
+        // Check if THIS SAME GUARD already has an assignment at SAME location/shift (prevent duplicates per guard)
+        $existingAssignment = GuardPatrolAssignment::where('guard_user_id', $request->guard_user_id)
             ->where('patrol_location_id', $request->patrol_location_id)
             ->where('building_shift_id', $request->building_shift_id)
             ->where('status', 'Active')
             ->whereNull('deleted_at');
 
         if ($request->id) {
-            $duplicate = $duplicate->where('id', '!=', $request->id);
+            $existingAssignment = $existingAssignment->where('id', '!=', $request->id);
         }
 
-        if ($duplicate->first()) {
-            return redirect()->back()->with('error', 'Guard is already assigned to this location for this shift');
+        if ($existingAssignment->first()) {
+            return redirect()->back()->with('error', 'This guard is already assigned to this location for this shift. Edit the existing assignment instead.');
         }
 
         $oldGuardId = null;
