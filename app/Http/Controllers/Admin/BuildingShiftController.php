@@ -21,7 +21,55 @@ class BuildingShiftController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        return view('admin.building_shifts.index', compact('shifts', 'building'));
+        // Fetch guards (via BuildingUser with guard role)
+        $guardRole = $this->getOrCreateGuardRole();
+        $guards = [];
+        if ($guardRole) {
+            $buildingUsers = \App\Models\BuildingUser::where('building_id', $building->id)
+                ->where('role_id', $guardRole->id)
+                ->with('user')
+                ->get();
+            $guards = $buildingUsers->pluck('user', 'user_id');
+        }
+
+        // Fetch gates for this building
+        $gates = \App\Models\Gate::where('building_id', $building->id)->get();
+
+        // Fetch all assignments for this building
+        $assignments = \App\Models\GuardPatrolAssignment::where('building_id', $building->id)
+            ->with(['guardUser', 'buildingShift', 'gate'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.building_shifts.index', compact('shifts', 'building', 'guards', 'gates', 'assignments'));
+    }
+
+    protected function getOrCreateGuardRole()
+    {
+        $role = \App\Models\Role::whereRaw("LOWER(TRIM(COALESCE(slug, ''))) = ?", ['guard'])->first();
+        if ($role) {
+            return $role;
+        }
+
+        $role = \App\Models\Role::whereRaw("LOWER(TRIM(COALESCE(slug, ''))) LIKE ?", ['%guard%'])->first();
+        if ($role) {
+            return $role;
+        }
+
+        try {
+            $new = new \App\Models\Role();
+            if (\Schema::hasColumn('roles', 'name')) {
+                $new->name = 'Guard';
+            }
+            if (\Schema::hasColumn('roles', 'slug')) {
+                $new->slug = 'guard';
+            }
+            $new->save();
+            return $new;
+        } catch (\Exception $e) {
+            \Log::error('Failed to create guard role: ' . $e->getMessage());
+            return null;
+        }
     }
 
     public function store(Request $request)

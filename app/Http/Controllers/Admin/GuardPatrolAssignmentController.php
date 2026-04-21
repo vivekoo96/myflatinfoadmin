@@ -64,7 +64,7 @@ class GuardPatrolAssignmentController extends Controller
 
         $rules = [
             'guard_user_id' => 'required|exists:users,id',
-            'patrol_location_id' => 'required|exists:patrol_locations,id',
+            'gate_id' => 'required|exists:gates,id',
             'building_shift_id' => 'required|exists:building_shifts,id',
             'notes' => 'nullable|string|max:255',
             'status' => 'required|in:Active,Inactive',
@@ -75,13 +75,13 @@ class GuardPatrolAssignmentController extends Controller
             return redirect()->back()->with('error', $validation->errors()->first());
         }
 
-        // Verify location belongs to this building
-        $location = PatrolLocation::where('id', $request->patrol_location_id)
+        // Verify gate belongs to this building
+        $gate = \App\Models\Gate::where('id', $request->gate_id)
             ->where('building_id', $building->id)
             ->first();
 
-        if (!$location) {
-            return redirect()->back()->with('error', 'Location not found for this building');
+        if (!$gate) {
+            return redirect()->back()->with('error', 'Gate not found for this building');
         }
 
         // Verify shift belongs to this building
@@ -93,9 +93,9 @@ class GuardPatrolAssignmentController extends Controller
             return redirect()->back()->with('error', 'Shift not found for this building');
         }
 
-        // Check if THIS SAME GUARD already has an assignment at SAME location/shift (prevent duplicates per guard)
+        // Check if THIS SAME GUARD already has an assignment at SAME gate/shift (prevent duplicates per guard)
         $existingAssignment = GuardPatrolAssignment::where('guard_user_id', $request->guard_user_id)
-            ->where('patrol_location_id', $request->patrol_location_id)
+            ->where('gate_id', $request->gate_id)
             ->where('building_shift_id', $request->building_shift_id)
             ->where('status', 'Active')
             ->whereNull('deleted_at');
@@ -105,7 +105,7 @@ class GuardPatrolAssignmentController extends Controller
         }
 
         if ($existingAssignment->first()) {
-            return redirect()->back()->with('error', 'This guard is already assigned to this location for this shift. Edit the existing assignment instead.');
+            return redirect()->back()->with('error', 'This guard is already assigned to this gate for this shift. Edit the existing assignment instead.');
         }
 
         $oldGuardId = null;
@@ -121,7 +121,7 @@ class GuardPatrolAssignmentController extends Controller
 
         $assignment->building_id = $building->id;
         $assignment->guard_user_id = $request->guard_user_id;
-        $assignment->patrol_location_id = $request->patrol_location_id;
+        $assignment->gate_id = $request->gate_id;
         $assignment->building_shift_id = $request->building_shift_id;
         $assignment->notes = $request->notes;
         $assignment->status = $request->status;
@@ -133,8 +133,8 @@ class GuardPatrolAssignmentController extends Controller
             // New assignment
             NotificationHelper2::sendNotification(
                 $request->guard_user_id,
-                'Patrol Assignment',
-                'You have been assigned to patrol ' . $location->name . ' during ' . $shift->name . ' shift',
+                'Gate Assignment',
+                'You have been assigned to ' . $gate->name . ' during ' . $shift->name . ' shift',
                 [],
                 ['save_to_db' => true, 'building_id' => $building->id, 'type' => 'patrol_assignment']
             );
@@ -145,23 +145,23 @@ class GuardPatrolAssignmentController extends Controller
                 NotificationHelper2::sendNotification(
                     $oldGuardId,
                     'Assignment Removed',
-                    'Your patrol assignment at ' . $location->name . ' has been removed',
+                    'Your assignment at ' . $gate->name . ' has been removed',
                     [],
                     ['save_to_db' => true, 'building_id' => $building->id, 'type' => 'patrol_assignment']
                 );
                 NotificationHelper2::sendNotification(
                     $request->guard_user_id,
-                    'Patrol Assignment',
-                    'You have been assigned to patrol ' . $location->name . ' during ' . $shift->name . ' shift',
+                    'Gate Assignment',
+                    'You have been assigned to ' . $gate->name . ' during ' . $shift->name . ' shift',
                     [],
                     ['save_to_db' => true, 'building_id' => $building->id, 'type' => 'patrol_assignment']
                 );
             } else {
-                // Same guard, location/shift changed
+                // Same guard, gate/shift changed
                 NotificationHelper2::sendNotification(
                     $request->guard_user_id,
                     'Assignment Updated',
-                    'Your patrol assignment has been updated to ' . $location->name . ' during ' . $shift->name . ' shift',
+                    'Your assignment has been updated to ' . $gate->name . ' during ' . $shift->name . ' shift',
                     [],
                     ['save_to_db' => true, 'building_id' => $building->id, 'type' => 'patrol_assignment']
                 );
@@ -192,7 +192,7 @@ class GuardPatrolAssignmentController extends Controller
         NotificationHelper2::sendNotification(
             $assignment->guard_user_id,
             'Assignment Removed',
-            'Your patrol assignment at ' . $assignment->patrolLocation->name . ' during ' . $assignment->buildingShift->name . ' has been removed',
+            'Your assignment at ' . ($assignment->gate->name ?? 'Gate') . ' during ' . ($assignment->buildingShift->name ?? 'Shift') . ' has been removed',
             [],
             ['save_to_db' => true, 'building_id' => $building->id, 'type' => 'patrol_assignment']
         );

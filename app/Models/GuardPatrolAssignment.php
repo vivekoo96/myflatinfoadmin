@@ -15,6 +15,7 @@ class GuardPatrolAssignment extends Model
         'building_id',
         'guard_user_id',
         'patrol_location_id',
+        'gate_id',
         'building_shift_id',
         'notes',
         'status',
@@ -44,5 +45,10 @@ class GuardPatrolAssignment extends Model
     public function assignedBy()
     {
         return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    public function gate()
+    {
+        return $this->belongsTo(Gate::class, 'gate_id');
     }
 }
