@@ -89,6 +89,14 @@
                     <textarea name="notes" id="notes" class="form-control" maxlength="255" placeholder="Optional notes (e.g., Special instructions, checkpoint details)"></textarea>
                   </div>
 
+                  <div class="form-group">
+                    <label>Status <span class="text-danger">*</span></label>
+                    <select name="status" id="status" class="form-control" required>
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+
                   <input type="hidden" name="id" id="assignment_id">
                 </div>
                 <div class="card-footer">
@@ -125,7 +133,8 @@
                         data-guard_user_id="{{ $assignment->guard_user_id }}"
                         data-patrol_location_id="{{ $assignment->patrol_location_id }}"
                         data-building_shift_id="{{ $assignment->building_shift_id }}"
-                        data-notes="{{ $assignment->notes }}">
+                        data-notes="{{ $assignment->notes }}"
+                        data-status="{{ $assignment->status }}">
                         ✏️ Edit
                       </button>
                       <button type="button" class="btn btn-xs btn-danger delete-assignment" data-id="{{ $assignment->id }}">
@@ -233,7 +242,8 @@
                             data-guard_user_id="{{ $assignment->guard_user_id }}"
                             data-patrol_location_id="{{ $assignment->patrol_location_id }}"
                             data-building_shift_id="{{ $assignment->building_shift_id }}"
-                            data-notes="{{ $assignment->notes }}">
+                            data-notes="{{ $assignment->notes }}"
+                            data-status="{{ $assignment->status }}">
                             ✏️ Edit
                           </button>
                           <button class="btn btn-sm btn-danger delete-assignment" data-id="{{ $assignment->id }}">
@@ -272,6 +282,7 @@
         $('#patrol_location_id').val($(this).data('patrol_location_id'));
         $('#building_shift_id').val($(this).data('building_shift_id'));
         $('#notes').val($(this).data('notes'));
+        $('#status').val($(this).data('status') || 'Active');
 
         $('#submit-btn').text('Update Assignment');
         $('#cancel-btn').show();
