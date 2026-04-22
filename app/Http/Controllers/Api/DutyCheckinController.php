@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\DutyCheckin;
 use App\Models\GuardPatrolAssignment;
+use App\Helpers\DutyCheckinHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -77,6 +78,9 @@ class DutyCheckinController
         }
 
         $interval = $building->duty_checkin_interval_minutes ?? 30;
+
+        // Check for missed check-ins
+        DutyCheckinHelper::checkAndCreateMissedCheckins($building, $user, $assignment, $now);
 
         // Get last check-in for today
         $lastCheckin = DutyCheckin::where('building_id', $building->id)
