@@ -363,25 +363,28 @@ class GuardPatrolController extends Controller
         // Get today's check-ins for locations in this gate only
         $checkedLocationIds = [];
 
-        // Check old GuardPatrol system
-        $guardPatrolCheckins = GuardPatrol::where('guard_user_id', $user->id)
+        // Check old GuardPatrol system - check ALL records for this guard today
+        $allGuardPatrols = GuardPatrol::where('guard_user_id', $user->id)
             ->whereDate('checked_in_at', today())
-            ->whereIn('patrol_location_id', $allLocations->pluck('id')->toArray())
             ->pluck('patrol_location_id')
             ->unique()
             ->toArray();
 
+        // Filter to only locations in this gate
+        $guardPatrolCheckins = array_intersect($allGuardPatrols, $allLocations->pluck('id')->toArray());
         $checkedLocationIds = array_merge($checkedLocationIds, $guardPatrolCheckins);
 
-        // Check new PatrolTaskLog system for same locations
-        $taskLogCheckins = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
+        // Check new PatrolTaskLog system - check ALL records for this guard today
+        $allTaskLogs = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
             ->whereDate('checked_at', today())
-            ->whereIn('patrol_location_id', $allLocations->pluck('id')->toArray())
             ->pluck('patrol_location_id')
             ->unique()
             ->toArray();
 
+        // Filter to only locations in this gate
+        $taskLogCheckins = array_intersect($allTaskLogs, $allLocations->pluck('id')->toArray());
         $checkedLocationIds = array_merge($checkedLocationIds, $taskLogCheckins);
+
         $todayCheckins = array_unique($checkedLocationIds);
 
         $nextLocation = null;
@@ -415,6 +418,18 @@ class GuardPatrolController extends Controller
         $completed = count($todayCheckins);
         $total = $allLocations->count();
 
+        // Debug info if no check-ins found
+        $debugInfo = null;
+        if ($completed === 0 && $total > 0) {
+            $debugInfo = [
+                'all_guard_patrols_today' => $allGuardPatrols,
+                'all_task_logs_today' => $allTaskLogs,
+                'gate_location_ids' => $allLocations->pluck('id')->toArray(),
+                'guard_id' => $user->id,
+                'gate_id' => $gate->id,
+            ];
+        }
+
         return response()->json([
             'success' => true,
             'gate_name' => $gate->name,
@@ -423,6 +438,7 @@ class GuardPatrolController extends Controller
             'progress' => "$completed/$total",
             'next_patrol_point' => $nextLocation,
             'remaining_patrols' => $remaining,
+            'debug' => $debugInfo,
         ]);
     }
 
