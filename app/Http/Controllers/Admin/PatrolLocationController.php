@@ -72,6 +72,7 @@ class PatrolLocationController extends Controller
 
         $msg = 'Patrol schedule added successfully';
         $location = new PatrolLocation();
+        $isNew = false;
 
         if ($request->id) {
             $location = PatrolLocation::where('id', $request->id)->where('building_id', $building->id)->first();
@@ -82,6 +83,7 @@ class PatrolLocationController extends Controller
         } else {
             // Generate unique QR string only on creation
             $location->qr_string = Str::random(32);
+            $isNew = true;
         }
 
         // Auto-generate name from gate, shift, and time
@@ -94,6 +96,26 @@ class PatrolLocationController extends Controller
         $location->patrol_time = $request->patrol_time;
         $location->status = 'Active';
         $location->save();
+
+        // Notify guards assigned to this gate + shift if new schedule
+        if ($isNew) {
+            $assignments = \App\Models\GuardPatrolAssignment::where('gate_id', $location->gate_id)
+                ->where('building_shift_id', $location->building_shift_id)
+                ->where('building_id', $building->id)
+                ->where('status', 'Active')
+                ->whereNull('deleted_at')
+                ->get();
+
+            foreach ($assignments as $assignment) {
+                \App\Helpers\NotificationHelper2::sendNotification(
+                    $assignment->guard_user_id,
+                    'Patrol Schedule Assigned',
+                    'A new patrol schedule has been created for your assigned gate and shift. Please check your schedule details and be prepared accordingly.',
+                    [],
+                    ['save_to_db' => true, 'building_id' => $building->id, 'type' => 'patrol_schedule']
+                );
+            }
+        }
 
         return redirect()->back()->with('success', $msg);
     }

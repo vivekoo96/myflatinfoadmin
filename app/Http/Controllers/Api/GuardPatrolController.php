@@ -255,4 +255,64 @@ class GuardPatrolController extends Controller
             'count' => $assignments->count(),
         ]);
     }
+
+    public function getNextPatrolSchedule(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $gate = $user->gate;
+        if (!$gate || !$gate->building) {
+            return response()->json(['success' => false, 'message' => 'Please select a gate first using select-gate endpoint'], 403);
+        }
+
+        $building = $gate->building;
+
+        // Get today's check-ins for this guard
+        $todayCheckins = GuardPatrol::where('guard_user_id', $user->id)
+            ->whereDate('checked_in_at', today())
+            ->pluck('patrol_location_id')
+            ->toArray();
+
+        $schedules = PatrolLocation::where('gate_id', $gate->id)
+            ->where('building_id', $building->id)
+            ->where('status', 'Active')
+            ->with('buildingShift')
+            ->orderBy('patrol_time')
+            ->get()
+            ->map(function ($location) use ($gate, $todayCheckins, $user) {
+                $lastCheckIn = GuardPatrol::where('guard_user_id', $user->id)
+                    ->where('patrol_location_id', $location->id)
+                    ->whereDate('checked_in_at', today())
+                    ->latest('checked_in_at')
+                    ->first();
+
+                return [
+                    'id' => $location->id,
+                    'name' => $location->name,
+                    'gate_name' => $gate->name,
+                    'gate_id' => $gate->id,
+                    'shift_name' => $location->buildingShift ? $location->buildingShift->name : 'N/A',
+                    'shift_id' => $location->building_shift_id,
+                    'shift_start' => $location->buildingShift ? $location->buildingShift->start_time : null,
+                    'shift_end' => $location->buildingShift ? $location->buildingShift->end_time : null,
+                    'patrol_time' => $location->patrol_time,
+                    'qr_string' => $location->qr_string,
+                    'is_completed' => in_array($location->id, $todayCheckins),
+                    'last_checked_at' => $lastCheckIn ? $lastCheckIn->checked_in_at->format('Y-m-d H:i:s') : null,
+                ];
+            });
+
+        $completed = collect($schedules)->where('is_completed', true)->count();
+
+        return response()->json([
+            'success' => true,
+            'gate_name' => $gate->name,
+            'total' => $schedules->count(),
+            'completed' => $completed,
+            'data' => $schedules,
+        ]);
+    }
 }

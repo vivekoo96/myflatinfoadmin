@@ -236,6 +236,7 @@ use App\Http\Controllers\Api\ActivityController;
         Route::get('guard-patrol-locations',[App\Http\Controllers\Api\GuardPatrolController::class,'getLocations']);
         Route::get('guard-patrol-history',[App\Http\Controllers\Api\GuardPatrolController::class,'history']);
         Route::get('my-patrol-assignments',[App\Http\Controllers\Api\GuardPatrolController::class,'getMyAssignments']);
+        Route::get('next-patrol-schedule',[App\Http\Controllers\Api\GuardPatrolController::class,'getNextPatrolSchedule']);
 
         // role route  //20nov2025 11:48
         Route::post('my-departments',[CustomerController::class,'my_departments']);
