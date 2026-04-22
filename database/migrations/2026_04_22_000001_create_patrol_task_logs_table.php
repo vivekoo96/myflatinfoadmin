@@ -22,11 +22,6 @@ class CreatePatrolTaskLogsTable extends Migration
 
             $table->index(['patrol_task_id', 'guard_user_id']);
             $table->index(['building_id', 'guard_user_id']);
-
-            $table->foreign('building_id')->references('id')->on('buildings');
-            $table->foreign('patrol_task_id')->references('id')->on('patrol_locations');
-            $table->foreign('patrol_location_id')->references('id')->on('patrol_locations');
-            $table->foreign('guard_user_id')->references('id')->on('users');
         });
     }
 
