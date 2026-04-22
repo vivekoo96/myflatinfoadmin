@@ -407,4 +407,62 @@ class GuardPatrolController extends Controller
             'remaining_patrols' => $remaining,
         ]);
     }
+
+    public function getGateShiftProgress(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $validation = \Validator::make($request->all(), [
+            'gate_id' => 'required|exists:gates,id',
+            'building_shift_id' => 'required|exists:building_shifts,id',
+        ]);
+
+        if ($validation->fails()) {
+            return response()->json(['success' => false, 'message' => $validation->errors()->first()], 422);
+        }
+
+        $gate = \App\Models\Gate::find($request->gate_id);
+        $shift = BuildingShift::find($request->building_shift_id);
+
+        $locations = PatrolLocation::where('gate_id', $gate->id)
+            ->where('building_shift_id', $shift->id)
+            ->where('status', 'Active')
+            ->orderBy('patrol_time')
+            ->get();
+
+        $data = $locations->map(function ($location) {
+            $checkin = GuardPatrol::where('patrol_location_id', $location->id)
+                ->whereDate('checked_in_at', today())
+                ->with('guardUser')
+                ->latest('checked_in_at')
+                ->first();
+
+            return [
+                'id' => $location->id,
+                'name' => $location->name,
+                'patrol_time' => $location->patrol_time,
+                'is_completed' => !!$checkin,
+                'checked_by' => $checkin ? ($checkin->guardUser->name ?? 'Guard') : null,
+                'checked_at' => $checkin ? $checkin->checked_in_at->format('Y-m-d H:i:s') : null,
+            ];
+        });
+
+        $completed = $data->where('is_completed', true)->count();
+        $total = $data->count();
+
+        return response()->json([
+            'success' => true,
+            'gate_name' => $gate->name,
+            'shift_name' => $shift->name . ' (' . $shift->start_time . ' - ' . $shift->end_time . ')',
+            'date' => today()->toDateString(),
+            'total' => $total,
+            'completed' => $completed,
+            'remaining' => $total - $completed,
+            'progress' => "$completed/$total",
+            'data' => $data,
+        ]);
+    }
 }
