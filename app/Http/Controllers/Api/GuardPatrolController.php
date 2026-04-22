@@ -424,15 +424,32 @@ class GuardPatrolController extends Controller
             return response()->json(['success' => false, 'message' => $validation->errors()->first()], 422);
         }
 
-        $gate = \App\Models\Gate::find($request->gate_id);
-        $shift = BuildingShift::find($request->building_shift_id);
-
-        if (!$gate) {
-            return response()->json(['success' => false, 'message' => 'Gate not found'], 404);
+        // Get building from authenticated user (BA/Security context)
+        $building = null;
+        if ($user->building) {
+            $building = $user->building;
+        } elseif ($user->gate && $user->gate->building) {
+            $building = $user->gate->building;
         }
 
+        if (!$building) {
+            return response()->json(['success' => false, 'message' => 'Building context not found. Please select a gate or ensure you have building access'], 403);
+        }
+
+        $gate = \App\Models\Gate::where('id', $request->gate_id)
+            ->where('building_id', $building->id)
+            ->first();
+
+        if (!$gate) {
+            return response()->json(['success' => false, 'message' => 'Gate not found for this building'], 404);
+        }
+
+        $shift = BuildingShift::where('id', $request->building_shift_id)
+            ->where('building_id', $building->id)
+            ->first();
+
         if (!$shift) {
-            return response()->json(['success' => false, 'message' => 'Shift not found'], 404);
+            return response()->json(['success' => false, 'message' => 'Shift not found for this building'], 404);
         }
 
         $locations = PatrolLocation::where('gate_id', $gate->id)
@@ -491,16 +508,31 @@ class GuardPatrolController extends Controller
             return response()->json(['success' => false, 'message' => $validation->errors()->first()], 422);
         }
 
+        // Get building from authenticated user (BA/Security context)
+        $building = null;
+        if ($user->building) {
+            $building = $user->building;
+        } elseif ($user->gate && $user->gate->building) {
+            $building = $user->gate->building;
+        }
+
+        if (!$building) {
+            return response()->json(['success' => false, 'message' => 'Building context not found. Please select a gate or ensure you have building access'], 403);
+        }
+
         $date  = $request->date ? \Carbon\Carbon::parse($request->date) : today();
         $guard = \App\Models\User::find($request->guard_user_id);
-        $shift = BuildingShift::find($request->building_shift_id);
+
+        $shift = BuildingShift::where('id', $request->building_shift_id)
+            ->where('building_id', $building->id)
+            ->first();
 
         if (!$guard) {
             return response()->json(['success' => false, 'message' => 'Guard not found'], 404);
         }
 
         if (!$shift) {
-            return response()->json(['success' => false, 'message' => 'Shift not found'], 404);
+            return response()->json(['success' => false, 'message' => 'Shift not found for this building'], 404);
         }
 
         $assignment = \App\Models\GuardPatrolAssignment::where('guard_user_id', $guard->id)
