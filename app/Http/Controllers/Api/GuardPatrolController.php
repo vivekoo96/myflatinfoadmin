@@ -459,19 +459,25 @@ class GuardPatrolController extends Controller
             ->get();
 
         $data = $locations->map(function ($location) {
-            $checkin = GuardPatrol::where('patrol_location_id', $location->id)
+            $patrols = GuardPatrol::where('patrol_location_id', $location->id)
                 ->whereDate('checked_in_at', today())
                 ->with('guardUser')
-                ->latest('checked_in_at')
-                ->first();
+                ->orderBy('checked_in_at', 'desc')
+                ->get()
+                ->map(function ($patrol) {
+                    return [
+                        'checkin_type' => $patrol->checkin_type,
+                        'checked_at' => $patrol->checked_in_at->format('Y-m-d H:i:s'),
+                        'checked_by' => $patrol->guardUser->name ?? 'Guard',
+                    ];
+                });
 
             return [
                 'id' => $location->id,
                 'name' => $location->name,
                 'patrol_time' => $location->patrol_time,
-                'is_completed' => !!$checkin,
-                'checked_by' => $checkin ? ($checkin->guardUser->name ?? 'Guard') : null,
-                'checked_at' => $checkin ? $checkin->checked_in_at->format('Y-m-d H:i:s') : null,
+                'is_completed' => $patrols->count() > 0,
+                'patrols' => $patrols,
             ];
         });
 
@@ -549,19 +555,25 @@ class GuardPatrolController extends Controller
             ->get();
 
         $data = $locations->map(function ($location) use ($guard, $date) {
-            $checkin = GuardPatrol::where('guard_user_id', $guard->id)
+            $patrols = GuardPatrol::where('guard_user_id', $guard->id)
                 ->where('patrol_location_id', $location->id)
                 ->whereDate('checked_in_at', $date)
-                ->latest('checked_in_at')
-                ->first();
+                ->orderBy('checked_in_at', 'desc')
+                ->get()
+                ->map(function ($patrol) {
+                    return [
+                        'checkin_type' => $patrol->checkin_type,
+                        'checked_at' => $patrol->checked_in_at->format('Y-m-d H:i:s'),
+                        'checked_by' => $patrol->guardUser->name ?? 'Guard',
+                    ];
+                });
 
             return [
                 'id'           => $location->id,
                 'name'         => $location->name,
                 'patrol_time'  => $location->patrol_time,
-                'is_completed' => !!$checkin,
-                'checked_at'   => $checkin ? $checkin->checked_in_at->format('Y-m-d H:i:s') : null,
-                'checkin_type' => $checkin ? $checkin->checkin_type : null,
+                'is_completed' => $patrols->count() > 0,
+                'patrols'      => $patrols,
             ];
         });
 
