@@ -21,7 +21,6 @@ class PatrolLocationController extends Controller
         $building = Auth::user()->building;
         $locations = PatrolLocation::where('building_id', $building->id)
             ->with(['gate', 'buildingShift'])
-            ->withTrashed()
             ->orderBy('name')
             ->get();
 
