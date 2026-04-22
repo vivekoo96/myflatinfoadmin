@@ -374,7 +374,14 @@ class GuardPatrolController extends Controller
         $guardPatrolCheckins = array_intersect($allGuardPatrols, $allLocations->pluck('id')->toArray());
         $checkedLocationIds = array_merge($checkedLocationIds, $guardPatrolCheckins);
 
-        // Check new PatrolTaskLog system - get patrol tasks this guard checked in for today
+        // Check new PatrolTaskLog system - get all task log location IDs for this guard today (across all gates)
+        $allTaskLogs = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
+            ->whereDate('checked_at', today())
+            ->pluck('patrol_location_id')
+            ->unique()
+            ->toArray();
+
+        // Get patrol tasks this guard checked in for today
         $completedTaskIds = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
             ->whereDate('checked_at', today())
             ->distinct('patrol_task_id')
