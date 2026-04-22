@@ -96,7 +96,6 @@ class GuardController extends Controller
                     }),
             ],
             'gate_id' => 'required|exists:gates,id',
-            'shift' => 'required|string|max:100',
             'status' => 'required|in:Active,Inactive',
             'company_name' => 'nullable|string|max:40',
             'password' => 'nullable|string|min:6',
@@ -146,7 +145,6 @@ class GuardController extends Controller
         $guard->block_id = $request->block_id;
         $guard->gate_id = $request->gate_id;
         $guard->user_id = $request->user_id;
-        $guard->shift = $request->shift;
         $guard->status = $request->status;
         $guard->id_proof_type = $request->id_proof_type;
         $guard->id_proof_number = $request->id_proof_number;
@@ -325,7 +323,6 @@ class GuardController extends Controller
             'building_id' => 'required|exists:buildings,id',
             'block_id' => 'required|exists:blocks,id',
             'gate_id' => 'required|exists:gates,id',
-            'shift' => 'required|string|max:100',
             'status' => 'required|in:Active,Inactive',
             'id_proof_type' => 'nullable|in:Aadhaar,PAN,Voter ID,Passport,Driving License',
             'id_proof_number' => 'nullable|string|max:30',
