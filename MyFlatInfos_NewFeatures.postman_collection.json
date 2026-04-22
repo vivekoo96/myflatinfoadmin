@@ -857,6 +857,25 @@
           "response": []
         },
         {
+          "name": "patrol-gate-shift-progress",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/patrol-gate-shift-progress?gate_id=1&building_shift_id=1",
+              "host": ["{{BASE_URL}}"],
+              "path": ["patrol-gate-shift-progress"],
+              "query": [
+                { "key": "gate_id", "value": "1", "description": "Gate ID (required)" },
+                { "key": "building_shift_id", "value": "1", "description": "Building Shift ID (required)" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Note: Next Patrol Point Detail",
           "request": {
             "method": "GET",
