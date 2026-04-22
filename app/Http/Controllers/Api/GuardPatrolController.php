@@ -594,4 +594,208 @@ class GuardPatrolController extends Controller
             'data'             => $data,
         ]);
     }
+
+    public function submitTaskLocationCheckin(Request $request)
+    {
+        $rules = [
+            'patrol_task_id' => 'required|exists:patrol_locations,id',
+            'patrol_location_id' => 'required|exists:patrol_locations,id',
+            'checkin_type' => 'required|in:photo,qr',
+            'photo' => 'required_if:checkin_type,photo|nullable|image|mimes:jpg,jpeg,png|max:4096',
+            'qr_scanned_value' => 'required_if:checkin_type,qr|nullable|string',
+        ];
+
+        $validation = \Validator::make($request->all(), $rules);
+
+        if ($validation->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validation->errors()->first(),
+            ], 422);
+        }
+
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        // Get building context
+        $building = null;
+        if ($user->building) {
+            $building = $user->building;
+        } elseif ($user->gate && $user->gate->building) {
+            $building = $user->gate->building;
+        }
+
+        if (!$building) {
+            return response()->json(['success' => false, 'message' => 'Building context not found'], 403);
+        }
+
+        // Verify patrol_task_id is a task (has gate_id)
+        $task = PatrolLocation::where('id', $request->patrol_task_id)
+            ->where('building_id', $building->id)
+            ->whereNotNull('gate_id')
+            ->first();
+
+        if (!$task) {
+            return response()->json(['success' => false, 'message' => 'Patrol task not found'], 404);
+        }
+
+        // Verify patrol_location_id is a physical location (no gate_id)
+        $location = PatrolLocation::where('id', $request->patrol_location_id)
+            ->where('building_id', $building->id)
+            ->whereNull('gate_id')
+            ->first();
+
+        if (!$location) {
+            return response()->json(['success' => false, 'message' => 'Patrol location not found'], 404);
+        }
+
+        // Prevent duplicate check-ins
+        $existing = \App\Models\PatrolTaskLog::where('patrol_task_id', $task->id)
+            ->where('patrol_location_id', $location->id)
+            ->where('guard_user_id', $user->id)
+            ->whereDate('checked_at', today())
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already checked in at this location for this task today.',
+            ], 409);
+        }
+
+        $photo_url = null;
+        if ($request->checkin_type === 'photo' && $request->hasFile('photo')) {
+            if (!file_exists(public_path('/images/patrols/'))) {
+                mkdir(public_path('/images/patrols/'), 0755, true);
+            }
+
+            $file = $request->file('photo');
+            $ext = $file->getClientOriginalExtension();
+            $filename = 'patrols/' . uniqid() . '.' . $ext;
+            $file->move(public_path('/images/patrols/'), $filename);
+            $photo_url = $filename;
+        }
+
+        if ($request->checkin_type === 'qr') {
+            // Verify QR code matches the location
+            if ($location->qr_string !== $request->qr_scanned_value) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid QR code for the selected location.',
+                ], 422);
+            }
+        }
+
+        try {
+            $log = \App\Models\PatrolTaskLog::create([
+                'building_id' => $building->id,
+                'patrol_task_id' => $task->id,
+                'patrol_location_id' => $location->id,
+                'guard_user_id' => $user->id,
+                'checkin_type' => $request->checkin_type,
+                'photo_url' => $photo_url,
+                'qr_scanned_value' => $request->checkin_type === 'qr' ? $request->qr_scanned_value : null,
+                'checked_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Check-in recorded successfully!',
+                'data' => [
+                    'id' => $log->id,
+                    'location' => $location->name,
+                    'checked_at' => $log->checked_at->format('Y-m-d H:i:s'),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Task location check-in failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record check-in. Please try again.',
+            ], 500);
+        }
+    }
+
+    public function getTaskProgress(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $validation = \Validator::make($request->all(), [
+            'patrol_task_id' => 'required|exists:patrol_locations,id',
+        ]);
+
+        if ($validation->fails()) {
+            return response()->json(['success' => false, 'message' => $validation->errors()->first()], 422);
+        }
+
+        // Get building context
+        $building = null;
+        if ($user->building) {
+            $building = $user->building;
+        } elseif ($user->gate && $user->gate->building) {
+            $building = $user->gate->building;
+        }
+
+        if (!$building) {
+            return response()->json(['success' => false, 'message' => 'Building context not found'], 403);
+        }
+
+        // Find the task
+        $task = PatrolLocation::where('id', $request->patrol_task_id)
+            ->where('building_id', $building->id)
+            ->whereNotNull('gate_id')
+            ->first();
+
+        if (!$task) {
+            return response()->json(['success' => false, 'message' => 'Patrol task not found'], 404);
+        }
+
+        // Get all physical locations (no gate_id)
+        $locations = PatrolLocation::where('building_id', $building->id)
+            ->whereNull('gate_id')
+            ->where('status', 'Active')
+            ->orderBy('name')
+            ->get();
+
+        $data = $locations->map(function ($location) use ($user, $task) {
+            $logs = \App\Models\PatrolTaskLog::where('patrol_task_id', $task->id)
+                ->where('patrol_location_id', $location->id)
+                ->where('guard_user_id', $user->id)
+                ->whereDate('checked_at', today())
+                ->orderBy('checked_at', 'desc')
+                ->get()
+                ->map(function ($log) {
+                    return [
+                        'checkin_type' => $log->checkin_type,
+                        'checked_at' => $log->checked_at->format('Y-m-d H:i:s'),
+                    ];
+                });
+
+            return [
+                'id' => $location->id,
+                'name' => $location->name,
+                'is_completed' => $logs->count() > 0,
+                'check_ins' => $logs,
+            ];
+        });
+
+        $completed = $data->where('is_completed', true)->count();
+        $total = $data->count();
+
+        return response()->json([
+            'success' => true,
+            'task_name' => $task->name,
+            'patrol_time' => $task->patrol_time,
+            'total' => $total,
+            'completed' => $completed,
+            'remaining' => $total - $completed,
+            'is_task_complete' => $total > 0 && $completed === $total,
+            'locations' => $data,
+        ]);
+    }
 }
