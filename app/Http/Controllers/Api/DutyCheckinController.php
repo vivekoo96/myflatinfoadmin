@@ -29,7 +29,7 @@ class DutyCheckinController
             ], 404);
         }
 
-        $assignment = GuardPatrolAssignment::where('user_id', $user->id)
+        $assignment = GuardPatrolAssignment::where('guard_user_id', $user->id)
             ->where('gate_id', $user->gate->id)
             ->first();
 
@@ -134,7 +134,7 @@ class DutyCheckinController
             ], 404);
         }
 
-        $assignment = GuardPatrolAssignment::where('user_id', $user->id)
+        $assignment = GuardPatrolAssignment::where('guard_user_id', $user->id)
             ->where('gate_id', $user->gate->id)
             ->first();
 
