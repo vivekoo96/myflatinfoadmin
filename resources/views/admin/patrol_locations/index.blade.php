@@ -316,7 +316,7 @@
         var id = $(this).data('id');
         if (!confirm('Are you sure you want to delete this location?')) return;
         $.ajax({
-            url: '{{ route("patrol-location.destroy", "") }}/' + id,
+            url: '/patrol-location/' + id,
             type: 'DELETE',
             data: {'_token': token},
             success: function(data){
@@ -393,7 +393,7 @@
         var id = $(this).data('id');
         if (!confirm('Remove this assignment?')) return;
         $.ajax({
-            url: '{{ route("patrol-location.destroy", "") }}/' + id,
+            url: '/patrol-location/' + id,
             type: 'DELETE',
             data: {'_token': token, 'remove_assignment': true},
             success: function(data){
