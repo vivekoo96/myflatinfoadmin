@@ -124,6 +124,7 @@ class PatrolLocationController extends Controller
     {
         $location = PatrolLocation::where('id', $id)
             ->where('building_id', Auth::user()->building_id)
+            ->withTrashed()
             ->firstOrFail();
 
         return response()->json([
@@ -141,6 +142,7 @@ class PatrolLocationController extends Controller
 
         $location = PatrolLocation::where('id', $id)
             ->where('building_id', Auth::user()->building_id)
+            ->withTrashed()
             ->firstOrFail();
 
         if ($request->remove_assignment) {
