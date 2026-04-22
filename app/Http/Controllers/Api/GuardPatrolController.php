@@ -499,7 +499,6 @@ class GuardPatrolController extends Controller
         }
 
         $validation = \Validator::make($request->all(), [
-            'guard_user_id'     => 'required|exists:users,id',
             'building_shift_id' => 'required|exists:building_shifts,id',
             'date'              => 'nullable|date_format:Y-m-d',
         ]);
@@ -508,7 +507,7 @@ class GuardPatrolController extends Controller
             return response()->json(['success' => false, 'message' => $validation->errors()->first()], 422);
         }
 
-        // Get building from authenticated user (BA/Security context)
+        // Get building and guard from authenticated user
         $building = null;
         if ($user->building) {
             $building = $user->building;
@@ -521,15 +520,11 @@ class GuardPatrolController extends Controller
         }
 
         $date  = $request->date ? \Carbon\Carbon::parse($request->date) : today();
-        $guard = \App\Models\User::find($request->guard_user_id);
+        $guard = $user; // Use authenticated user as the guard
 
         $shift = BuildingShift::where('id', $request->building_shift_id)
             ->where('building_id', $building->id)
             ->first();
-
-        if (!$guard) {
-            return response()->json(['success' => false, 'message' => 'Guard not found'], 404);
-        }
 
         if (!$shift) {
             return response()->json(['success' => false, 'message' => 'Shift not found for this building'], 404);
