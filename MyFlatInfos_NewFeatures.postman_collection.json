@@ -1478,6 +1478,94 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "patrol-task-location-checkin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "patrol_task_id",
+                  "value": "13",
+                  "type": "text",
+                  "description": "Patrol task ID (the scheduled task)"
+                },
+                {
+                  "key": "patrol_location_id",
+                  "value": "1",
+                  "type": "text",
+                  "description": "Physical location ID to check in"
+                },
+                {
+                  "key": "checkin_type",
+                  "value": "qr",
+                  "type": "text",
+                  "description": "photo or qr"
+                },
+                {
+                  "key": "qr_scanned_value",
+                  "value": "",
+                  "type": "text",
+                  "disabled": false,
+                  "description": "Only for checkin_type=qr"
+                },
+                {
+                  "key": "photo",
+                  "value": "",
+                  "type": "file",
+                  "disabled": true,
+                  "description": "Only for checkin_type=photo"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/patrol-task-location-checkin",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "patrol-task-location-checkin"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "patrol-task-progress",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/patrol-task-progress?patrol_task_id=13",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "patrol-task-progress"
+              ],
+              "query": [
+                {
+                  "key": "patrol_task_id",
+                  "value": "13",
+                  "description": "Patrol task ID (required)"
+                }
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
