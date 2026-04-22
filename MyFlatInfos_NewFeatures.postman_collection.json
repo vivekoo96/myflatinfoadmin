@@ -1548,6 +1548,7 @@
                 "value": "Bearer {{token}}"
               }
             ],
+            "description": "Get patrol task progress - shows all locations assigned to a patrol task and which ones are completed by the guard. Returns data array with each location's details and completion status.",
             "url": {
               "raw": "{{BASE_URL}}/patrol-task-progress?patrol_task_id=13",
               "host": [
@@ -1560,7 +1561,7 @@
                 {
                   "key": "patrol_task_id",
                   "value": "13",
-                  "description": "Patrol task ID (required)"
+                  "description": "Patrol task ID (required) - the scheduled task that contains multiple patrol locations"
                 }
               ]
             }
