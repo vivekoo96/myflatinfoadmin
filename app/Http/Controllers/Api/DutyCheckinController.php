@@ -11,6 +11,23 @@ use Carbon\Carbon;
 
 class DutyCheckinController
 {
+    /**
+     * Get duty check-in status with countdown timer
+     *
+     * Response: {
+     *   "success": true,
+     *   "interval_minutes": 30,
+     *   "name": "Afternoon (14:00 - 22:00)",
+     *   "last_checkin_at": "2026-04-22 14:00:00",
+     *   "next_checkin_at": "2026-04-22 14:30:00",
+     *   "scheduled_at": "2026-04-22 14:30:00",
+     *   "seconds_remaining": 286,
+     *   "is_overdue": false,
+     *   "recent_checkins": [
+     *     { "checked_in_at": "2026-04-22 14:00:00", "scheduled_at": "2026-04-22 14:00:00", "status": "on_time" }
+     *   ]
+     * }
+     */
     public function status(Request $request)
     {
         $user = Auth::user();
@@ -119,6 +136,18 @@ class DutyCheckinController
         ]);
     }
 
+    /**
+     * Submit duty check-in
+     * Body: {} (empty)
+     *
+     * Response: {
+     *   "success": true,
+     *   "message": "Check-in recorded",
+     *   "status": "on_time|delayed",
+     *   "next_checkin_at": "2026-04-22 14:30:00",
+     *   "seconds_remaining": 1800
+     * }
+     */
     public function checkin(Request $request)
     {
         $user = Auth::user();

@@ -718,6 +718,30 @@ class GuardPatrolController extends Controller
         }
     }
 
+    /**
+     * Get patrol task progress - shows all locations for a task and completion status
+     * Query: patrol_task_id (required)
+     *
+     * Response: {
+     *   "success": true,
+     *   "task_name": "Morning Patrol",
+     *   "patrol_time": "06:00",
+     *   "total": 5,
+     *   "completed": 3,
+     *   "remaining": 2,
+     *   "is_task_complete": false,
+     *   "locations": [
+     *     {
+     *       "id": 1,
+     *       "name": "Gate A",
+     *       "is_completed": true,
+     *       "check_ins": [
+     *         { "checkin_type": "qr", "checked_at": "2026-04-22 06:15:00" }
+     *       ]
+     *     }
+     *   ]
+     * }
+     */
     public function getTaskProgress(Request $request)
     {
         $user = Auth::user();
