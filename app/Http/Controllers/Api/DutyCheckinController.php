@@ -106,7 +106,7 @@ class DutyCheckinController
         return response()->json([
             'success' => true,
             'interval_minutes' => $interval,
-            'shift_name' => $shift->shift_name,
+            'name' => $shift->name,
             'last_checkin_at' => $lastCheckin ? $lastCheckin->checked_in_at : null,
             'next_checkin_at' => $nextCheckinAt,
             'seconds_remaining' => abs($secondsRemaining),
