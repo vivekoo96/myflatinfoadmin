@@ -71,7 +71,6 @@
                     <th>Email</th>
                     <th>Gender</th>
                     <th>Company</th>
-                    <th>Shift</th>
                     <th>Status</th>
                      @if(Auth::User()->role == 'BA')
                     <th>Action</th>
@@ -95,13 +94,12 @@
                     <td>{{ $bu->user->email ?? '' }}</td>
                     <td>{{ $bu->user->gender ?? '' }}</td>
                     <td>{{ $bu->user->company_name ?? '' }}</td>
-                    <td>{{ $guard ? $guard->shift : '-' }}</td>
                     <td>{{ $bu->status }}</td>
                        @if(Auth::User()->role == 'BA')
                     <td>
                    @if(Auth::User()->role == 'BA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'security'))
                         <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#addModal" data-id="{{$guard->id}}" data-building_id="{{$guard->building_id}}"
-                          data-block_id="{{$guard->block_id}}" data-gate_id="{{$guard->gate_id}}" data-shift="{{$guard->shift}}" data-user_email="{{$bu->user->email}}"
+                          data-block_id="{{$guard->block_id}}" data-gate_id="{{$guard->gate_id}}" data-user_email="{{$bu->user->email}}"
                           data-user_id="{{$bu->user->id}}" data-user_name="{{ $bu->user->name ?? $bu->user->first_name }}" data-company_name="{{$bu->user->company_name}}" data-status="{{$bu->status}}"
                           data-id_proof_type="{{$guard->id_proof_type}}" data-id_proof_number="{{$guard->id_proof_number}}"><i class="fa fa-edit"></i></button>
                         @if($guard->deleted_at)
@@ -227,18 +225,6 @@
               </div>
               <small class="form-text text-muted password-helper-text">Required for new users. Leave blank if using existing user.</small>
             </div>
-            <div class="form-group">
-            <label for="name" class="col-form-label">Shift:</label>
-            <select name="shift" class="form-control" id="user-shift" required>
-              <option value="">-- Select Shift --</option>
-              @forelse($shifts as $shift)
-                <option value="{{ $shift->name }}">{{ $shift->name }} ({{ $shift->start_time }} - {{ $shift->end_time }})</option>
-              @empty
-                <option disabled>No shifts configured</option>
-              @endforelse
-            </select>
-          </div>
-          
           <div class="form-group">
             <label for="name" class="col-form-label">Building:</label>
             <select name="building_id" id="user-building_id" class="form-control" required>
@@ -338,17 +324,6 @@
             <label for="password_guard" class="col-form-label">New Password:</label>
             <input type="password" name="password" class="form-control" id="password_guard" placeholder="Leave blank to keep current password" minlength="6">
             <small class="form-text text-muted">Leave blank if you don't want to change the password</small>
-          </div>
-          <div class="form-group">
-            <label for="name" class="col-form-label">Shift:</label>
-            <select name="shift" class="form-control" id="shift" required>
-              <option value="">-- Select Shift --</option>
-              @forelse($shifts as $shift)
-                <option value="{{ $shift->name }}">{{ $shift->name }} ({{ $shift->start_time }} - {{ $shift->end_time }})</option>
-              @empty
-                <option disabled>No shifts configured</option>
-              @endforelse
-            </select>
           </div>
 
           <div class="form-group">
@@ -527,7 +502,6 @@
       $('#user_name').val('');
       $('#company_name_guard').val('');
       $('#password_guard').val('');
-      $('#shift').val('');
       $('#status').val('');
       $('#id_proof_type_guard').val('');
       $('#id_proof_number_guard').val('');
@@ -547,7 +521,6 @@
             $('#building_id').val(button.data('building_id'));
             $('#block_id').val(button.data('block_id'));
             $('#gate_id').val(button.data('gate_id'));
-            $('#shift').val(button.data('shift'));
             $('#status').val(button.data('status'));
             $('#id_proof_type_guard').val(button.data('id_proof_type'));
             $('#id_proof_number_guard').val(button.data('id_proof_number'));
