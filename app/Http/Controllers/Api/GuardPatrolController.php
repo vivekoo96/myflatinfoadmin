@@ -352,20 +352,6 @@ class GuardPatrolController extends Controller
 
         $building = $gate->building;
 
-        // Get today's check-ins for this guard (both old GuardPatrol and new PatrolTaskLog)
-        $guardPatrolCheckins = GuardPatrol::where('guard_user_id', $user->id)
-            ->whereDate('checked_in_at', today())
-            ->pluck('patrol_location_id')
-            ->toArray();
-
-        $taskLogCheckins = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
-            ->whereDate('checked_at', today())
-            ->distinct()
-            ->pluck('patrol_location_id')
-            ->toArray();
-
-        $todayCheckins = array_unique(array_merge($guardPatrolCheckins, $taskLogCheckins));
-
         // Get all active patrol locations for this gate, ordered by patrol_time
         $allLocations = PatrolLocation::where('gate_id', $gate->id)
             ->where('building_id', $building->id)
@@ -373,6 +359,30 @@ class GuardPatrolController extends Controller
             ->with('buildingShift')
             ->orderBy('patrol_time')
             ->get();
+
+        // Get today's check-ins for locations in this gate only
+        $checkedLocationIds = [];
+
+        // Check old GuardPatrol system
+        $guardPatrolCheckins = GuardPatrol::where('guard_user_id', $user->id)
+            ->whereDate('checked_in_at', today())
+            ->whereIn('patrol_location_id', $allLocations->pluck('id')->toArray())
+            ->distinct('patrol_location_id')
+            ->pluck('patrol_location_id')
+            ->toArray();
+
+        $checkedLocationIds = array_merge($checkedLocationIds, $guardPatrolCheckins);
+
+        // Check new PatrolTaskLog system for same locations
+        $taskLogCheckins = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
+            ->whereDate('checked_at', today())
+            ->whereIn('patrol_location_id', $allLocations->pluck('id')->toArray())
+            ->distinct('patrol_location_id')
+            ->pluck('patrol_location_id')
+            ->toArray();
+
+        $checkedLocationIds = array_merge($checkedLocationIds, $taskLogCheckins);
+        $todayCheckins = array_unique($checkedLocationIds);
 
         $nextLocation = null;
         $remaining = [];
