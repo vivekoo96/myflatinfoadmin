@@ -825,6 +825,7 @@ class GuardPatrolController extends Controller
             return [
                 'id' => $location->id,
                 'name' => $location->name,
+                'description' => $location->description,
                 'is_completed' => $logs->count() > 0,
                 'check_ins' => $logs,
             ];
