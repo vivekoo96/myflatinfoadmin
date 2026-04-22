@@ -719,6 +719,7 @@
     },
     {
       "name": "Guard Patrol (API) - NEW",
+      "description": "Guard patrol check-in endpoints with progress tracking. submit-checkin validates patrol_time (cannot start before scheduled time) and prevents duplicates. next-patrol-point returns next uncompleted location + remaining patrols + completed count for progress bar (2/6).",
       "item": [
         {
           "name": "get-patrol-locations",
@@ -731,19 +732,6 @@
               "raw": "{{BASE_URL}}/guard-patrol-locations",
               "host": ["{{BASE_URL}}"],
               "path": ["guard-patrol-locations"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Note: Dynamic Shifts",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "Response includes: 'shifts[]' (available shifts for building) and 'current_shift' (detected based on current time)",
-              "host": [],
-              "path": []
             }
           },
           "response": []
@@ -829,19 +817,6 @@
           "response": []
         },
         {
-          "name": "Note: Patrol Progress",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "Returns: 'total' (total schedules), 'completed' (count completed today), 'data[]' with is_completed flag and last_checked_at timestamp. Used for progress bar on Guard Patrolling screen (e.g. 2/6)",
-              "host": [],
-              "path": []
-            }
-          },
-          "response": []
-        },
-        {
           "name": "next-patrol-point",
           "request": {
             "method": "GET",
@@ -855,24 +830,12 @@
             }
           },
           "response": []
-        },
-        {
-          "name": "Note: Next Patrol Point Detail",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "Returns: 'next_patrol_point' (next uncompleted location), 'remaining_patrols' (all uncompleted ordered by time), 'completed' count, 'total' count, 'progress' (e.g. '2/6'). Main Guard Patrolling screen uses this.",
-              "host": [],
-              "path": []
-            }
-          },
-          "response": []
         }
       ]
     },
     {
       "name": "Admin Panel - Guard Patrol - NEW",
+      "description": "BA management endpoints. create-patrol-schedule auto-generates name as '{Gate} - {Shift} - {Time}', generates QR code, and notifies guards assigned to that gate+shift. All guards at same gate see same schedules but track completion individually.",
       "item": [
         {
           "name": "list-patrol-locations",
@@ -905,19 +868,6 @@
               "raw": "{{ADMIN_URL}}/patrol-location",
               "host": ["{{ADMIN_URL}}"],
               "path": ["patrol-location"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Note: Auto-Generated Schedule",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "Schedule name is auto-generated as: '{Gate Name} - {Shift Name} - {Patrol Time}' (e.g. 'Main Gate - Morning - 08:30'). QR code auto-generated on creation. Notifies all guards assigned to that gate+shift combination.",
-              "host": [],
-              "path": []
             }
           },
           "response": []
