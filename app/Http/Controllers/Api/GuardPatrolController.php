@@ -738,23 +738,27 @@ class GuardPatrolController extends Controller
 
     /**
      * Get patrol task progress - shows all locations for a task and completion status
-     * Query: patrol_task_id (required)
+     * Query: patrol_task_id (required) - The patrol task ID (scheduled task with gate_id)
      *
-     * Response: {
-     *   "success": true,
-     *   "task_name": "Morning Patrol",
-     *   "patrol_time": "06:00",
-     *   "total": 5,
-     *   "completed": 3,
-     *   "remaining": 2,
-     *   "is_task_complete": false,
-     *   "locations": [
+     * Response Structure:
+     * {
+     *   "success": true,                      // Request successful
+     *   "task_name": "Morning Patrol",        // Name of the patrol task
+     *   "patrol_time": "06:00",               // Scheduled patrol time
+     *   "total": 5,                           // Total number of locations in this task
+     *   "completed": 3,                       // Number of locations already checked in
+     *   "remaining": 2,                       // Number of locations still pending
+     *   "is_task_complete": false,            // true if all locations completed, false if pending
+     *   "locations": [                        // Array of all patrol locations for this task
      *     {
-     *       "id": 1,
-     *       "name": "Gate A",
-     *       "is_completed": true,
-     *       "check_ins": [
-     *         { "checkin_type": "qr", "checked_at": "2026-04-22 06:15:00" }
+     *       "id": 3,                          // Location ID
+     *       "name": "Location Point A",       // Location name
+     *       "is_completed": false,            // true if checked in today, false if pending
+     *       "check_ins": [                    // Array of check-in records for this location today
+     *         {
+     *           "checkin_type": "qr|photo",  // Type of check-in (qr code or photo)
+     *           "checked_at": "2026-04-22 06:15:00"  // When this location was checked in
+     *         }
      *       ]
      *     }
      *   ]
