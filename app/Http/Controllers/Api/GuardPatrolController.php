@@ -427,6 +427,14 @@ class GuardPatrolController extends Controller
         $gate = \App\Models\Gate::find($request->gate_id);
         $shift = BuildingShift::find($request->building_shift_id);
 
+        if (!$gate) {
+            return response()->json(['success' => false, 'message' => 'Gate not found'], 404);
+        }
+
+        if (!$shift) {
+            return response()->json(['success' => false, 'message' => 'Shift not found'], 404);
+        }
+
         $locations = PatrolLocation::where('gate_id', $gate->id)
             ->where('building_shift_id', $shift->id)
             ->where('status', 'Active')
