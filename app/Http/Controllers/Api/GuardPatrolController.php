@@ -442,7 +442,6 @@ class GuardPatrolController extends Controller
             'progress' => "$completed/$total",
             'next_patrol_point' => $nextLocation,
             'remaining_patrols' => $remaining,
-            'debug' => $debugInfo,
         ]);
     }
 
