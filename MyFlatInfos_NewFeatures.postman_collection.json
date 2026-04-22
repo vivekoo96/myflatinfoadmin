@@ -1725,6 +1725,155 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Duty Check-In (API) - NEW",
+      "item": [
+        {
+          "name": "get-duty-checkin-status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/duty-checkin-status",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "duty-checkin-status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "submit-duty-checkin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/duty-checkin",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "duty-checkin"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Panel - Duty Check-Ins - NEW",
+      "item": [
+        {
+          "name": "list-duty-checkins",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ADMIN_URL}}/duty-checkins?guard_user_id=&gate_id=&building_shift_id=&status=&date=",
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "duty-checkins"
+              ],
+              "query": [
+                {
+                  "key": "guard_user_id",
+                  "value": "",
+                  "description": "Filter by guard (optional)"
+                },
+                {
+                  "key": "gate_id",
+                  "value": "",
+                  "description": "Filter by gate (optional)"
+                },
+                {
+                  "key": "building_shift_id",
+                  "value": "",
+                  "description": "Filter by shift (optional)"
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by status: on_time, delayed, missed (optional)"
+                },
+                {
+                  "key": "date",
+                  "value": "",
+                  "description": "Filter by date YYYY-MM-DD (optional)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update-duty-checkin-interval",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}"
+                },
+                {
+                  "key": "duty_checkin_interval_minutes",
+                  "value": "30",
+                  "type": "text",
+                  "description": "Check-in interval in minutes (5-480)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{ADMIN_URL}}/duty-checkins/interval",
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "duty-checkins",
+                "interval"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
