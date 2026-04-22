@@ -16,16 +16,44 @@
             "header": [],
             "url": {
               "raw": "{{BASE_URL}}/meetings?limit=10&page=1&sortField=dateTime&sortOrder=desc",
-              "host": ["{{BASE_URL}}"],
-              "path": ["meetings"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "meetings"
+              ],
               "query": [
-                { "key": "limit",     "value": "10" },
-                { "key": "page",      "value": "1" },
-                { "key": "sortField", "value": "dateTime" },
-                { "key": "sortOrder", "value": "desc" },
-                { "key": "search",    "value": "",           "disabled": true },
-                { "key": "fromDate",  "value": "2026-01-01", "disabled": true },
-                { "key": "toDate",    "value": "2026-12-31", "disabled": true }
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "sortField",
+                  "value": "dateTime"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "fromDate",
+                  "value": "2026-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "toDate",
+                  "value": "2026-12-31",
+                  "disabled": true
+                }
               ]
             }
           },
@@ -35,16 +63,29 @@
           "name": "create-meeting",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"title\": \"Monthly Society Meeting\",\n  \"description\": \"Discuss society matters\",\n  \"datetime\": \"2026-04-15T10:00\",\n  \"created_by\": 1,\n  \"created_by_role\": \"Building Admin\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{BASE_URL}}/meetings",
-              "host": ["{{BASE_URL}}"],
-              "path": ["meetings"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "meetings"
+              ]
             }
           },
           "response": []
@@ -56,8 +97,13 @@
             "header": [],
             "url": {
               "raw": "{{BASE_URL}}/meetings/1",
-              "host": ["{{BASE_URL}}"],
-              "path": ["meetings", "1"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "meetings",
+                "1"
+              ]
             }
           },
           "response": []
@@ -74,8 +120,12 @@
             "header": [],
             "url": {
               "raw": "{{ADMIN_URL}}/meeting",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["meeting"]
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "meeting"
+              ]
             }
           },
           "response": []
@@ -84,20 +134,41 @@
           "name": "create-meeting",
           "request": {
             "method": "POST",
-            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "body": {
               "mode": "urlencoded",
               "urlencoded": [
-                { "key": "_token",      "value": "{{csrf_token}}" },
-                { "key": "title",       "value": "Monthly Society Meeting" },
-                { "key": "description", "value": "Agenda: parking, maintenance, events" },
-                { "key": "datetime",    "value": "2026-04-15T10:00" }
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}"
+                },
+                {
+                  "key": "title",
+                  "value": "Monthly Society Meeting"
+                },
+                {
+                  "key": "description",
+                  "value": "Agenda: parking, maintenance, events"
+                },
+                {
+                  "key": "datetime",
+                  "value": "2026-04-15T10:00"
+                }
               ]
             },
             "url": {
               "raw": "{{ADMIN_URL}}/meeting",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["meeting"]
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "meeting"
+              ]
             }
           },
           "response": []
@@ -106,18 +177,34 @@
           "name": "delete-meeting",
           "request": {
             "method": "POST",
-            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "body": {
               "mode": "urlencoded",
               "urlencoded": [
-                { "key": "_token",  "value": "{{csrf_token}}" },
-                { "key": "_method", "value": "DELETE" }
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}"
+                },
+                {
+                  "key": "_method",
+                  "value": "DELETE"
+                }
               ]
             },
             "url": {
               "raw": "{{ADMIN_URL}}/meeting/1",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["meeting", "1"]
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "meeting",
+                "1"
+              ]
             }
           },
           "response": []
@@ -134,13 +221,32 @@
             "header": [],
             "url": {
               "raw": "{{BASE_URL}}/video_tutorials/post_video?limit=10&page=1",
-              "host": ["{{BASE_URL}}"],
-              "path": ["video_tutorials", "post_video"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "video_tutorials",
+                "post_video"
+              ],
               "query": [
-                { "key": "limit",  "value": "10" },
-                { "key": "page",   "value": "1" },
-                { "key": "role",   "value": "BA",       "disabled": true },
-                { "key": "search", "value": "tutorial", "disabled": true }
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "role",
+                  "value": "BA",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "tutorial",
+                  "disabled": true
+                }
               ]
             }
           },
@@ -153,13 +259,30 @@
             "header": [],
             "url": {
               "raw": "{{BASE_URL}}/video_tutorials/post_video?limit=3&page=1&role=BA&search=tutorial",
-              "host": ["{{BASE_URL}}"],
-              "path": ["video_tutorials", "post_video"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "video_tutorials",
+                "post_video"
+              ],
               "query": [
-                { "key": "limit",  "value": "3" },
-                { "key": "page",   "value": "1" },
-                { "key": "role",   "value": "BA" },
-                { "key": "search", "value": "tutorial" }
+                {
+                  "key": "limit",
+                  "value": "3"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "role",
+                  "value": "BA"
+                },
+                {
+                  "key": "search",
+                  "value": "tutorial"
+                }
               ]
             }
           },
@@ -169,16 +292,30 @@
           "name": "create-video",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"moduleId\": 1,\n  \"title\": \"Intro to the Platform\",\n  \"text\": \"A quick overview of the app and its main features.\",\n  \"videoUrl\": \"https://youtu.be/zUfPhL_EU2Y\",\n  \"videoType\": \"youtube\",\n  \"interfaces\": [\"user\", \"BA\"]\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{BASE_URL}}/video_tutorials/post_video",
-              "host": ["{{BASE_URL}}"],
-              "path": ["video_tutorials", "post_video"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "video_tutorials",
+                "post_video"
+              ]
             }
           },
           "response": []
@@ -190,8 +327,13 @@
             "header": [],
             "url": {
               "raw": "{{BASE_URL}}/video_tutorials/create_module",
-              "host": ["{{BASE_URL}}"],
-              "path": ["video_tutorials", "create_module"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "video_tutorials",
+                "create_module"
+              ]
             }
           },
           "response": []
@@ -200,16 +342,30 @@
           "name": "create-module",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"title\": \"Getting Started\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{BASE_URL}}/video_tutorials/create_module",
-              "host": ["{{BASE_URL}}"],
-              "path": ["video_tutorials", "create_module"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "video_tutorials",
+                "create_module"
+              ]
             }
           },
           "response": []
@@ -224,18 +380,41 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/get-flat-directory?limit=10&page=1&search=&sortField=name&sortOrder=asc",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-flat-directory"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "get-flat-directory"
+              ],
               "query": [
-                { "key": "limit", "value": "10" },
-                { "key": "page", "value": "1" },
-                { "key": "search", "value": "", "disabled": true },
-                { "key": "sortField", "value": "name" },
-                { "key": "sortOrder", "value": "asc" }
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "sortField",
+                  "value": "name"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc"
+                }
               ]
             }
           },
@@ -251,16 +430,35 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/get-staff-directory?limit=10&page=1&search=",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-staff-directory"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "get-staff-directory"
+              ],
               "query": [
-                { "key": "limit",  "value": "10",  "disabled": false },
-                { "key": "page",   "value": "1",   "disabled": false },
-                { "key": "search", "value": "",    "disabled": true }
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "disabled": false
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                }
               ]
             }
           },
@@ -276,18 +474,32 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type",  "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{BASE_URL}}/get-polls",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-polls"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "get-polls"
+              ]
             }
           },
           "response": []
@@ -297,18 +509,32 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type",  "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"poll_id\": 1\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{BASE_URL}}/get-poll-detail",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-poll-detail"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "get-poll-detail"
+              ]
             }
           },
           "response": []
@@ -318,18 +544,32 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type",  "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"poll_id\": 1,\n  \"answers\": [\n    { \"question_id\": 1, \"option_id\": 2 }\n  ]\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{BASE_URL}}/cast-vote",
-              "host": ["{{BASE_URL}}"],
-              "path": ["cast-vote"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "cast-vote"
+              ]
             }
           },
           "response": []
@@ -339,18 +579,32 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type",  "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"poll_id\": 1\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{BASE_URL}}/get-poll-results",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-poll-results"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "get-poll-results"
+              ]
             }
           },
           "response": []
@@ -365,18 +619,32 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type",  "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"title\": \"Suspicious Activity at Gate 3\",\n  \"body\": \"White sedan parked near gate 3 without visitor pass at 10:30 PM. License plate not visible.\",\n  \"noted_at\": \"2026-04-15T22:30:00.000000Z\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{BASE_URL}}/create-note",
-              "host": ["{{BASE_URL}}"],
-              "path": ["create-note"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "create-note"
+              ]
             }
           },
           "response": []
@@ -386,17 +654,40 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/get-notes?fromdate=15-04-2026&todate=15-04-2026&count=10&page=1",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-notes"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "get-notes"
+              ],
               "query": [
-                { "key": "fromdate", "value": "15-04-2026", "disabled": true },
-                { "key": "todate",   "value": "15-04-2026", "disabled": true },
-                { "key": "count",    "value": "10",         "disabled": true },
-                { "key": "page",     "value": "1",          "disabled": true }
+                {
+                  "key": "fromdate",
+                  "value": "15-04-2026",
+                  "disabled": true
+                },
+                {
+                  "key": "todate",
+                  "value": "15-04-2026",
+                  "disabled": true
+                },
+                {
+                  "key": "count",
+                  "value": "10",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                }
               ]
             }
           },
@@ -407,14 +698,24 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/get-note?id=1",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-note"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "get-note"
+              ],
               "query": [
-                { "key": "id", "value": "1" }
+                {
+                  "key": "id",
+                  "value": "1"
+                }
               ]
             }
           },
@@ -425,18 +726,32 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type",  "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"id\": 1,\n  \"title\": \"Suspicious Activity at Gate 3 - Updated\",\n  \"body\": \"White sedan parked near gate 3 without visitor pass at 10:30 PM. License plate: ABC-1234. Updated after checking CCTV.\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{BASE_URL}}/update-note",
-              "host": ["{{BASE_URL}}"],
-              "path": ["update-note"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "update-note"
+              ]
             }
           },
           "response": []
@@ -453,13 +768,33 @@
             "header": [],
             "url": {
               "raw": "{{ADMIN_URL}}/security-notes?guard_user_id=&gate_id=&from_date=&to_date=",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["security-notes"],
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "security-notes"
+              ],
               "query": [
-                { "key": "guard_user_id", "value": "",             "disabled": false },
-                { "key": "gate_id",       "value": "",             "disabled": false },
-                { "key": "from_date",     "value": "2026-04-15",   "disabled": true },
-                { "key": "to_date",       "value": "2026-04-15",   "disabled": true }
+                {
+                  "key": "guard_user_id",
+                  "value": "",
+                  "disabled": false
+                },
+                {
+                  "key": "gate_id",
+                  "value": "",
+                  "disabled": false
+                },
+                {
+                  "key": "from_date",
+                  "value": "2026-04-15",
+                  "disabled": true
+                },
+                {
+                  "key": "to_date",
+                  "value": "2026-04-15",
+                  "disabled": true
+                }
               ]
             }
           },
@@ -475,18 +810,32 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type",  "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"title\": \"Cricket Match at Sports Complex\",\n  \"description\": \"Friendly cricket match. Bring your own equipment.\",\n  \"location\": \"Building Sports Complex\",\n  \"activity_datetime\": \"2026-04-20T15:00:00\",\n  \"response_type\": \"simple\",\n  \"post_type\": \"slot\",\n  \"max_slots\": 12\n}\n\n// RESPONSE TYPES:\n// \"simple\" → Users respond with: Interested / Not Interested\n// \"detailed\" → Users respond with: Attending / Maybe / Not Attending\n\n// POST TYPES:\n// \"slot\" → Limited capacity (max_slots required)\n// \"unlimited\" → No limit (max_slots not needed)\n\n// STATUS:\n// Activity created with status='pending' (requires BA approval)\n// Only approved activities visible to other users",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{BASE_URL}}/create-activity",
-              "host": ["{{BASE_URL}}"],
-              "path": ["create-activity"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "create-activity"
+              ]
             }
           },
           "response": []
@@ -496,17 +845,40 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/get-activities?type=active&search=&count=10&page=1",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-activities"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "get-activities"
+              ],
               "query": [
-                { "key": "type",   "value": "active", "disabled": false },
-                { "key": "search", "value": "", "disabled": true },
-                { "key": "count",  "value": "10", "disabled": true },
-                { "key": "page",   "value": "1", "disabled": true }
+                {
+                  "key": "type",
+                  "value": "active",
+                  "disabled": false
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "count",
+                  "value": "10",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                }
               ]
             }
           },
@@ -517,16 +889,35 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/get-my-activities?search=&count=10&page=1",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-my-activities"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "get-my-activities"
+              ],
               "query": [
-                { "key": "search", "value": "", "disabled": true },
-                { "key": "count",  "value": "10", "disabled": true },
-                { "key": "page",   "value": "1", "disabled": true }
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "count",
+                  "value": "10",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                }
               ]
             }
           },
@@ -537,14 +928,24 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/get-activity?id=1",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-activity"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "get-activity"
+              ],
               "query": [
-                { "key": "id", "value": "1" }
+                {
+                  "key": "id",
+                  "value": "1"
+                }
               ]
             }
           },
@@ -555,18 +956,32 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type",  "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"activity_id\": 1,\n  \"response\": \"interested\"\n}\n\n// VALID RESPONSE TYPES:\n// For response_type='simple': \"interested\" OR \"not_interested\"\n// For response_type='detailed': \"attending\" OR \"maybe\" OR \"not_attending\"\n// (Only use response matching the activity's response_type)\n\n// EXAMPLES:\n// Simple activity: {\"activity_id\": 1, \"response\": \"interested\"}\n// Detailed activity: {\"activity_id\": 2, \"response\": \"attending\"}\n// Detailed activity: {\"activity_id\": 2, \"response\": \"maybe\"}\n// Detailed activity: {\"activity_id\": 2, \"response\": \"not_attending\"}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{BASE_URL}}/respond-activity",
-              "host": ["{{BASE_URL}}"],
-              "path": ["respond-activity"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "respond-activity"
+              ]
             }
           },
           "response": []
@@ -576,14 +991,24 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/delete-activity?id=1",
-              "host": ["{{BASE_URL}}"],
-              "path": ["delete-activity"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "delete-activity"
+              ],
               "query": [
-                { "key": "id", "value": "1" }
+                {
+                  "key": "id",
+                  "value": "1"
+                }
               ]
             }
           },
@@ -594,14 +1019,24 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/activity-stats?id=1",
-              "host": ["{{BASE_URL}}"],
-              "path": ["activity-stats"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "activity-stats"
+              ],
               "query": [
-                { "key": "id", "value": "1" }
+                {
+                  "key": "id",
+                  "value": "1"
+                }
               ]
             }
           },
@@ -619,11 +1054,23 @@
             "header": [],
             "url": {
               "raw": "{{ADMIN_URL}}/community-activities?status=pending&search=",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["community-activities"],
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "community-activities"
+              ],
               "query": [
-                { "key": "status", "value": "pending", "disabled": false },
-                { "key": "search", "value": "", "disabled": true }
+                {
+                  "key": "status",
+                  "value": "pending",
+                  "disabled": false
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                }
               ]
             }
           },
@@ -636,8 +1083,13 @@
             "header": [],
             "url": {
               "raw": "{{ADMIN_URL}}/community-activities/1",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["community-activities", "1"]
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "community-activities",
+                "1"
+              ]
             }
           },
           "response": []
@@ -646,15 +1098,26 @@
           "name": "approve-activity",
           "request": {
             "method": "POST",
-            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": ""
             },
             "url": {
               "raw": "{{ADMIN_URL}}/community-activities/1/approve",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["community-activities", "1", "approve"]
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "community-activities",
+                "1",
+                "approve"
+              ]
             }
           },
           "response": []
@@ -663,15 +1126,26 @@
           "name": "reject-activity",
           "request": {
             "method": "POST",
-            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": ""
             },
             "url": {
               "raw": "{{ADMIN_URL}}/community-activities/1/reject",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["community-activities", "1", "reject"]
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "community-activities",
+                "1",
+                "reject"
+              ]
             }
           },
           "response": []
@@ -680,11 +1154,21 @@
           "name": "delete-activity-admin",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "url": {
               "raw": "{{ADMIN_URL}}/community-activities/1",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["community-activities", "1"]
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "community-activities",
+                "1"
+              ]
             }
           },
           "response": []
@@ -699,18 +1183,32 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type",  "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"status\": \"All\",\n  \"count\": 10,\n  \"page\": 1\n}\n\n// Response includes:\n// - delivery_entry_allowed: true/false (based on current time vs configured window)\n// - delivery_entry_window: {start_time, end_time, current_time}\n// Use delivery_entry_allowed flag to show/hide 'Allow Entry' button in app",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{BASE_URL}}/get-my-parcels",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-my-parcels"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "get-my-parcels"
+              ]
             }
           },
           "response": []
@@ -725,25 +1223,19 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/guard-patrol-locations",
-              "host": ["{{BASE_URL}}"],
-              "path": ["guard-patrol-locations"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Note: Dynamic Shifts",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "Response includes: 'shifts[]' (available shifts for building) and 'current_shift' (detected based on current time)",
-              "host": [],
-              "path": []
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "guard-patrol-locations"
+              ]
             }
           },
           "response": []
@@ -753,21 +1245,45 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "patrol_location_id", "value": "1", "type": "text" },
-                { "key": "building_shift_id", "value": "1", "type": "text" },
-                { "key": "checkin_type", "value": "photo", "type": "text" },
-                { "key": "photo", "value": "", "type": "file", "disabled": false }
+                {
+                  "key": "patrol_location_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "building_shift_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "checkin_type",
+                  "value": "photo",
+                  "type": "text"
+                },
+                {
+                  "key": "photo",
+                  "value": "",
+                  "type": "file",
+                  "disabled": false
+                }
               ]
             },
             "url": {
               "raw": "{{BASE_URL}}/guard-patrol-checkin",
-              "host": ["{{BASE_URL}}"],
-              "path": ["guard-patrol-checkin"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "guard-patrol-checkin"
+              ]
             }
           },
           "response": []
@@ -777,18 +1293,32 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"patrol_location_id\": 1,\n  \"building_shift_id\": 1,\n  \"checkin_type\": \"qr\",\n  \"qr_scanned_value\": \"abc123def456ghi789\"\n}\n\n// building_shift_id = ID from shifts[] in get-patrol-locations response\n// qr_scanned_value = the unique QR string for that location (from get-patrol-locations)\n// Location must exist in the same building as the authenticated guard\n// Shift must be active for this building (no overlapping shifts allowed)",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{BASE_URL}}/guard-patrol-checkin",
-              "host": ["{{BASE_URL}}"],
-              "path": ["guard-patrol-checkin"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "guard-patrol-checkin"
+              ]
             }
           },
           "response": []
@@ -798,16 +1328,35 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/guard-patrol-history?shift=Day&date=2026-04-20&days=7",
-              "host": ["{{BASE_URL}}"],
-              "path": ["guard-patrol-history"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "guard-patrol-history"
+              ],
               "query": [
-                { "key": "shift", "value": "Day", "disabled": true },
-                { "key": "date", "value": "2026-04-20", "disabled": true },
-                { "key": "days", "value": "7", "disabled": true }
+                {
+                  "key": "shift",
+                  "value": "Day",
+                  "disabled": true
+                },
+                {
+                  "key": "date",
+                  "value": "2026-04-20",
+                  "disabled": true
+                },
+                {
+                  "key": "days",
+                  "value": "7",
+                  "disabled": true
+                }
               ]
             }
           },
@@ -818,25 +1367,19 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/next-patrol-schedule",
-              "host": ["{{BASE_URL}}"],
-              "path": ["next-patrol-schedule"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Note: Patrol Progress",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "Returns: 'total' (total schedules), 'completed' (count completed today), 'data[]' with is_completed flag and last_checked_at timestamp. Used for progress bar on Guard Patrolling screen (e.g. 2/6)",
-              "host": [],
-              "path": []
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "next-patrol-schedule"
+              ]
             }
           },
           "response": []
@@ -846,12 +1389,19 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/next-patrol-point",
-              "host": ["{{BASE_URL}}"],
-              "path": ["next-patrol-point"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "next-patrol-point"
+              ]
             }
           },
           "response": []
@@ -861,29 +1411,31 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/patrol-gate-shift-progress?gate_id=1&building_shift_id=1",
-              "host": ["{{BASE_URL}}"],
-              "path": ["patrol-gate-shift-progress"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "patrol-gate-shift-progress"
+              ],
               "query": [
-                { "key": "gate_id", "value": "1", "description": "Gate ID (required)" },
-                { "key": "building_shift_id", "value": "1", "description": "Building Shift ID (required)" }
+                {
+                  "key": "gate_id",
+                  "value": "1",
+                  "description": "Gate ID (required)"
+                },
+                {
+                  "key": "building_shift_id",
+                  "value": "1",
+                  "description": "Building Shift ID (required)"
+                }
               ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Note: Next Patrol Point Detail",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "Returns: 'next_patrol_point' (next uncompleted location), 'remaining_patrols' (all uncompleted ordered by time), 'completed' count, 'total' count, 'progress' (e.g. '2/6'). Main Guard Patrolling screen uses this.",
-              "host": [],
-              "path": []
             }
           },
           "response": []
@@ -900,8 +1452,12 @@
             "header": [],
             "url": {
               "raw": "{{ADMIN_URL}}/patrol-location",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["patrol-location"]
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "patrol-location"
+              ]
             }
           },
           "response": []
@@ -910,33 +1466,44 @@
           "name": "create-patrol-schedule",
           "request": {
             "method": "POST",
-            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "body": {
               "mode": "urlencoded",
               "urlencoded": [
-                { "key": "_token", "value": "{{csrf_token}}" },
-                { "key": "gate_id", "value": "1", "type": "text" },
-                { "key": "building_shift_id", "value": "1", "type": "text" },
-                { "key": "patrol_time", "value": "08:30", "type": "text" }
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}"
+                },
+                {
+                  "key": "gate_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "building_shift_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "patrol_time",
+                  "value": "08:30",
+                  "type": "text"
+                }
               ]
             },
             "url": {
               "raw": "{{ADMIN_URL}}/patrol-location",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["patrol-location"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Note: Auto-Generated Schedule",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "Schedule name is auto-generated as: '{Gate Name} - {Shift Name} - {Patrol Time}' (e.g. 'Main Gate - Morning - 08:30'). QR code auto-generated on creation. Notifies all guards assigned to that gate+shift combination.",
-              "host": [],
-              "path": []
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "patrol-location"
+              ]
             }
           },
           "response": []
@@ -948,8 +1515,13 @@
             "header": [],
             "url": {
               "raw": "{{ADMIN_URL}}/patrol-location/1",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["patrol-location", "1"]
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "patrol-location",
+                "1"
+              ]
             }
           },
           "response": []
@@ -958,15 +1530,25 @@
           "name": "delete-patrol-location",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
+            "header": [
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": ""
             },
             "url": {
               "raw": "{{ADMIN_URL}}/patrol-location/1",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["patrol-location", "1"]
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "patrol-location",
+                "1"
+              ]
             }
           },
           "response": []
@@ -978,14 +1560,38 @@
             "header": [],
             "url": {
               "raw": "{{ADMIN_URL}}/guard-patrol?guard_user_id=&patrol_location_id=&shift=&checkin_type=&date=",
-              "host": ["{{ADMIN_URL}}"],
-              "path": ["guard-patrol"],
+              "host": [
+                "{{ADMIN_URL}}"
+              ],
+              "path": [
+                "guard-patrol"
+              ],
               "query": [
-                { "key": "guard_user_id", "value": "", "disabled": true },
-                { "key": "patrol_location_id", "value": "", "disabled": true },
-                { "key": "shift", "value": "Day", "disabled": true },
-                { "key": "checkin_type", "value": "photo", "disabled": true },
-                { "key": "date", "value": "2026-04-20", "disabled": true }
+                {
+                  "key": "guard_user_id",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "patrol_location_id",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "shift",
+                  "value": "Day",
+                  "disabled": true
+                },
+                {
+                  "key": "checkin_type",
+                  "value": "photo",
+                  "disabled": true
+                },
+                {
+                  "key": "date",
+                  "value": "2026-04-20",
+                  "disabled": true
+                }
               ]
             }
           },
@@ -997,19 +1603,49 @@
   "event": [
     {
       "listen": "prerequest",
-      "script": { "type": "text/javascript", "packages": {}, "exec": [""] }
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [
+          ""
+        ]
+      }
     },
     {
       "listen": "test",
-      "script": { "type": "text/javascript", "packages": {}, "exec": [""] }
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [
+          ""
+        ]
+      }
     }
   ],
   "variable": [
-    { "key": "BASE_URL",   "value": "" },
-    { "key": "ADMIN_URL",  "value": "" },
-    { "key": "SA_URL",     "value": "" },
-    { "key": "token",      "value": "" },
-    { "key": "csrf_token", "value": "" },
-    { "key": "poll_id",    "value": "1" }
+    {
+      "key": "BASE_URL",
+      "value": ""
+    },
+    {
+      "key": "ADMIN_URL",
+      "value": ""
+    },
+    {
+      "key": "SA_URL",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "csrf_token",
+      "value": ""
+    },
+    {
+      "key": "poll_id",
+      "value": "1"
+    }
   ]
 }
