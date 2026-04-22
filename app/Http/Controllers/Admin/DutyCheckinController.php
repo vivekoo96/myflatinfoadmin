@@ -58,7 +58,7 @@ class DutyCheckinController
             ->get();
 
         $shifts = BuildingShift::where('building_id', $building->id)
-            ->orderBy('shift_name')
+            ->orderBy('name')
             ->get();
 
         return view('admin.duty_checkins.index', [

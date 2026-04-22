@@ -93,7 +93,7 @@
                       <option value="">All Shifts</option>
                       @foreach($shifts as $shift)
                       <option value="{{ $shift->id }}" {{ request('building_shift_id') == $shift->id ? 'selected' : '' }}>
-                        {{ $shift->shift_name }}
+                        {{ $shift->name }}
                       </option>
                       @endforeach
                     </select>
@@ -148,7 +148,7 @@
                     <td>{{ $i }}</td>
                     <td>{{ $checkin->guardUser ? ($checkin->guardUser->name ?? ($checkin->guardUser->first_name ?? '') . ' ' . ($checkin->guardUser->last_name ?? '')) : 'N/A' }}</td>
                     <td>{{ $checkin->gate->name ?? 'N/A' }}</td>
-                    <td>{{ $checkin->buildingShift->shift_name ?? 'N/A' }}</td>
+                    <td>{{ $checkin->buildingShift->name ?? 'N/A' }}</td>
                     <td>
                       @if($checkin->status == 'on_time')
                         <span class="badge badge-success">On Time</span>
