@@ -367,8 +367,8 @@ class GuardPatrolController extends Controller
         $guardPatrolCheckins = GuardPatrol::where('guard_user_id', $user->id)
             ->whereDate('checked_in_at', today())
             ->whereIn('patrol_location_id', $allLocations->pluck('id')->toArray())
-            ->distinct('patrol_location_id')
             ->pluck('patrol_location_id')
+            ->unique()
             ->toArray();
 
         $checkedLocationIds = array_merge($checkedLocationIds, $guardPatrolCheckins);
@@ -377,8 +377,8 @@ class GuardPatrolController extends Controller
         $taskLogCheckins = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
             ->whereDate('checked_at', today())
             ->whereIn('patrol_location_id', $allLocations->pluck('id')->toArray())
-            ->distinct('patrol_location_id')
             ->pluck('patrol_location_id')
+            ->unique()
             ->toArray();
 
         $checkedLocationIds = array_merge($checkedLocationIds, $taskLogCheckins);
