@@ -465,4 +465,78 @@ class GuardPatrolController extends Controller
             'data' => $data,
         ]);
     }
+
+    public function getGuardPatrolProgress(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $validation = \Validator::make($request->all(), [
+            'guard_user_id'     => 'required|exists:users,id',
+            'building_shift_id' => 'required|exists:building_shifts,id',
+            'date'              => 'nullable|date_format:Y-m-d',
+        ]);
+
+        if ($validation->fails()) {
+            return response()->json(['success' => false, 'message' => $validation->errors()->first()], 422);
+        }
+
+        $date  = $request->date ? \Carbon\Carbon::parse($request->date) : today();
+        $guard = \App\Models\User::find($request->guard_user_id);
+        $shift = BuildingShift::find($request->building_shift_id);
+
+        $assignment = \App\Models\GuardPatrolAssignment::where('guard_user_id', $guard->id)
+            ->where('building_shift_id', $shift->id)
+            ->where('status', 'Active')
+            ->whereNull('deleted_at')
+            ->first();
+
+        if (!$assignment || !$assignment->gate_id) {
+            return response()->json(['success' => false, 'message' => 'Guard is not assigned to any gate for this shift'], 404);
+        }
+
+        $gate = \App\Models\Gate::find($assignment->gate_id);
+
+        $locations = PatrolLocation::where('gate_id', $gate->id)
+            ->where('building_shift_id', $shift->id)
+            ->where('status', 'Active')
+            ->orderBy('patrol_time')
+            ->get();
+
+        $data = $locations->map(function ($location) use ($guard, $date) {
+            $checkin = GuardPatrol::where('guard_user_id', $guard->id)
+                ->where('patrol_location_id', $location->id)
+                ->whereDate('checked_in_at', $date)
+                ->latest('checked_in_at')
+                ->first();
+
+            return [
+                'id'           => $location->id,
+                'name'         => $location->name,
+                'patrol_time'  => $location->patrol_time,
+                'is_completed' => !!$checkin,
+                'checked_at'   => $checkin ? $checkin->checked_in_at->format('Y-m-d H:i:s') : null,
+                'checkin_type' => $checkin ? $checkin->checkin_type : null,
+            ];
+        });
+
+        $completed = $data->where('is_completed', true)->count();
+        $total     = $data->count();
+
+        return response()->json([
+            'success'          => true,
+            'guard_name'       => $guard->name,
+            'gate_name'        => $gate->name,
+            'shift_name'       => $shift->name . ' (' . $shift->start_time . ' - ' . $shift->end_time . ')',
+            'date'             => $date->toDateString(),
+            'total'            => $total,
+            'completed'        => $completed,
+            'remaining'        => $total - $completed,
+            'progress'         => "$completed/$total",
+            'is_shift_complete'=> $total > 0 && $completed === $total,
+            'data'             => $data,
+        ]);
+    }
 }

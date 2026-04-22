@@ -239,6 +239,7 @@ use App\Http\Controllers\Api\ActivityController;
         Route::get('next-patrol-schedule',[App\Http\Controllers\Api\GuardPatrolController::class,'getNextPatrolSchedule']);
         Route::get('next-patrol-point',[App\Http\Controllers\Api\GuardPatrolController::class,'getNextPatrolPoint']);
         Route::get('patrol-gate-shift-progress',[App\Http\Controllers\Api\GuardPatrolController::class,'getGateShiftProgress']);
+        Route::get('guard-patrol-progress',[App\Http\Controllers\Api\GuardPatrolController::class,'getGuardPatrolProgress']);
 
         // role route  //20nov2025 11:48
         Route::post('my-departments',[CustomerController::class,'my_departments']);

@@ -1439,6 +1439,45 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "guard-patrol-progress",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/guard-patrol-progress?guard_user_id=5&building_shift_id=1&date=2026-04-22",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "guard-patrol-progress"
+              ],
+              "query": [
+                {
+                  "key": "guard_user_id",
+                  "value": "5",
+                  "description": "Guard User ID (required)"
+                },
+                {
+                  "key": "building_shift_id",
+                  "value": "1",
+                  "description": "Building Shift ID (required)"
+                },
+                {
+                  "key": "date",
+                  "value": "2026-04-22",
+                  "description": "Date in Y-m-d format (optional, defaults to today)"
+                }
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
