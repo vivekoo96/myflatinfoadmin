@@ -81,7 +81,7 @@
                       <option value="">All Gates</option>
                       @foreach($gates as $gate)
                       <option value="{{ $gate->id }}" {{ request('gate_id') == $gate->id ? 'selected' : '' }}>
-                        {{ $gate->gate_name }}
+                        {{ $gate->name }}
                       </option>
                       @endforeach
                     </select>
@@ -147,7 +147,7 @@
                   <tr>
                     <td>{{ $i }}</td>
                     <td>{{ $checkin->guardUser ? ($checkin->guardUser->name ?? ($checkin->guardUser->first_name ?? '') . ' ' . ($checkin->guardUser->last_name ?? '')) : 'N/A' }}</td>
-                    <td>{{ $checkin->gate->gate_name ?? 'N/A' }}</td>
+                    <td>{{ $checkin->gate->name ?? 'N/A' }}</td>
                     <td>{{ $checkin->buildingShift->shift_name ?? 'N/A' }}</td>
                     <td>
                       @if($checkin->status == 'on_time')

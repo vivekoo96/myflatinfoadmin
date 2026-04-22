@@ -54,7 +54,7 @@ class DutyCheckinController
             ->get();
 
         $gates = Gate::where('building_id', $building->id)
-            ->orderBy('gate_name')
+            ->orderBy('name')
             ->get();
 
         $shifts = BuildingShift::where('building_id', $building->id)
