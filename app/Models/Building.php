@@ -10,6 +10,10 @@ class Building extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $fillable = [
+        'duty_checkin_interval_minutes',
+    ];
+
     public function user()
     {
         return $this->belongsTo('App\Models\User')->withTrashed();
