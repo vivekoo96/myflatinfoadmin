@@ -243,6 +243,10 @@ use App\Http\Controllers\Api\ActivityController;
         Route::post('patrol-task-location-checkin',[App\Http\Controllers\Api\GuardPatrolController::class,'submitTaskLocationCheckin']);
         Route::get('patrol-task-progress',[App\Http\Controllers\Api\GuardPatrolController::class,'getTaskProgress']);
 
+        // Duty Check-in API
+        Route::get('duty-checkin-status',[App\Http\Controllers\Api\DutyCheckinController::class,'status']);
+        Route::post('duty-checkin',[App\Http\Controllers\Api\DutyCheckinController::class,'checkin']);
+
         // role route  //20nov2025 11:48
         Route::post('my-departments',[CustomerController::class,'my_departments']);
         Route::post('select-department',[CustomerController::class,'select_department']);

@@ -942,7 +942,7 @@
          
           
           @php
-            $isVehicleOpen = request()->is('vehicles*') || request()->is('vehicle-inout*') || request()->is('visitor*') || request()->is('patrol-location*') || request()->is('guard-patrol*') || request()->is('building-shift*') || request()->is('patrol-assignment*');
+            $isVehicleOpen = request()->is('vehicles*') || request()->is('vehicle-inout*') || request()->is('visitor*') || request()->is('patrol-location*') || request()->is('guard-patrol*') || request()->is('building-shift*') || request()->is('patrol-assignment*') || request()->is('duty-checkins*');
             $isVehicleActive = request()->is('vehicles*');
             $isInoutActive = request()->is('vehicle-inouts*');
             $isVisitorActive = request()->is('visitor*');
@@ -1031,6 +1031,12 @@
             </a>
           </li>
           @endif
+          <li class="nav-item">
+            <a href="{{ route('duty-checkin.index') }}" class="nav-link {{ request()->is('duty-checkins*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-user-clock"></i>
+              <p>Duty Check-Ins</p>
+            </a>
+          </li>
           <li class="nav-item">
             <a href="{{ route('delivery-restriction.index') }}" class="nav-link {{ request()->is('delivery-restriction*') ? 'active' : '' }}">
               <i class="nav-icon fas fa-clock"></i>
