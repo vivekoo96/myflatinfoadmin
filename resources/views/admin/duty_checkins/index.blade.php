@@ -69,7 +69,7 @@
                       <option value="">All Guards</option>
                       @foreach($guards as $guard)
                       <option value="{{ $guard->id }}" {{ request('guard_user_id') == $guard->id ? 'selected' : '' }}>
-                        {{ $guard->name }}
+                        {{ $guard->name ?? ($guard->first_name ?? '') . ' ' . ($guard->last_name ?? '') }}
                       </option>
                       @endforeach
                     </select>
@@ -146,7 +146,7 @@
                   <?php $i++; ?>
                   <tr>
                     <td>{{ $i }}</td>
-                    <td>{{ $checkin->guardUser->name ?? 'N/A' }}</td>
+                    <td>{{ $checkin->guardUser ? ($checkin->guardUser->name ?? ($checkin->guardUser->first_name ?? '') . ' ' . ($checkin->guardUser->last_name ?? '')) : 'N/A' }}</td>
                     <td>{{ $checkin->gate->gate_name ?? 'N/A' }}</td>
                     <td>{{ $checkin->buildingShift->shift_name ?? 'N/A' }}</td>
                     <td>

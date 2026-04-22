@@ -50,7 +50,7 @@ class DutyCheckinController
         // Get filter dropdowns
         $guards = User::where('building_id', $building->id)
             ->where('role', 'guard')
-            ->orderBy('name')
+            ->orderBy('first_name')
             ->get();
 
         $gates = Gate::where('building_id', $building->id)
