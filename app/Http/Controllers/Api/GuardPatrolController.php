@@ -103,6 +103,28 @@ class GuardPatrolController extends Controller
             return response()->json(['success' => false, 'message' => 'Shift not found or not active for this building'], 404);
         }
 
+        // Check if current time is at or after patrol_time
+        $currentTime = now()->format('H:i:s');
+        if ($currentTime < $location->patrol_time) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Patrol cannot be started before scheduled time. Start time: ' . $location->patrol_time,
+            ], 403);
+        }
+
+        // Prevent duplicate check-ins for same location today
+        $existingCheckin = GuardPatrol::where('guard_user_id', $user->id)
+            ->where('patrol_location_id', $location->id)
+            ->whereDate('checked_in_at', today())
+            ->first();
+
+        if ($existingCheckin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already checked in at this location today.',
+            ], 409);
+        }
+
         $photo_url = null;
         if ($request->checkin_type === 'photo' && $request->hasFile('photo')) {
             if (!file_exists(public_path('/images/patrols/'))) {
@@ -313,6 +335,76 @@ class GuardPatrolController extends Controller
             'total' => $schedules->count(),
             'completed' => $completed,
             'data' => $schedules,
+        ]);
+    }
+
+    public function getNextPatrolPoint(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $gate = $user->gate;
+        if (!$gate || !$gate->building) {
+            return response()->json(['success' => false, 'message' => 'Please select a gate first using select-gate endpoint'], 403);
+        }
+
+        $building = $gate->building;
+
+        // Get today's check-ins for this guard
+        $todayCheckins = GuardPatrol::where('guard_user_id', $user->id)
+            ->whereDate('checked_in_at', today())
+            ->pluck('patrol_location_id')
+            ->toArray();
+
+        // Get all active patrol locations for this gate, ordered by patrol_time
+        $allLocations = PatrolLocation::where('gate_id', $gate->id)
+            ->where('building_id', $building->id)
+            ->where('status', 'Active')
+            ->with('buildingShift')
+            ->orderBy('patrol_time')
+            ->get();
+
+        $nextLocation = null;
+        $remaining = [];
+
+        foreach ($allLocations as $location) {
+            $isCompleted = in_array($location->id, $todayCheckins);
+
+            $locationData = [
+                'id' => $location->id,
+                'name' => $location->name,
+                'patrol_time' => $location->patrol_time,
+                'shift_name' => $location->buildingShift ? $location->buildingShift->name : 'N/A',
+                'shift_start' => $location->buildingShift ? $location->buildingShift->start_time : null,
+                'shift_end' => $location->buildingShift ? $location->buildingShift->end_time : null,
+                'qr_string' => $location->qr_string,
+                'is_completed' => $isCompleted,
+            ];
+
+            // If not completed and this is the first uncompleted, set as next
+            if (!$isCompleted && !$nextLocation) {
+                $nextLocation = $locationData;
+            }
+
+            // Add all uncompleted to remaining list
+            if (!$isCompleted) {
+                $remaining[] = $locationData;
+            }
+        }
+
+        $completed = count($todayCheckins);
+        $total = $allLocations->count();
+
+        return response()->json([
+            'success' => true,
+            'gate_name' => $gate->name,
+            'completed' => $completed,
+            'total' => $total,
+            'progress' => "$completed/$total",
+            'next_patrol_point' => $nextLocation,
+            'remaining_patrols' => $remaining,
         ]);
     }
 }

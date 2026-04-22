@@ -812,6 +812,62 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "next-patrol-schedule",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/next-patrol-schedule",
+              "host": ["{{BASE_URL}}"],
+              "path": ["next-patrol-schedule"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Note: Patrol Progress",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "Returns: 'total' (total schedules), 'completed' (count completed today), 'data[]' with is_completed flag and last_checked_at timestamp. Used for progress bar on Guard Patrolling screen (e.g. 2/6)",
+              "host": [],
+              "path": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "next-patrol-point",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/next-patrol-point",
+              "host": ["{{BASE_URL}}"],
+              "path": ["next-patrol-point"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Note: Next Patrol Point Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "Returns: 'next_patrol_point' (next uncompleted location), 'remaining_patrols' (all uncompleted ordered by time), 'completed' count, 'total' count, 'progress' (e.g. '2/6'). Main Guard Patrolling screen uses this.",
+              "host": [],
+              "path": []
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -832,7 +888,7 @@
           "response": []
         },
         {
-          "name": "create-patrol-location",
+          "name": "create-patrol-schedule",
           "request": {
             "method": "POST",
             "header": [{ "key": "X-CSRF-TOKEN", "value": "{{csrf_token}}" }],
@@ -840,15 +896,28 @@
               "mode": "urlencoded",
               "urlencoded": [
                 { "key": "_token", "value": "{{csrf_token}}" },
-                { "key": "name", "value": "Main Gate" },
-                { "key": "description", "value": "Primary entrance to building" },
-                { "key": "status", "value": "Active" }
+                { "key": "gate_id", "value": "1", "type": "text" },
+                { "key": "building_shift_id", "value": "1", "type": "text" },
+                { "key": "patrol_time", "value": "08:30", "type": "text" }
               ]
             },
             "url": {
               "raw": "{{ADMIN_URL}}/patrol-location",
               "host": ["{{ADMIN_URL}}"],
               "path": ["patrol-location"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Note: Auto-Generated Schedule",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "Schedule name is auto-generated as: '{Gate Name} - {Shift Name} - {Patrol Time}' (e.g. 'Main Gate - Morning - 08:30'). QR code auto-generated on creation. Notifies all guards assigned to that gate+shift combination.",
+              "host": [],
+              "path": []
             }
           },
           "response": []
