@@ -101,7 +101,7 @@ class DutyCheckinController
             ->whereDate('checked_in_at', $now->toDateString())
             ->orderBy('checked_in_at', 'desc')
             ->take(5)
-            ->get(['checked_in_at', 'status']);
+            ->get(['checked_in_at', 'scheduled_at', 'status']);
 
         return response()->json([
             'success' => true,
@@ -173,7 +173,9 @@ class DutyCheckinController
         }
 
         // Determine status based on grace period
-        $minutesAfterScheduled = $now->diffInMinutes($scheduledAt, false);
+        // Positive = checked in after scheduled, negative = checked in before scheduled
+        $minutesAfterScheduled = $now->diffInMinutes($scheduledAt);
+        // on_time if checked in before scheduled or within grace period, delayed if after grace period
         $status = $minutesAfterScheduled <= $graceperiod ? 'on_time' : 'delayed';
 
         // Create duty check-in record
