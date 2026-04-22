@@ -63,7 +63,7 @@
                   </thead>
                   <tbody>
                     <?php $i = 0; ?>
-                  @forelse($locations as $location)
+                  @forelse($locations->whereNull('gate_id') as $location)
                   <?php $i++; ?>
                   <tr>
                     <td>{{$i}}</td>
