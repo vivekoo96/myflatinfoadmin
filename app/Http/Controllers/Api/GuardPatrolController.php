@@ -487,6 +487,14 @@ class GuardPatrolController extends Controller
         $guard = \App\Models\User::find($request->guard_user_id);
         $shift = BuildingShift::find($request->building_shift_id);
 
+        if (!$guard) {
+            return response()->json(['success' => false, 'message' => 'Guard not found'], 404);
+        }
+
+        if (!$shift) {
+            return response()->json(['success' => false, 'message' => 'Shift not found'], 404);
+        }
+
         $assignment = \App\Models\GuardPatrolAssignment::where('guard_user_id', $guard->id)
             ->where('building_shift_id', $shift->id)
             ->where('status', 'Active')
