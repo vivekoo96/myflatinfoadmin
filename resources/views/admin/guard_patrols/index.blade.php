@@ -117,8 +117,9 @@
                     <th>S No</th>
                     <th>Guard Name</th>
                     <th>Location</th>
+                    <th>Log Type</th>
                     <th>Shift</th>
-                    <th>Type</th>
+                    <th>Check Method</th>
                     <th>Checked In At</th>
                     <th>Photo</th>
                   </tr>
@@ -131,7 +132,14 @@
                     <td>{{ $i }}</td>
                     <td>{{ $patrol->guardUser ? ($patrol->guardUser->name ?? ($patrol->guardUser->first_name ?? '') . ' ' . ($patrol->guardUser->last_name ?? '')) : 'N/A' }}</td>
                     <td>{{ $patrol->patrolLocation ? $patrol->patrolLocation->name : 'N/A' }}</td>
-                    <td>{{ $patrol->shift }}</td>
+                    <td>
+                      @if(($patrol->log_type ?? '') == 'task')
+                        <span class="badge badge-info">Task</span>
+                      @else
+                        <span class="badge badge-secondary">General</span>
+                      @endif
+                    </td>
+                    <td>{{ $patrol->shift ?? 'N/A' }}</td>
                     <td>
                       @if($patrol->checkin_type == 'photo')
                         <span class="badge badge-primary">Photo</span>

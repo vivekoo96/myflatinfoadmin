@@ -36,29 +36,80 @@ class GuardPatrolController extends Controller
 
         $locations = PatrolLocation::where('building_id', $building->id)->get();
 
-        $query = GuardPatrol::where('building_id', $building->id)
-            ->with(['guardUser', 'patrolLocation']);
+        // Query 1: General Patrols
+        $generalQuery = \DB::table('guard_patrols')
+            ->where('building_id', $building->id)
+            ->select([
+                'id',
+                'guard_user_id',
+                'patrol_location_id',
+                'checkin_type',
+                'shift',
+                'photo_url',
+                'checked_in_at',
+                \DB::raw("'general' as log_type")
+            ]);
 
-        // Apply filters
+        // Query 2: Task Logs (joining to get shift info)
+        $taskQuery = \DB::table('patrol_task_logs')
+            ->join('patrol_locations', 'patrol_task_logs.patrol_task_id', '=', 'patrol_locations.id')
+            ->leftJoin('building_shifts', 'patrol_locations.building_shift_id', '=', 'building_shifts.id')
+            ->where('patrol_task_logs.building_id', $building->id)
+            ->select([
+                'patrol_task_logs.id',
+                'patrol_task_logs.guard_user_id',
+                'patrol_task_logs.patrol_location_id', // This is the physical point
+                'patrol_task_logs.checkin_type',
+                'building_shifts.name as shift',
+                'patrol_task_logs.photo_url',
+                'patrol_task_logs.checked_at as checked_in_at',
+                \DB::raw("'task' as log_type")
+            ]);
+
+        // Apply same filters to both
         if ($request->filled('guard_user_id')) {
-            $query->where('guard_user_id', $request->guard_user_id);
+            $generalQuery->where('guard_user_id', $request->guard_user_id);
+            $taskQuery->where('patrol_task_logs.guard_user_id', $request->guard_user_id);
         }
         if ($request->filled('patrol_location_id')) {
-            $query->where('patrol_location_id', $request->patrol_location_id);
+            $generalQuery->where('patrol_location_id', $request->patrol_location_id);
+            $taskQuery->where('patrol_task_logs.patrol_location_id', $request->patrol_location_id);
         }
         if ($request->filled('shift')) {
-            $query->where('shift', $request->shift);
+            $generalQuery->where('shift', $request->shift);
+            $taskQuery->where('building_shifts.name', $request->shift);
         }
         if ($request->filled('checkin_type')) {
-            $query->where('checkin_type', $request->checkin_type);
+            $generalQuery->where('checkin_type', $request->checkin_type);
+            $taskQuery->where('patrol_task_logs.checkin_type', $request->checkin_type);
         }
         if ($request->filled('date')) {
-            $query->whereDate('checked_in_at', $request->date);
+            $generalQuery->whereDate('checked_in_at', $request->date);
+            $taskQuery->whereDate('patrol_task_logs.checked_at', $request->date);
         }
 
-        $patrols = $query->orderBy('checked_in_at', 'desc')
+        // Combine and Paginate using union
+        // Wrap in a subquery to allow sorting the union result
+        $unionSql = $generalQuery->union($taskQuery)->toSql();
+        $bindings = array_merge($generalQuery->getBindings(), $taskQuery->getBindings());
+
+        $combinedResults = \DB::table(\DB::raw("($unionSql) as combined_logs"))
+            ->mergeBindings($generalQuery->union($taskQuery))
+            ->orderBy('checked_in_at', 'desc')
             ->paginate(20)
             ->appends($request->query());
+
+        // Transform results to include relations for the view
+        $patrols = $combinedResults->getCollection()->map(function($item) {
+            $item->guardUser = \App\Models\User::find($item->guard_user_id);
+            $item->patrolLocation = \App\Models\PatrolLocation::find($item->patrol_location_id);
+            if ($item->checked_in_at) {
+                $item->checked_in_at = \Carbon\Carbon::parse($item->checked_in_at);
+            }
+            return $item;
+        });
+        $combinedResults->setCollection($patrols);
+        $patrols = $combinedResults;
 
         $filters = array_merge(
             ['guard_user_id' => '', 'patrol_location_id' => '', 'shift' => '', 'checkin_type' => '', 'date' => ''],
