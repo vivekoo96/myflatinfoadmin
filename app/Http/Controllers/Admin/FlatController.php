@@ -478,6 +478,30 @@ class FlatController extends Controller
         return response()->json(['success' => false, 'message' => 'Flat not found']);
     }
 
+    public function getFlatDetails(Request $request)
+    {
+        $flat = Flat::with(['owner', 'tanent'])->find($request->flat_id);
+        if ($flat) {
+            return response()->json([
+                'success' => true,
+                'owner' => $flat->owner ? [
+                    'id' => $flat->owner->id,
+                    'name' => $flat->owner->name,
+                    'email' => $flat->owner->email,
+                    'phone' => $flat->owner->phone,
+                ] : null,
+                'tenant' => $flat->tanent ? [
+                    'id' => $flat->tanent->id,
+                    'name' => $flat->tanent->name,
+                    'email' => $flat->tanent->email,
+                    'phone' => $flat->tanent->phone,
+                ] : null,
+                'living_status' => $flat->living_status
+            ]);
+        }
+        return response()->json(['success' => false, 'message' => 'Flat not found']);
+    }
+
     public function store_parking_flat(Request $request) {
         if(Auth::User()->role == 'BA' || Auth::User()->hasRole('security') )
         {

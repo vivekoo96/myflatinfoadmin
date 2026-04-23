@@ -199,6 +199,7 @@ Route::middleware('admin')->group(function () {
         Route::post('/update-corpus-fund',[FlatController::class, 'update_corpus_fund'])->middleware('corpusfund');
         Route::post('/get-flat',[FlatController::class, 'get_flat']);
         Route::post('/get-flat-data',[FlatController::class, 'get_flat_data']);
+        Route::post('/get-flat-details',[FlatController::class, 'getFlatDetails'])->name('get.flat.details');
         Route::post('/store-parking-flat',[FlatController::class, 'store_parking_flat']);
         Route::post('/delete-parking-flat',[FlatController::class, 'delete_parking_flat']);
 

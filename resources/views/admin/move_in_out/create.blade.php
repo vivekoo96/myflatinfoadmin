@@ -39,9 +39,8 @@
                   </div>
                   <div class="form-group">
                     <label>Type</label>
-                    <select name="type" class="form-control" required>
+                    <select name="type" class="form-control" required readonly>
                       <option value="Move-In">Move-In</option>
-                      <option value="Move-Out">Move-Out</option>
                     </select>
                   </div>
                   <div class="form-group">
@@ -55,7 +54,7 @@
                 <div class="col-md-6">
                   <div class="form-group">
                     <label>Email ID</label>
-                    <input type="email" name="email" class="form-control" placeholder="Enter email" required>
+                    <input type="email" name="email" id="email_field" class="form-control" placeholder="Enter email" required>
                   </div>
                   <div class="form-group">
                     <label>Phone Number</label>
@@ -68,10 +67,9 @@
                 </div>
               </div>
               <div id="fetched_details" style="display:none;" class="mt-3 p-3 bg-light border rounded">
-                <h5>Fetched Details</h5>
-                <p><strong>Name:</strong> <span id="fetched_name"></span></p>
-                <p><strong>Block:</strong> <span id="fetched_block"></span></p>
-                <p><strong>Flat:</strong> <span id="fetched_flat"></span></p>
+                <h5>Flat Occupant Details</h5>
+                <p><strong>Name:</strong> <span id="occupant_name"></span></p>
+                <p><strong>Status:</strong> <span id="occupant_status"></span></p>
               </div>
             </div>
             <div class="card-footer">
@@ -90,43 +88,53 @@
 $(document).ready(function() {
     $('.select2').select2();
 
-    // Fetch details by email/phone
-    $('#phone_field, input[name="email"]').on('blur', function() {
-        var email = $('input[name="email"]').val();
-        var phone = $('#phone_field').val();
+    var flatData = null;
+
+    function populateFields() {
+        var personType = $('select[name="person_type"]').val();
+        if(!flatData) return;
+
+        var occupant = (personType === 'Owner') ? flatData.owner : flatData.tenant;
         
-        if(email || phone) {
+        if(occupant) {
+            $('#email_field').val(occupant.email);
+            $('#phone_field').val(occupant.phone);
+            $('#occupant_name').text(occupant.name);
+            $('#occupant_status').text(personType);
+            $('#fetched_details').show();
+        } else {
+            $('#email_field').val('');
+            $('#phone_field').val('');
+            $('#fetched_details').hide();
+        }
+    }
+
+    $('select[name="flat_id"]').on('change', function() {
+        var flatId = $(this).val();
+        if(flatId) {
             $.ajax({
-                url: "{{ url('api/get-user-by-contact') }}",
+                url: "{{ route('get.flat.details') }}",
                 type: 'POST',
                 data: {
-                    email: email,
-                    phone: phone,
+                    flat_id: flatId,
                     _token: "{{ csrf_token() }}"
                 },
                 success: function(response) {
                     if(response.success) {
-                        $('#fetched_name').text(response.user.name);
-                        $('#fetched_details').show();
-                    } else {
-                        $('#fetched_details').hide();
+                        flatData = response;
+                        // Automatically switch person type based on living status if needed
+                        if(response.living_status === 'Owner' || response.living_status === 'Tanent') {
+                            $('select[name="person_type"]').val(response.living_status);
+                        }
+                        populateFields();
                     }
                 }
             });
         }
     });
 
-    $('select[name="flat_id"]').on('change', function() {
-        var flatId = $(this).val();
-        if(flatId) {
-            var flatName = $(this).find('option:selected').text();
-            $('#fetched_flat').text(flatName);
-            // Block is usually in the text like "Flat 101 (Block A)"
-            var blockMatch = flatName.match(/\(([^)]+)\)/);
-            if(blockMatch) {
-                $('#fetched_block').text(blockMatch[1]);
-            }
-        }
+    $('select[name="person_type"]').on('change', function() {
+        populateFields();
     });
 });
 </script>
