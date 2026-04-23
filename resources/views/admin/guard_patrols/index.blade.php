@@ -63,7 +63,7 @@
                           <option value="">-- All Locations --</option>
                           @foreach($locations as $location)
                             <option value="{{ $location->id }}" {{ ($filters['patrol_location_id'] ?? '') == $location->id ? 'selected' : '' }}>
-                              {{ $location->name }}
+                              {{ $location->display_name }}
                             </option>
                           @endforeach
                         </select>
@@ -73,9 +73,10 @@
                       <div class="form-group">
                         <label>Shift:</label>
                         <select name="shift" class="form-control">
-                          <option value="">-- All --</option>
-                          <option value="Day" {{ ($filters['shift'] ?? '') == 'Day' ? 'selected' : '' }}>Day</option>
-                          <option value="Night" {{ ($filters['shift'] ?? '') == 'Night' ? 'selected' : '' }}>Night</option>
+                          <option value="">-- All Shifts --</option>
+                          @foreach($shifts as $s)
+                            <option value="{{ $s->name }}" {{ ($filters['shift'] ?? '') == $s->name ? 'selected' : '' }}>{{ $s->name }}</option>
+                          @endforeach
                         </select>
                       </div>
                     </div>
@@ -83,7 +84,7 @@
                       <div class="form-group">
                         <label>Type:</label>
                         <select name="checkin_type" class="form-control">
-                          <option value="">-- All --</option>
+                          <option value="">-- All Types --</option>
                           <option value="photo" {{ ($filters['checkin_type'] ?? '') == 'photo' ? 'selected' : '' }}>Photo</option>
                           <option value="qr" {{ ($filters['checkin_type'] ?? '') == 'qr' ? 'selected' : '' }}>QR</option>
                         </select>
@@ -131,7 +132,12 @@
                   <tr>
                     <td>{{ $i }}</td>
                     <td>{{ $patrol->guardUser ? ($patrol->guardUser->name ?? ($patrol->guardUser->first_name ?? '') . ' ' . ($patrol->guardUser->last_name ?? '')) : 'N/A' }}</td>
-                    <td>{{ $patrol->patrolLocation ? $patrol->patrolLocation->name : 'N/A' }}</td>
+                    <td>
+                      {{ $patrol->patrolLocation ? $patrol->patrolLocation->name : 'N/A' }}
+                      @if($patrol->patrolLocation && $patrol->patrolLocation->gate)
+                        <br><small class="text-muted">Route: {{ $patrol->patrolLocation->gate->name }}</small>
+                      @endif
+                    </td>
                     <td>
                       @if(($patrol->log_type ?? '') == 'task')
                         <span class="badge badge-info">Task</span>

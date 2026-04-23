@@ -34,7 +34,19 @@ class GuardPatrolController extends Controller
             $guards = $buildingUsers->pluck('user', 'user_id');
         }
 
-        $locations = PatrolLocation::where('building_id', $building->id)->get();
+        $shifts = BuildingShift::where('building_id', $building->id)->get();
+
+        $locations = PatrolLocation::where('building_id', $building->id)
+            ->with('gate')
+            ->get()
+            ->map(function($loc) {
+                if ($loc->gate) {
+                    $loc->display_name = $loc->name . ' (Route: ' . ($loc->gate->name ?? 'N/A') . ')';
+                } else {
+                    $loc->display_name = $loc->name;
+                }
+                return $loc;
+            });
 
         // Query 1: General Patrols
         $generalQuery = \DB::table('guard_patrols')
@@ -112,7 +124,7 @@ class GuardPatrolController extends Controller
             $request->only(['guard_user_id', 'patrol_location_id', 'shift', 'checkin_type', 'date'])
         );
 
-        return view('admin.guard_patrols.index', compact('patrols', 'guards', 'locations', 'filters'));
+        return view('admin.guard_patrols.index', compact('patrols', 'guards', 'locations', 'filters', 'shifts'));
     }
 
     public function checkin()
