@@ -41,11 +41,12 @@ class PatrolLocationController extends Controller
 
         $building = Auth::user()->building;
 
-        // Validate patrol schedule
+        // Validate
         $rules = [
-            'gate_id' => 'required|exists:gates,id',
-            'building_shift_id' => 'required|exists:building_shifts,id',
-            'patrol_time' => 'required|date_format:H:i',
+            'name' => 'required_without:gate_id',
+            'gate_id' => 'nullable|exists:gates,id',
+            'building_shift_id' => 'required_with:gate_id|nullable|exists:building_shifts,id',
+            'patrol_time' => 'required_with:gate_id|nullable|date_format:H:i',
         ];
 
         $validation = \Validator::make($request->all(), $rules);
@@ -53,51 +54,58 @@ class PatrolLocationController extends Controller
             return redirect()->back()->with('error', $validation->errors()->first());
         }
 
-        // Verify gate and shift belong to this building
-        $gate = Gate::where('id', $request->gate_id)->where('building_id', $building->id)->first();
-        if (!$gate) {
-            return redirect()->back()->with('error', 'Gate not found for this building');
+        $name = $request->name;
+        $gate = null;
+        $shift = null;
+
+        if ($request->gate_id) {
+            // Verify gate and shift belong to this building
+            $gate = Gate::where('id', $request->gate_id)->where('building_id', $building->id)->first();
+            if (!$gate) {
+                return redirect()->back()->with('error', 'Gate not found for this building');
+            }
+
+            $shift = BuildingShift::where('id', $request->building_shift_id)->where('building_id', $building->id)->first();
+            if (!$shift) {
+                return redirect()->back()->with('error', 'Shift not found for this building');
+            }
+
+            // Validate patrol_time is within shift hours
+            if ($request->patrol_time < $shift->start_time || $request->patrol_time > $shift->end_time) {
+                return redirect()->back()->with('error', 'Patrol time must be between ' . $shift->start_time . ' and ' . $shift->end_time);
+            }
+
+            // Auto-generate name from gate, shift, and time
+            $name = $gate->name . ' - ' . $shift->name . ' - ' . $request->patrol_time;
         }
 
-        $shift = BuildingShift::where('id', $request->building_shift_id)->where('building_id', $building->id)->first();
-        if (!$shift) {
-            return redirect()->back()->with('error', 'Shift not found for this building');
-        }
-
-        // Validate patrol_time is within shift hours
-        if ($request->patrol_time < $shift->start_time || $request->patrol_time > $shift->end_time) {
-            return redirect()->back()->with('error', 'Patrol time must be between ' . $shift->start_time . ' and ' . $shift->end_time);
-        }
-
-        $msg = 'Patrol schedule added successfully';
+        $msg = 'Patrol item added successfully';
         $location = new PatrolLocation();
         $isNew = false;
 
         if ($request->id) {
             $location = PatrolLocation::where('id', $request->id)->where('building_id', $building->id)->first();
             if (!$location) {
-                return redirect()->back()->with('error', 'Patrol schedule not found');
+                return redirect()->back()->with('error', 'Patrol item not found');
             }
-            $msg = 'Patrol schedule updated successfully';
+            $msg = 'Patrol item updated successfully';
         } else {
             // Generate unique QR string only on creation
             $location->qr_string = Str::random(32);
             $isNew = true;
         }
 
-        // Auto-generate name from gate, shift, and time
-        $name = $gate->name . ' - ' . $shift->name . ' - ' . $request->patrol_time;
-
         $location->building_id = $building->id;
         $location->name = $name;
+        $location->description = $request->description;
         $location->gate_id = $request->gate_id;
         $location->building_shift_id = $request->building_shift_id;
         $location->patrol_time = $request->patrol_time;
-        $location->status = 'Active';
+        $location->status = $request->status ?? 'Active';
         $location->save();
 
         // Notify guards assigned to this gate + shift if new schedule
-        if ($isNew) {
+        if ($isNew && $location->gate_id) {
             $assignments = \App\Models\GuardPatrolAssignment::where('gate_id', $location->gate_id)
                 ->where('building_shift_id', $location->building_shift_id)
                 ->where('building_id', $building->id)

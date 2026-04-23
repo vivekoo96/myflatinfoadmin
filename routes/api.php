@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\MeetingMinuteController;
 use App\Http\Controllers\Api\MeetingController;
 use App\Http\Controllers\Api\VideoTutorialController;
 use App\Http\Controllers\Api\ActivityController;
+use App\Http\Controllers\Api\MoveInOutApiController;
 
 // Route::prefix('customer')->group(function () {
     Route::post('register',[CustomerController::class,'register']);
@@ -26,6 +27,7 @@ use App\Http\Controllers\Api\ActivityController;
     Route::post('onboarding',[CustomerController::class,'onboarding']);
     Route::post('facility-failed-webhook',[WebhookController::class,'facility_failed_webhook']);
     Route::post('send-push-notification',[CustomerController::class,'send_push_notification']);
+    Route::post('get-user-by-contact', [MoveInOutApiController::class, 'get_user_by_contact']);
    
     
     Route::middleware(['auth:api'])->group(function (){
@@ -45,6 +47,7 @@ use App\Http\Controllers\Api\ActivityController;
         
         Route::post('get-flats',[CustomerController::class,'get_flats']);
         Route::post('select-flat',[CustomerController::class,'select_flat']);
+        Route::get('get-active-passcode', [MoveInOutApiController::class, 'get_active_passcode']);
 
       Route::post('get-issue-comments-user',[CustomerController::class,'get_issue_comments_user']);
 
@@ -98,6 +101,8 @@ use App\Http\Controllers\Api\ActivityController;
             Route::post('update-checkin-checkout-status',[CustomerController::class,'update_checkin_checkout_status']);
             Route::post('create-gate-pass',[CustomerController::class,'create_gate_pass']);
             Route::post('get-gate-passes',[CustomerController::class,'get_gate_passes']);
+            Route::post('create-tanent-move-in', [MoveInOutApiController::class, 'create_tanent_move_in']);
+            Route::post('create-move-out-request', [MoveInOutApiController::class, 'create_move_out_request']);
             Route::post('take-gate-pass-action',[CustomerController::class,'take_gate_pass_action']);
             Route::post('gate-pass-details',[CustomerController::class,'gate_pass_details']);
             Route::post('my-visitor-in-out-history',[CustomerController::class,'my_visitor_in_out_history']);
@@ -228,6 +233,10 @@ use App\Http\Controllers\Api\ActivityController;
             Route::get('get-notes',[CustomerController::class,'get_security_notes']);
             Route::get('get-note',[CustomerController::class,'get_security_note']);
             Route::post('update-note',[CustomerController::class,'update_security_note']);
+            Route::post('move-in-out-verify', [MoveInOutApiController::class, 'verify_passcode']);
+            Route::post('move-in-out-submit', [MoveInOutApiController::class, 'submit_entry']);
+            Route::post('get-security-requests', [MoveInOutApiController::class, 'get_security_requests']);
+            Route::post('owner-approve-move-out', [MoveInOutApiController::class, 'owner_approve_move_out']);
 
         });
 

@@ -99,4 +99,10 @@ class Flat extends Model
 }
 
     
+    public function pendingDues()
+    {
+        $maintenance_unpaid = $this->maintenance_payments()->where('status', 'Unpaid')->sum('amount');
+        $essential_unpaid = $this->essential_payments()->where('status', 'Unpaid')->sum('amount');
+        return $maintenance_unpaid + $essential_unpaid;
+    }
 }

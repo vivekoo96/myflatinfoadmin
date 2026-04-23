@@ -942,10 +942,11 @@
          
           
           @php
-            $isVehicleOpen = request()->is('vehicles*') || request()->is('vehicle-inout*') || request()->is('visitor*') || request()->is('patrol-location*') || request()->is('guard-patrol*') || request()->is('building-shift*') || request()->is('patrol-assignment*') || request()->is('duty-checkins*');
+            $isVehicleOpen = request()->is('vehicles*') || request()->is('vehicle-inout*') || request()->is('visitor*') || request()->is('move-in-out*') || request()->is('patrol-location*') || request()->is('guard-patrol*') || request()->is('building-shift*') || request()->is('patrol-assignment*') || request()->is('duty-checkins*');
             $isVehicleActive = request()->is('vehicles*');
             $isInoutActive = request()->is('vehicle-inouts*');
             $isVisitorActive = request()->is('visitor*');
+            $isMoveInOutActive = request()->is('move-in-out*');
             
             // Check access for Security Management (Vehicle)
             $hasVehicleFeature = $building && $building->hasPermission('Vehicle');
@@ -968,6 +969,13 @@
                       <a href="{{ route('visitor.index') }}" class="nav-link {{ $isVisitorActive ? 'second-active' : '' }} {{ getAccessControl($hasVisitorsAccess && $hasVehicleFeature) }}">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Visitors</p>
+                      </a>
+                  </li>
+                  
+                  <li class="nav-item">
+                      <a href="{{ route('move-in-out.index') }}" class="nav-link {{ $isMoveInOutActive ? 'second-active' : '' }} {{ getAccessControl($hasVisitorsAccess && $hasVehicleFeature) }}">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Move-In / Move-Out</p>
                       </a>
                   </li>
                   

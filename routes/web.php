@@ -48,6 +48,7 @@ use App\Http\Controllers\Admin\DeliveryRestrictionController;
 use App\Http\Controllers\Admin\GstController;
 use App\Http\Controllers\Admin\AssetController;
 use App\Http\Controllers\Admin\AssetAmcController;
+use App\Http\Controllers\Admin\MoveInOutController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\Setting;
@@ -229,7 +230,13 @@ Route::middleware('admin')->group(function () {
         Route::resource('/facility', FacilityController::class)->middleware('facility');
         Route::resource('/timing', TimingController::class)->middleware('facility');
         Route::resource('/visitor', VisitorController::class)->middleware('visitor');
-         Route::get('/visitor/user-history/{phone}', [VisitorController::class, 'userHistory'])->name('visitor.user.history');
+        Route::get('/move-in-out', [MoveInOutController::class, 'index'])->name('move-in-out.index');
+        Route::get('/move-in-out/create', [MoveInOutController::class, 'create'])->name('move-in-out.create');
+        Route::post('/move-in-out', [MoveInOutController::class, 'store'])->name('move-in-out.store');
+        Route::post('/move-in-out/approve/{id}', [MoveInOutController::class, 'approve'])->name('move-in-out.approve');
+        Route::post('/move-in-out/reject/{id}', [MoveInOutController::class, 'reject'])->name('move-in-out.reject');
+        
+        Route::get('/visitor/user-history/{phone}', [VisitorController::class, 'userHistory'])->name('visitor.user.history');
         Route::get('/visitor/{id}/timeline', [VisitorController::class, 'getTimeline'])->name('visitor.timeline');
         Route::resource('/vehicles', VehicleController::class)->middleware('vehicle');
         Route::resource('/expense', ExpenseController::class);

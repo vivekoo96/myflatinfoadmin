@@ -26,12 +26,10 @@ class GuardController extends Controller
 
     public function index()
     {
-        if(Auth::User()->role == 'BA' || Auth::user()->selectedRole->name == "President" ||  Auth::user()->selectedRole->name == "Security" || Auth::User()->hasPermission('custom.roles') )
-
-        {
+        if (Auth::User()->role == 'BA' || Auth::user()->selectedRole->name == "President" || Auth::user()->selectedRole->name == "Security" || Auth::User()->hasPermission('custom.roles')) {
             //
-        }else{
-            return redirect('permission-denied')->with('error','Permission denied!');
+        } else {
+            return redirect('permission-denied')->with('error', 'Permission denied!');
         }
         $building = Auth::User()->building;
 
@@ -48,7 +46,7 @@ class GuardController extends Controller
                 $g = Guard::where('user_id', $bu->user_id)
                     ->where('building_id', $building->id)
                     ->withTrashed()
-                    ->with(['block','gate'])
+                    ->with(['block', 'gate'])
                     ->first();
 
                 $guardsData[] = (object) [
@@ -75,27 +73,25 @@ class GuardController extends Controller
 
     public function store(Request $request)
     {
-        if(Auth::User()->role == 'BA' || Auth::User()->hasRole('security'))
-        {
+        if (Auth::User()->role == 'BA' || Auth::User()->hasRole('security')) {
             //
-        }else{
-            return redirect('permission-denied')->with('error','Permission denied!');
+        } else {
+            return redirect('permission-denied')->with('error', 'Permission denied!');
         }
         $rules = [
             'building_id' => 'required|exists:buildings,id',
             'block_id' => 'required|exists:blocks,id',
             'gate_id' => 'required|exists:gates,id',
-            'user_id'     => [
+            'user_id' => [
                 'required',
                 'exists:users,id',
                 Rule::unique('guards')
                     ->ignore($request->id) // allow same user for update
                     ->where(function ($query) {
                         return $query->where('status', 'Active') // only active guards block
-                                     ->whereNull('deleted_at');  // only non-deleted guards block
+                            ->whereNull('deleted_at');  // only non-deleted guards block
                     }),
             ],
-            'gate_id' => 'required|exists:gates,id',
             'status' => 'required|in:Active,Inactive',
             'company_name' => 'nullable|string|max:40',
             'password' => 'nullable|string|min:6',
@@ -107,13 +103,13 @@ class GuardController extends Controller
         ];
         $msg = 'Guard added successfully';
         $guard = new Guard();
-    
+
         if ($request->id) {
             $guard = Guard::withTrashed()->find($request->id);
             $msg = 'Guard Updated';
         }
-    
-        $validation = \Validator::make($request->all(), $rules,$messages);
+
+        $validation = \Validator::make($request->all(), $rules, $messages);
 
         if ($validation->fails()) {
             return redirect()->back()->with('error', $validation->errors()->first());
@@ -137,9 +133,9 @@ class GuardController extends Controller
         }
 
         $building = Auth::User()->building;
-        $total_other_users = User::where('created_by', Auth::User()->building_id)->where('created_type','other')->withTrashed()->count();
-        if($building->no_of_other_users <= $total_other_users){
-            return redirect()->back()->with('error', 'Total no of users is '.$building->no_of_other_users.' only');
+        $total_other_users = User::where('created_by', Auth::User()->building_id)->where('created_type', 'other')->withTrashed()->count();
+        if ($building->no_of_other_users <= $total_other_users) {
+            return redirect()->back()->with('error', 'Total no of users is ' . $building->no_of_other_users . ' only');
         }
         $guard->building_id = $request->building_id;
         $guard->block_id = $request->block_id;
@@ -149,7 +145,7 @@ class GuardController extends Controller
         $guard->id_proof_type = $request->id_proof_type;
         $guard->id_proof_number = $request->id_proof_number;
         $guard->save();
-        
+
         // Also save/update in building_users table with guard role
         // Only update guards and building_users status, NOT user status
         $guardRole = $this->getOrCreateGuardRole();
@@ -158,7 +154,7 @@ class GuardController extends Controller
                 ->where('user_id', $request->user_id)
                 ->where('role_id', $guardRole->id)
                 ->first();
-            
+
             if (!$buildingUser) {
                 $buildingUser = new \App\Models\BuildingUser();
                 $buildingUser->building_id = $request->building_id;
@@ -169,7 +165,7 @@ class GuardController extends Controller
             $buildingUser->status = $request->status;
             $buildingUser->save();
         }
-        
+
         // Update user's company name and password if provided
         // BUT DO NOT UPDATE USER STATUS - only guards and building_users status should change
         if (($request->company_name || $request->password) && $request->user_id) {
@@ -184,22 +180,21 @@ class GuardController extends Controller
                 $user->save();
             }
         }
-    
+
         return redirect()->back()->with('success', $msg);
     }
-    
+
     public function store_new_guard(Request $request)
     {
-        if(Auth::User()->role == 'BA' || Auth::User()->hasRole('security'))
-        {
+        if (Auth::User()->role == 'BA' || Auth::User()->hasRole('security')) {
             //
-        }else{
-            return redirect('permission-denied')->with('error','Permission denied!');
+        } else {
+            return redirect('permission-denied')->with('error', 'Permission denied!');
         }
-        
+
         // Check if user already exists by email
         $existingUser = User::where('email', $request->email)->first();
-        
+
         if ($existingUser) {
             // User already exists, use this user
             $user = $existingUser;
@@ -222,7 +217,7 @@ class GuardController extends Controller
                         ];
                         Mail::send('email.password', $info, function ($message) use ($user) {
                             $message->to($user->email, $user->name)
-                                    ->subject('Account Password Updated');
+                                ->subject('Account Password Updated');
                         });
                     } catch (\Exception $e) {
                         \Log::warning('Failed to send password email to existing user: ' . $e->getMessage());
@@ -240,15 +235,15 @@ class GuardController extends Controller
                     'email',
                     'max:255',
                     'regex:/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/',
-                    Rule::unique('users', 'email'), 
+                    Rule::unique('users', 'email'),
                 ],
                 'phone' => [
                     'required',
                     'regex:/^[6-9]\d{9}$/', // Exactly 10 digits and starts with 6, 7, 8, or 9
-                    Rule::unique('users', 'phone'), 
+                    Rule::unique('users', 'phone'),
                 ],
                 'gender' => 'required|in:Male,Female,Others',
-                'password' =>[
+                'password' => [
                     'nullable',
                     'string',
                     'min:8',             // must be at least 10 characters in length
@@ -261,22 +256,21 @@ class GuardController extends Controller
                 'building_id' => 'required|exists:buildings,id',
                 'block_id' => 'required|exists:blocks,id',
                 'gate_id' => 'required|exists:gates,id',
-                'shift' => 'required|string|max:100',
                 'status' => 'required|in:Active,Inactive',
             ];
             // Validate the request
             $validation = Validator::make($request->all(), $rules);
-        
+
             if ($validation->fails()) {
                 return redirect()->back()->with('error', $validation->errors()->first());
             }
-            
+
             $building = Auth::User()->building;
-            $total_other_users = User::where('created_by', Auth::User()->building_id)->where('created_type','other')->withTrashed()->count();
-            if($building->no_of_other_users <= $total_other_users){
-                return redirect()->back()->with('error', 'Total no of users is '.$building->no_of_other_users.' only');
+            $total_other_users = User::where('created_by', Auth::User()->building_id)->where('created_type', 'other')->withTrashed()->count();
+            if ($building->no_of_other_users <= $total_other_users) {
+                return redirect()->back()->with('error', 'Total no of users is ' . $building->no_of_other_users . ' only');
             }
-            
+
             $user = new User();
             $user->role = $request->role;
             $user->first_name = $request->first_name;
@@ -290,7 +284,7 @@ class GuardController extends Controller
             if ($request->password) {
                 $user->password = Hash::make($request->password);
             }
-        
+
             $user->created_by = Auth::User()->building_id;
             $user->created_type = 'other';
             $user->save();
@@ -307,7 +301,7 @@ class GuardController extends Controller
                 try {
                     Mail::send('email.password', $info, function ($message) use ($user) {
                         $message->to($user->email, $user->name)
-                                ->subject('Forget Password');
+                            ->subject('Forget Password');
                     });
                 } catch (\Exception $e) {
                     return response()->json([
@@ -315,10 +309,10 @@ class GuardController extends Controller
                     ], 500);
                 }
             }
-            
+
             $msg = 'Guard added successfully';
         }
-        
+
         $rules_guard = [
             'building_id' => 'required|exists:buildings,id',
             'block_id' => 'required|exists:blocks,id',
@@ -327,7 +321,7 @@ class GuardController extends Controller
             'id_proof_type' => 'nullable|in:Aadhaar,PAN,Voter ID,Passport,Driving License',
             'id_proof_number' => 'nullable|string|max:30',
         ];
-        
+
         $validation = Validator::make($request->all(), $rules_guard);
         if ($validation->fails()) {
             return redirect()->back()->with('error', $validation->errors()->first());
@@ -365,7 +359,7 @@ class GuardController extends Controller
         $guard->id_proof_type = $request->id_proof_type;
         $guard->id_proof_number = $request->id_proof_number;
         $guard->save();
-        
+
         // Also save/update in building_users table with guard role
         $guardRole = $this->getOrCreateGuardRole();
         if ($guardRole) {
@@ -373,7 +367,7 @@ class GuardController extends Controller
                 ->where('user_id', $user->id)
                 ->where('role_id', $guardRole->id)
                 ->first();
-            
+
             if (!$buildingUser) {
                 $buildingUser = new \App\Models\BuildingUser();
                 $buildingUser->building_id = $request->building_id;
@@ -383,25 +377,24 @@ class GuardController extends Controller
             $buildingUser->status = $request->status;
             $buildingUser->save();
         }
-    
+
         return redirect()->back()->with('success', $msg);
     }
 
     public function show($id)
     {
-        if(Auth::User()->role == 'BA' || Auth::User()->hasRole('security') || Auth::User()->hasRole('president') || Auth::User()->hasPermission('custom.roles') )
-        {
+        if (Auth::User()->role == 'BA' || Auth::User()->hasRole('security') || Auth::User()->hasRole('president') || Auth::User()->hasPermission('custom.roles')) {
             //
-        }else{
-            return redirect('permission-denied')->with('error','Permission denied!');
+        } else {
+            return redirect('permission-denied')->with('error', 'Permission denied!');
         }
-        $guard = Guard::where('id',$id)->where('building_id',Auth::User()->building_id)->withTrashed()->first();
-        if(!$guard){
+        $guard = Guard::where('id', $id)->where('building_id', Auth::User()->building_id)->withTrashed()->first();
+        if (!$guard) {
             return redirect()->route('guard.index');
         }
-        return view('admin.guard.show',compact('guard'));
+        return view('admin.guard.show', compact('guard'));
     }
-    
+
     public function edit($id)
     {
         //
@@ -414,14 +407,13 @@ class GuardController extends Controller
 
     public function destroy($id, Request $request)
     {
-        if(Auth::User()->role == 'BA' || Auth::User()->hasRole('security')  )
-        {
+        if (Auth::User()->role == 'BA' || Auth::User()->hasRole('security')) {
             //
-        }else{
-            return redirect('permission-denied')->with('error','Permission denied!');
+        } else {
+            return redirect('permission-denied')->with('error', 'Permission denied!');
         }
         $guard = Guard::where('id', $id)->withTrashed()->firstOrFail();
-    
+
         if ($request->action == 'delete') {
             // Permanent delete requested: force delete guard and corresponding building_users row
             try {
@@ -455,18 +447,18 @@ class GuardController extends Controller
                 ->whereNull('deleted_at')
                 ->where('id', '!=', $guard->id) // exclude self
                 ->exists();
-    
+
             if ($exists) {
                 return response()->json([
                     'msg' => 'This user is already a security guard in another place you cant be restore or update anymore'
                 ], 422);
             }
-    
+
             // Restore
             $guard->status = 'Active';
             $guard->save();
             $guard->restore();
-            
+
             // Also restore in building_users
             $guardRole = $this->getOrCreateGuardRole();
             if ($guardRole) {
@@ -482,7 +474,7 @@ class GuardController extends Controller
                 }
             }
         }
-    
+
         return response()->json([
             'msg' => 'success'
         ], 200);
