@@ -34,7 +34,7 @@ class GuardPatrolController extends Controller
             $guards = $buildingUsers->pluck('user', 'user_id');
         }
 
-        $locations = PatrolLocation::where('building_id', $building->id)->get();
+        $locations = PatrolLocation::where('building_id', $building->id)->where('status', 'Active')->get();
 
         $query = GuardPatrol::where('building_id', $building->id)
             ->with(['guardUser', 'patrolLocation']);
