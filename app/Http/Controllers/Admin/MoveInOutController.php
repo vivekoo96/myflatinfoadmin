@@ -34,7 +34,8 @@ class MoveInOutController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('admin.move_in_out.index', compact('building', 'requests'));
+        $setting = \App\Models\Setting::first();
+        return view('admin.move_in_out.index', compact('building', 'requests', 'setting'));
     }
 
     public function create()
@@ -74,6 +75,10 @@ class MoveInOutController extends Controller
         
         $moveRequest = new MoveInOutRequest($request->all());
         $moveRequest->type = $request->type ?? 'Move-In'; // Default to Move-In
+        if ($user) {
+            $moveRequest->first_name = $user->name ?? $user->first_name;
+            $moveRequest->last_name = $user->last_name ?? '';
+        }
         $moveRequest->building_id = Auth::User()->building_id;
         $moveRequest->user_id = $user ? $user->id : null;
         $moveRequest->status = 'Approved'; // BA created are pre-approved

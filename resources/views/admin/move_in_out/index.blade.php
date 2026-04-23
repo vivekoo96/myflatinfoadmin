@@ -69,6 +69,7 @@
                     <th>Passcode</th>
                     <th>Dues</th>
                     <th>Status</th>
+                    <th>Approver</th>
                     <th>Comment</th>
                     <th>Action</th>
                   </tr>
@@ -83,9 +84,9 @@
                       </span>
                     </td>
                     <td>{{ $req->person_type }}</td>
-                    <td>{{ $req->flat->name }}</td>
-                    <td>{{ $req->user ? $req->user->name : ($req->first_name . ' ' . $req->last_name) }}</td>
-                    <td>{{ $req->user ? $req->user->phone : $req->phone }}</td>
+                    <td>{{ $req->flat->name }} ({{ $req->flat->block->name ?? 'N/A' }})</td>
+                    <td>{{ $req->user ? $req->user->name : ($req->first_name ?: '-') }}</td>
+                    <td>{{ $req->user ? $req->user->phone : ($req->phone ?: '-') }}</td>
                     <td>{{ date('d-m-Y', strtotime($req->date_of_entry_exit)) }}</td>
                     <td>
                       @if($req->passcode)
@@ -113,6 +114,9 @@
                         if($req->status == 'Completed') $badge = 'primary';
                       @endphp
                       <span class="badge badge-{{ $badge }}">{{ $req->status }}</span>
+                    </td>
+                    <td>
+                      {{ $req->approver ? $req->approver->name : '-' }}
                     </td>
                     <td>
                       <small class="text-muted">{{ $req->comment ?? '-' }}</small>
