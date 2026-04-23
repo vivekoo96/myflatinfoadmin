@@ -89,12 +89,8 @@ class GuardPatrolController extends Controller
         }
 
         // Combine and Paginate using union
-        // Wrap in a subquery to allow sorting the union result
-        $unionSql = $generalQuery->union($taskQuery)->toSql();
-        $bindings = array_merge($generalQuery->getBindings(), $taskQuery->getBindings());
-
-        $combinedResults = \DB::table(\DB::raw("($unionSql) as combined_logs"))
-            ->mergeBindings($generalQuery->union($taskQuery))
+        // We use unionAll for better performance and to ensure all logs show up
+        $combinedResults = $generalQuery->unionAll($taskQuery)
             ->orderBy('checked_in_at', 'desc')
             ->paginate(20)
             ->appends($request->query());
