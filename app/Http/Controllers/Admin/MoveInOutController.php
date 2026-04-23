@@ -56,7 +56,7 @@ class MoveInOutController extends Controller
 
         $validator = Validator::make($request->all(), [
             'flat_id' => 'required|exists:flats,id',
-            'type' => 'required|in:Move-In,Move-Out',
+            'type' => 'nullable|in:Move-In,Move-Out',
             'person_type' => 'required|in:Owner,Tanent',
             'email' => 'required|email',
             'phone' => 'required',
@@ -73,6 +73,7 @@ class MoveInOutController extends Controller
         $user = User::where('email', $request->email)->orWhere('phone', $request->phone)->first();
         
         $moveRequest = new MoveInOutRequest($request->all());
+        $moveRequest->type = $request->type ?? 'Move-In'; // Default to Move-In
         $moveRequest->building_id = Auth::User()->building_id;
         $moveRequest->user_id = $user ? $user->id : null;
         $moveRequest->status = 'Approved'; // BA created are pre-approved

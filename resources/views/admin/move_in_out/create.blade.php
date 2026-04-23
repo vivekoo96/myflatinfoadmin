@@ -37,19 +37,7 @@
                       @endforeach
                     </select>
                   </div>
-                  <div class="form-group">
-                    <label>Type</label>
-                    <select name="type" class="form-control" required readonly>
-                      <option value="Move-In">Move-In</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label>Person Type</label>
-                    <select name="person_type" id="person_type_select" class="form-control" required>
-                      <option value="Owner">Owner</option>
-                      <option value="Tanent">Tanent</option>
-                    </select>
-                  </div>
+                  <input type="hidden" name="person_type" id="person_type_hidden">
                   <div class="form-group">
                     <label>Select User</label>
                     <select id="user_select" class="form-control">
@@ -113,7 +101,7 @@ $(document).ready(function() {
 
     function populateFields(personType, email, phone) {
         if(personType) {
-            $('#person_type_select').val(personType);
+            $('#person_type_hidden').val(personType);
         }
         if(email !== undefined) {
             $('#email_field').val(email);
@@ -173,11 +161,6 @@ $(document).ready(function() {
         if(type) {
             populateFields(type, email, phone);
         }
-    });
-
-    $('#person_type_select').on('change', function() {
-        var type = $(this).val();
-        $('#user_select').val(type).trigger('change');
     });
 });
 </script>
