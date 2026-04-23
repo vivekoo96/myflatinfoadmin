@@ -45,9 +45,15 @@
                   </div>
                   <div class="form-group">
                     <label>Person Type</label>
-                    <select name="person_type" class="form-control" required>
+                    <select name="person_type" id="person_type_select" class="form-control" required>
                       <option value="Owner">Owner</option>
                       <option value="Tanent">Tanent</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Select User</label>
+                    <select id="user_select" class="form-control">
+                        <option value="">-- Select Flat First --</option>
                     </select>
                   </div>
                 </div>
@@ -90,22 +96,41 @@ $(document).ready(function() {
 
     var flatData = null;
 
-    function populateFields() {
-        var personType = $('select[name="person_type"]').val();
-        if(!flatData) return;
+    function populateUserSelect() {
+        var $userSelect = $('#user_select');
+        $userSelect.empty();
+        $userSelect.append('<option value="">-- Select User --</option>');
 
-        var occupant = (personType === 'Owner') ? flatData.owner : flatData.tenant;
+        if (flatData) {
+            if (flatData.owner) {
+                $userSelect.append('<option value="Owner" data-email="'+flatData.owner.email+'" data-phone="'+flatData.owner.phone+'">Owner: ' + flatData.owner.name + '</option>');
+            }
+            if (flatData.tenant) {
+                $userSelect.append('<option value="Tanent" data-email="'+flatData.tenant.email+'" data-phone="'+flatData.tenant.phone+'">Tenant: ' + flatData.tenant.name + '</option>');
+            }
+        }
+    }
+
+    function populateFields(personType, email, phone) {
+        if(personType) {
+            $('#person_type_select').val(personType);
+        }
+        if(email !== undefined) {
+            $('#email_field').val(email);
+        }
+        if(phone !== undefined) {
+            $('#phone_field').val(phone);
+        }
         
-        if(occupant) {
-            $('#email_field').val(occupant.email);
-            $('#phone_field').val(occupant.phone);
-            $('#occupant_name').text(occupant.name);
-            $('#occupant_status').text(personType);
-            $('#fetched_details').show();
-        } else {
-            $('#email_field').val('');
-            $('#phone_field').val('');
-            $('#fetched_details').hide();
+        if(flatData) {
+            var occupant = (personType === 'Owner') ? flatData.owner : flatData.tenant;
+            if(occupant) {
+                $('#occupant_name').text(occupant.name);
+                $('#occupant_status').text(personType);
+                $('#fetched_details').show();
+            } else {
+                $('#fetched_details').hide();
+            }
         }
     }
 
@@ -122,19 +147,37 @@ $(document).ready(function() {
                 success: function(response) {
                     if(response.success) {
                         flatData = response;
-                        // Automatically switch person type based on living status if needed
+                        populateUserSelect();
+                        
+                        // Default to current living status if possible
                         if(response.living_status === 'Owner' || response.living_status === 'Tanent') {
-                            $('select[name="person_type"]').val(response.living_status);
+                            var type = response.living_status;
+                            $('#user_select').val(type);
+                            var occupant = (type === 'Owner') ? response.owner : response.tenant;
+                            if(occupant) {
+                                populateFields(type, occupant.email, occupant.phone);
+                            }
                         }
-                        populateFields();
                     }
                 }
             });
         }
     });
 
-    $('select[name="person_type"]').on('change', function() {
-        populateFields();
+    $('#user_select').on('change', function() {
+        var selected = $(this).find('option:selected');
+        var type = $(this).val();
+        var email = selected.data('email');
+        var phone = selected.data('phone');
+        
+        if(type) {
+            populateFields(type, email, phone);
+        }
+    });
+
+    $('#person_type_select').on('change', function() {
+        var type = $(this).val();
+        $('#user_select').val(type).trigger('change');
     });
 });
 </script>
