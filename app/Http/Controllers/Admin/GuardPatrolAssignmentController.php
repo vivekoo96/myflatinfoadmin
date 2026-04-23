@@ -93,9 +93,8 @@ class GuardPatrolAssignmentController extends Controller
             return redirect()->back()->with('error', 'Shift not found for this building');
         }
 
-        // Check if THIS SAME GUARD already has an assignment at SAME gate/shift (prevent duplicates per guard)
+        // Check if THIS SAME GUARD already has an assignment in THIS SAME shift (prevent multiple gates per guard per shift)
         $existingAssignment = GuardPatrolAssignment::where('guard_user_id', $request->guard_user_id)
-            ->where('gate_id', $request->gate_id)
             ->where('building_shift_id', $request->building_shift_id)
             ->where('status', 'Active')
             ->whereNull('deleted_at');
@@ -104,8 +103,10 @@ class GuardPatrolAssignmentController extends Controller
             $existingAssignment = $existingAssignment->where('id', '!=', $request->id);
         }
 
-        if ($existingAssignment->first()) {
-            return redirect()->back()->with('error', 'This guard is already assigned to this gate for this shift. Edit the existing assignment instead.');
+        $conflict = $existingAssignment->with('gate')->first();
+        if ($conflict) {
+            $gateName = $conflict->gate->name ?? 'another gate';
+            return redirect()->back()->with('error', "This guard is already assigned to {$gateName} for this shift. One guard cannot be assigned to multiple gates in the same shift.");
         }
 
         $oldGuardId = null;
