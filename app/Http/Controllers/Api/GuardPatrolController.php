@@ -328,12 +328,27 @@ class GuardPatrolController extends Controller
             });
 
         $completed = collect($schedules)->where('is_completed', true)->count();
+        $total = $schedules->count();
+
+        // Determine overall status
+        if ($total === 0) {
+            $status = 'NO_SCHEDULE';
+        } elseif ($completed === 0) {
+            $status = 'PENDING';
+        } elseif ($completed === $total) {
+            $status = 'COMPLETED';
+        } else {
+            $status = 'IN_PROGRESS';
+        }
 
         return response()->json([
             'success' => true,
             'gate_name' => $gate->name,
-            'total' => $schedules->count(),
+            'total' => $total,
             'completed' => $completed,
+            'remaining' => $total - $completed,
+            'progress' => "$completed/$total",
+            'schedule_status' => $status,
             'data' => $schedules,
         ]);
     }
@@ -429,6 +444,17 @@ class GuardPatrolController extends Controller
         $completed = count($todayCheckins);
         $total = $allLocations->count();
 
+        // Determine overall status
+        if ($total === 0) {
+            $scheduleStatus = 'NO_SCHEDULE';
+        } elseif ($completed === 0) {
+            $scheduleStatus = 'PENDING';
+        } elseif ($completed === $total) {
+            $scheduleStatus = 'COMPLETED';
+        } else {
+            $scheduleStatus = 'IN_PROGRESS';
+        }
+
         // Debug info if no check-ins found
         $debugInfo = null;
         if ($completed === 0 && $total > 0) {
@@ -446,7 +472,14 @@ class GuardPatrolController extends Controller
             'gate_name' => $gate->name,
             'completed' => $completed,
             'total' => $total,
+            'remaining' => $total - $completed,
             'progress' => "$completed/$total",
+            'schedule_status' => $scheduleStatus,
+            'message' => $scheduleStatus === 'COMPLETED'
+                ? 'All locations completed! Great work!'
+                : ($scheduleStatus === 'PENDING'
+                    ? "You have $total locations to visit today"
+                    : "You have " . ($total - $completed) . " more locations to visit"),
             'next_patrol_point' => $nextLocation,
             'remaining_patrols' => $remaining,
         ]);
@@ -528,6 +561,17 @@ class GuardPatrolController extends Controller
         $completed = $data->where('is_completed', true)->count();
         $total = $data->count();
 
+        // Determine status
+        if ($total === 0) {
+            $shiftStatus = 'NO_SCHEDULE';
+        } elseif ($completed === 0) {
+            $shiftStatus = 'PENDING';
+        } elseif ($completed === $total) {
+            $shiftStatus = 'COMPLETED';
+        } else {
+            $shiftStatus = 'IN_PROGRESS';
+        }
+
         return response()->json([
             'success' => true,
             'gate_name' => $gate->name,
@@ -537,6 +581,7 @@ class GuardPatrolController extends Controller
             'completed' => $completed,
             'remaining' => $total - $completed,
             'progress' => "$completed/$total",
+            'shift_status' => $shiftStatus,
             'data' => $data,
         ]);
     }
@@ -624,6 +669,17 @@ class GuardPatrolController extends Controller
         $completed = $data->where('is_completed', true)->count();
         $total     = $data->count();
 
+        // Determine status
+        if ($total === 0) {
+            $guardStatus = 'NO_SCHEDULE';
+        } elseif ($completed === 0) {
+            $guardStatus = 'PENDING';
+        } elseif ($completed === $total) {
+            $guardStatus = 'COMPLETED';
+        } else {
+            $guardStatus = 'IN_PROGRESS';
+        }
+
         return response()->json([
             'success'          => true,
             'guard_name'       => $guard->name,
@@ -634,6 +690,7 @@ class GuardPatrolController extends Controller
             'completed'        => $completed,
             'remaining'        => $total - $completed,
             'progress'         => "$completed/$total",
+            'guard_shift_status' => $guardStatus,
             'is_shift_complete'=> $total > 0 && $completed === $total,
             'data'             => $data,
         ]);
@@ -860,6 +917,17 @@ class GuardPatrolController extends Controller
         $completed = $data->where('is_completed', true)->count();
         $total = $data->count();
 
+        // Determine status
+        if ($total === 0) {
+            $taskStatus = 'NO_LOCATIONS';
+        } elseif ($completed === 0) {
+            $taskStatus = 'PENDING';
+        } elseif ($completed === $total) {
+            $taskStatus = 'COMPLETED';
+        } else {
+            $taskStatus = 'IN_PROGRESS';
+        }
+
         return response()->json([
             'success' => true,
             'task_name' => $task->name,
@@ -867,7 +935,14 @@ class GuardPatrolController extends Controller
             'total' => $total,
             'completed' => $completed,
             'remaining' => $total - $completed,
+            'progress' => "$completed/$total",
+            'task_status' => $taskStatus,
             'is_task_complete' => $total > 0 && $completed === $total,
+            'message' => $taskStatus === 'COMPLETED'
+                ? 'Task completed! All locations visited.'
+                : ($taskStatus === 'PENDING'
+                    ? "Visit all $total locations to complete this task"
+                    : "You have " . ($total - $completed) . " more locations to visit"),
             'locations' => $data,
         ]);
     }

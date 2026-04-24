@@ -4,6 +4,55 @@
     Patrol Locations
 @endsection
 
+@section('css')
+<style>
+  @media print {
+    * { margin: 0; padding: 0; }
+    body { background: white; }
+    .content-wrapper, .main-header, .main-sidebar,
+    .card, .table-responsive, .modal-footer,
+    .modal-header .close, .card-tools,
+    .breadcrumb, .content-header,
+    .modal-dialog { display: none !important; }
+
+    .modal { position: static !important; }
+    .modal-content {
+      box-shadow: none !important;
+      border: none !important;
+    }
+
+    #qrModal.show { display: block !important; }
+    .modal.show .modal-dialog {
+      display: block !important;
+      width: 100%;
+      margin: 0;
+    }
+
+    #qrcode-display {
+      display: flex !important;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      background: white;
+    }
+
+    #qr-location-name {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      padding: 20px;
+    }
+
+    .modal-body {
+      display: block !important;
+      padding: 0;
+      text-align: center;
+    }
+  }
+</style>
+@endsection
+
 @section('content')
     <!-- Content Header -->
     <section class="content-header">
@@ -97,7 +146,7 @@
           <div class="col-md-12 mt-4">
             <div class="card">
               <div class="card-header with-border">
-                <h3 class="card-title"><i class="nav-icon fas fa-route"></i> Patrol Schedule</h3>
+                <h3 class="card-title"><i class="nav-icon fas fa-route"></i> Patrol Schedule (Today's Progress)</h3>
                 <div class="card-tools pull-right">
                   @if(Auth::User()->role == 'BA')
                   <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#assignLocationModal">
@@ -115,6 +164,8 @@
                     <th>Gate</th>
                     <th>Shift</th>
                     <th>Patrol Time</th>
+                    <th>Progress Today</th>
+                    <th>Status</th>
                     @if(Auth::User()->role == 'BA')
                     <th>Actions</th>
                     @endif
@@ -123,12 +174,35 @@
                   <tbody>
                     <?php $j = 0; ?>
                   @forelse($locations->where('gate_id', '!=', null) as $loc)
-                  <?php $j++; ?>
+                  <?php
+                    $j++;
+                    $key = $loc->gate_id . '_' . $loc->building_shift_id;
+                    $progress = isset($scheduleProgress[$key]) ? $scheduleProgress[$key] : ['completed' => 0, 'total' => 0];
+                    $completed = $progress['completed'];
+                    $total = $progress['total'];
+                    $isComplete = $total > 0 && $completed === $total;
+                    $statusBadge = $isComplete ? 'badge-success' : ($completed > 0 ? 'badge-warning' : 'badge-secondary');
+                    $statusText = $isComplete ? 'COMPLETED' : ($completed > 0 ? 'IN PROGRESS' : 'PENDING');
+                  ?>
                   <tr>
                     <td>{{$j}}</td>
                     <td>{{ $loc->gate->name ?? '-' }}</td>
                     <td>{{ $loc->buildingShift ? $loc->buildingShift->name . ' (' . $loc->buildingShift->start_time . '-' . $loc->buildingShift->end_time . ')' : '-' }}</td>
                     <td>{{ $loc->patrol_time ?? '-' }}</td>
+                    <td>
+                      <strong>{{ $completed }}/{{ $total }}</strong>
+                      @if($total > 0)
+                        <div class="progress" style="height: 15px; margin-top: 5px;">
+                          <div class="progress-bar {{ $isComplete ? 'bg-success' : 'bg-warning' }}"
+                               style="width: {{ $total > 0 ? ($completed / $total * 100) : 0 }}%">
+                            {{ $total > 0 ? round($completed / $total * 100) : 0 }}%
+                          </div>
+                        </div>
+                      @endif
+                    </td>
+                    <td>
+                      <span class="badge {{ $statusBadge }}">{{ $statusText }}</span>
+                    </td>
                     @if(Auth::User()->role == 'BA')
                     <td>
                         <button class="btn btn-sm btn-primary edit-assignment" data-toggle="modal" data-target="#assignLocationModal"
@@ -144,7 +218,7 @@
                     @endif
                   </tr>
                   @empty
-                  <tr><td colspan="5" class="text-center">No schedules yet</td></tr>
+                  <tr><td colspan="7" class="text-center">No schedules yet</td></tr>
                   @endforelse
                   </tbody>
                 </table>
@@ -205,13 +279,16 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <div class="modal-body text-center">
-        <p id="qr-location-name"></p>
-        <div id="qrcode-display"></div>
+      <div class="modal-body text-center" style="padding: 40px;">
+        <h3 id="qr-location-name" style="margin-bottom: 30px; font-weight: bold; font-size: 22px;"></h3>
+        <div id="qrcode-display" style="display: flex; justify-content: center; align-items: center; padding: 20px;"></div>
+        <p style="margin-top: 20px; font-size: 14px; color: #666;">Scan this code to verify location</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" onclick="window.print()">Print QR</button>
+        <button type="button" class="btn btn-primary" onclick="window.print()">
+          <i class="fa fa-print"></i> Print QR
+        </button>
       </div>
     </div>
   </div>

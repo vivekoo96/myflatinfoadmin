@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PatrolLocation;
 use App\Models\Gate;
 use App\Models\BuildingShift;
+use App\Models\GuardPatrol;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Auth;
@@ -30,7 +31,33 @@ class PatrolLocationController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        return view('admin.patrol_locations.index', compact('building', 'locations', 'gates', 'shifts'));
+        // Get today's patrol progress for each schedule
+        $scheduleProgress = [];
+        foreach ($locations->where('gate_id', '!=', null) as $schedule) {
+            if (!$schedule->gate_id || !$schedule->building_shift_id) continue;
+
+            $key = $schedule->gate_id . '_' . $schedule->building_shift_id;
+            if (!isset($scheduleProgress[$key])) {
+                $allLocations = PatrolLocation::where('gate_id', $schedule->gate_id)
+                    ->where('status', 'Active')
+                    ->get();
+
+                $completedCount = 0;
+                foreach ($allLocations as $loc) {
+                    $checked = GuardPatrol::where('patrol_location_id', $loc->id)
+                        ->whereDate('checked_in_at', today())
+                        ->exists();
+                    if ($checked) $completedCount++;
+                }
+
+                $scheduleProgress[$key] = [
+                    'completed' => $completedCount,
+                    'total' => $allLocations->count(),
+                ];
+            }
+        }
+
+        return view('admin.patrol_locations.index', compact('building', 'locations', 'gates', 'shifts', 'scheduleProgress'));
     }
 
     public function store(Request $request)
