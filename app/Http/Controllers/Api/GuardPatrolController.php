@@ -292,11 +292,21 @@ class GuardPatrolController extends Controller
 
         $building = $gate->building;
 
-        // Get today's check-ins for this guard
-        $todayCheckins = GuardPatrol::where('guard_user_id', $user->id)
+        // Check GuardPatrol table (submitCheckin flow)
+        $guardPatrolCheckins = GuardPatrol::where('guard_user_id', $user->id)
             ->whereDate('checked_in_at', today())
             ->pluck('patrol_location_id')
             ->toArray();
+
+        // Check PatrolTaskLog table (submitTaskLocationCheckin flow)
+        $taskLogCheckins = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
+            ->whereDate('checked_at', today())
+            ->pluck('patrol_location_id')
+            ->unique()
+            ->toArray();
+
+        // Merge both — a location is done if checked via either system
+        $todayCheckins = array_unique(array_merge($guardPatrolCheckins, $taskLogCheckins));
 
         // Get all physical patrol locations for this building (gate_id = null)
         $schedules = PatrolLocation::where('building_id', $building->id)
@@ -369,12 +379,22 @@ class GuardPatrolController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Get today's check-ins for this guard across all physical locations
-        $todayCheckins = GuardPatrol::where('guard_user_id', $user->id)
+        // Check GuardPatrol table (submitCheckin flow)
+        $guardPatrolCheckins = GuardPatrol::where('guard_user_id', $user->id)
             ->whereDate('checked_in_at', today())
             ->pluck('patrol_location_id')
             ->unique()
             ->toArray();
+
+        // Check PatrolTaskLog table (submitTaskLocationCheckin flow)
+        $taskLogCheckins = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
+            ->whereDate('checked_at', today())
+            ->pluck('patrol_location_id')
+            ->unique()
+            ->toArray();
+
+        // Merge both — a location is done if checked via either system
+        $todayCheckins = array_unique(array_merge($guardPatrolCheckins, $taskLogCheckins));
 
         $nextLocation = null;
         $remaining = [];
