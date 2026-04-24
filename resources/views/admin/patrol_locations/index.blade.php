@@ -4,98 +4,6 @@
     Patrol Locations
 @endsection
 
-@section('css')
-<style>
-  @media print {
-    /* Hide everything by default */
-    * {
-      margin: 0;
-      padding: 0;
-    }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-      background: white;
-    }
-
-    /* Hide all page elements */
-    body > * {
-      display: none !important;
-    }
-
-    /* Exception: Show only modal when printing */
-    body > div:last-child,
-    body > div:last-child > * {
-      display: block !important;
-    }
-
-    /* Show modal content */
-    #qrModal,
-    #qrModal .modal-content,
-    #qrModal .modal-body {
-      display: block !important;
-      position: static !important;
-      width: 100%;
-      height: auto;
-      margin: 0;
-      padding: 20px;
-      border: none;
-      box-shadow: none;
-      background: white;
-    }
-
-    /* Hide modal header and footer */
-    #qrModal .modal-header,
-    #qrModal .modal-footer {
-      display: none !important;
-    }
-
-    /* Hide close button */
-    .modal-header .close {
-      display: none !important;
-    }
-
-    /* Style location name */
-    #qr-location-name {
-      text-align: center;
-      font-size: 28px;
-      font-weight: bold;
-      margin-bottom: 30px;
-      padding: 20px 0;
-      color: #333;
-      page-break-after: avoid;
-    }
-
-    /* Center QR code */
-    #qrcode-display {
-      width: 100%;
-      display: flex !important;
-      justify-content: center;
-      align-items: center;
-      padding: 30px !important;
-      background: white !important;
-      page-break-inside: avoid;
-    }
-
-    /* QR Code sizing */
-    #qrcode-display img,
-    #qrcode-display canvas {
-      max-width: 400px;
-      max-height: 400px;
-    }
-
-    /* Helper text */
-    .modal-body > p {
-      text-align: center;
-      font-size: 14px;
-      color: #666;
-      margin-top: 20px;
-    }
-  }
-</style>
-@endsection
-
 @section('content')
     <!-- Content Header -->
     <section class="content-header">
@@ -527,9 +435,30 @@
         });
     });
 
-    // Print QR Code button
+    // Print QR Code button - opens popup with QR only
     $(document).on('click', '#print-qr-btn', function(){
-        window.print();
+        var locationName = $('#qr-location-name').text();
+        var canvas = $('#qrcode-display canvas')[0];
+        var qrImage = canvas ? canvas.toDataURL('image/png') : null;
+
+        var printWindow = window.open('', '_blank', 'width=500,height=600');
+        printWindow.document.write(
+            '<html><head><title>QR Code</title>' +
+            '<style>' +
+            'body { font-family: Arial, sans-serif; text-align: center; padding: 40px; background: white; margin: 0; }' +
+            'h2 { font-size: 24px; margin-bottom: 30px; color: #333; margin-top: 0; }' +
+            'img { width: 300px; height: 300px; border: 1px solid #ccc; }' +
+            'p { font-size: 13px; color: #666; margin-top: 20px; }' +
+            '</style></head><body>' +
+            '<h2>' + locationName + '</h2>' +
+            (qrImage ? '<img src="' + qrImage + '" />' : '') +
+            '<p>Scan this code to verify location</p>' +
+            '</body></html>'
+        );
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
     });
   });
 </script>
