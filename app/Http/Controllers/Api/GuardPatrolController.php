@@ -298,11 +298,11 @@ class GuardPatrolController extends Controller
             ->pluck('patrol_location_id')
             ->toArray();
 
-        $schedules = PatrolLocation::where('gate_id', $gate->id)
-            ->where('building_id', $building->id)
+        // Get all physical patrol locations for this building (gate_id = null)
+        $schedules = PatrolLocation::where('building_id', $building->id)
+            ->whereNull('gate_id')
             ->where('status', 'Active')
-            ->with('buildingShift')
-            ->orderBy('patrol_time')
+            ->orderBy('name')
             ->get()
             ->map(function ($location) use ($gate, $todayCheckins, $user) {
                 $lastCheckIn = GuardPatrol::where('guard_user_id', $user->id)
@@ -314,13 +314,8 @@ class GuardPatrolController extends Controller
                 return [
                     'id' => $location->id,
                     'name' => $location->name,
+                    'description' => $location->description,
                     'gate_name' => $gate->name,
-                    'gate_id' => $gate->id,
-                    'shift_name' => $location->buildingShift ? $location->buildingShift->name : 'N/A',
-                    'shift_id' => $location->building_shift_id,
-                    'shift_start' => $location->buildingShift ? $location->buildingShift->start_time : null,
-                    'shift_end' => $location->buildingShift ? $location->buildingShift->end_time : null,
-                    'patrol_time' => $location->patrol_time,
                     'qr_string' => $location->qr_string,
                     'is_completed' => in_array($location->id, $todayCheckins),
                     'last_checked_at' => $lastCheckIn ? $lastCheckIn->checked_in_at->format('Y-m-d H:i:s') : null,
@@ -367,51 +362,19 @@ class GuardPatrolController extends Controller
 
         $building = $gate->building;
 
-        // Get all active patrol locations for this gate, ordered by patrol_time
-        $allLocations = PatrolLocation::where('gate_id', $gate->id)
-            ->where('building_id', $building->id)
+        // Get all active physical patrol locations for this building (gate_id = null)
+        $allLocations = PatrolLocation::where('building_id', $building->id)
+            ->whereNull('gate_id')
             ->where('status', 'Active')
-            ->with('buildingShift')
-            ->orderBy('patrol_time')
+            ->orderBy('name')
             ->get();
 
-        // Get today's check-ins for locations in this gate only
-        $checkedLocationIds = [];
-
-        // Check old GuardPatrol system - check ALL records for this guard today
-        $allGuardPatrols = GuardPatrol::where('guard_user_id', $user->id)
+        // Get today's check-ins for this guard across all physical locations
+        $todayCheckins = GuardPatrol::where('guard_user_id', $user->id)
             ->whereDate('checked_in_at', today())
             ->pluck('patrol_location_id')
             ->unique()
             ->toArray();
-
-        // Filter to only locations in this gate
-        $guardPatrolCheckins = array_intersect($allGuardPatrols, $allLocations->pluck('id')->toArray());
-        $checkedLocationIds = array_merge($checkedLocationIds, $guardPatrolCheckins);
-
-        // Check new PatrolTaskLog system - get all task log location IDs for this guard today (across all gates)
-        $allTaskLogs = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
-            ->whereDate('checked_at', today())
-            ->pluck('patrol_location_id')
-            ->unique()
-            ->toArray();
-
-        // Get patrol tasks this guard checked in for today
-        $completedTaskIds = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
-            ->whereDate('checked_at', today())
-            ->distinct('patrol_task_id')
-            ->pluck('patrol_task_id')
-            ->toArray();
-
-        // Map patrol task IDs to actual patrol task location IDs in this gate
-        $completedPatrolTaskLocationIds = PatrolLocation::whereIn('id', $completedTaskIds)
-            ->where('gate_id', $gate->id)
-            ->pluck('id')
-            ->toArray();
-
-        $checkedLocationIds = array_merge($checkedLocationIds, $completedPatrolTaskLocationIds);
-
-        $todayCheckins = array_unique($checkedLocationIds);
 
         $nextLocation = null;
         $remaining = [];
@@ -422,10 +385,7 @@ class GuardPatrolController extends Controller
             $locationData = [
                 'id' => $location->id,
                 'name' => $location->name,
-                'patrol_time' => $location->patrol_time,
-                'shift_name' => $location->buildingShift ? $location->buildingShift->name : 'N/A',
-                'shift_start' => $location->buildingShift ? $location->buildingShift->start_time : null,
-                'shift_end' => $location->buildingShift ? $location->buildingShift->end_time : null,
+                'description' => $location->description,
                 'qr_string' => $location->qr_string,
                 'is_completed' => $isCompleted,
             ];
@@ -453,18 +413,6 @@ class GuardPatrolController extends Controller
             $scheduleStatus = 'COMPLETED';
         } else {
             $scheduleStatus = 'IN_PROGRESS';
-        }
-
-        // Debug info if no check-ins found
-        $debugInfo = null;
-        if ($completed === 0 && $total > 0) {
-            $debugInfo = [
-                'all_guard_patrols_today' => $allGuardPatrols,
-                'all_task_logs_today' => $allTaskLogs,
-                'gate_location_ids' => $allLocations->pluck('id')->toArray(),
-                'guard_id' => $user->id,
-                'gate_id' => $gate->id,
-            ];
         }
 
         return response()->json([
