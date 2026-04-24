@@ -7,47 +7,90 @@
 @section('css')
 <style>
   @media print {
-    * { margin: 0; padding: 0; }
-    body { background: white; }
-    .content-wrapper, .main-header, .main-sidebar,
-    .card, .table-responsive, .modal-footer,
-    .modal-header .close, .card-tools,
-    .breadcrumb, .content-header,
-    .modal-dialog { display: none !important; }
-
-    .modal { position: static !important; }
-    .modal-content {
-      box-shadow: none !important;
-      border: none !important;
-    }
-
-    #qrModal.show { display: block !important; }
-    .modal.show .modal-dialog {
-      display: block !important;
-      width: 100%;
+    /* Hide everything by default */
+    * {
       margin: 0;
+      padding: 0;
     }
 
-    #qrcode-display {
-      display: flex !important;
-      justify-content: center;
-      align-items: center;
-      padding: 40px;
+    html, body {
+      width: 100%;
+      height: 100%;
       background: white;
     }
 
-    #qr-location-name {
-      text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 20px;
-      padding: 20px;
+    /* Hide all page elements */
+    body > * {
+      display: none !important;
     }
 
-    .modal-body {
+    /* Exception: Show only modal when printing */
+    body > div:last-child,
+    body > div:last-child > * {
       display: block !important;
-      padding: 0;
+    }
+
+    /* Show modal content */
+    #qrModal,
+    #qrModal .modal-content,
+    #qrModal .modal-body {
+      display: block !important;
+      position: static !important;
+      width: 100%;
+      height: auto;
+      margin: 0;
+      padding: 20px;
+      border: none;
+      box-shadow: none;
+      background: white;
+    }
+
+    /* Hide modal header and footer */
+    #qrModal .modal-header,
+    #qrModal .modal-footer {
+      display: none !important;
+    }
+
+    /* Hide close button */
+    .modal-header .close {
+      display: none !important;
+    }
+
+    /* Style location name */
+    #qr-location-name {
       text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 30px;
+      padding: 20px 0;
+      color: #333;
+      page-break-after: avoid;
+    }
+
+    /* Center QR code */
+    #qrcode-display {
+      width: 100%;
+      display: flex !important;
+      justify-content: center;
+      align-items: center;
+      padding: 30px !important;
+      background: white !important;
+      page-break-inside: avoid;
+    }
+
+    /* QR Code sizing */
+    #qrcode-display img,
+    #qrcode-display canvas {
+      max-width: 400px;
+      max-height: 400px;
+    }
+
+    /* Helper text */
+    .modal-body > p {
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+      margin-top: 20px;
     }
   }
 </style>
@@ -286,7 +329,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" onclick="window.print()">
+        <button type="button" class="btn btn-primary" id="print-qr-btn">
           <i class="fa fa-print"></i> Print QR
         </button>
       </div>
@@ -482,6 +525,11 @@
                 alert('Error removing assignment');
             }
         });
+    });
+
+    // Print QR Code button
+    $(document).on('click', '#print-qr-btn', function(){
+        window.print();
     });
   });
 </script>
