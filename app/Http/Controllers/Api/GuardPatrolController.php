@@ -292,34 +292,64 @@ class GuardPatrolController extends Controller
 
         $building = $gate->building;
 
-        // Check GuardPatrol table (submitCheckin flow)
-        $guardPatrolCheckins = GuardPatrol::where('guard_user_id', $user->id)
-            ->whereDate('checked_in_at', today())
-            ->pluck('patrol_location_id')
-            ->toArray();
+        // If patrol_task_id is given, scope check-ins to that specific task only
+        if ($request->filled('patrol_task_id')) {
+            $todayCheckins = \App\Models\PatrolTaskLog::where('patrol_task_id', $request->patrol_task_id)
+                ->where('guard_user_id', $user->id)
+                ->whereDate('checked_at', today())
+                ->pluck('patrol_location_id')
+                ->unique()
+                ->toArray();
+        } else {
+            $guardPatrolCheckins = GuardPatrol::where('guard_user_id', $user->id)
+                ->whereDate('checked_in_at', today())
+                ->pluck('patrol_location_id')
+                ->unique()
+                ->toArray();
 
-        // Check PatrolTaskLog table (submitTaskLocationCheckin flow)
-        $taskLogCheckins = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
-            ->whereDate('checked_at', today())
-            ->pluck('patrol_location_id')
-            ->unique()
-            ->toArray();
+            $taskLogCheckins = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
+                ->whereDate('checked_at', today())
+                ->pluck('patrol_location_id')
+                ->unique()
+                ->toArray();
 
-        // Merge both — a location is done if checked via either system
-        $todayCheckins = array_unique(array_merge($guardPatrolCheckins, $taskLogCheckins));
+            $todayCheckins = array_unique(array_merge($guardPatrolCheckins, $taskLogCheckins));
+        }
 
         // Get all physical patrol locations for this building (gate_id = null)
+        $patrolTaskId = $request->patrol_task_id;
         $schedules = PatrolLocation::where('building_id', $building->id)
             ->whereNull('gate_id')
             ->where('status', 'Active')
             ->orderBy('name')
             ->get()
-            ->map(function ($location) use ($gate, $todayCheckins, $user) {
-                $lastCheckIn = GuardPatrol::where('guard_user_id', $user->id)
-                    ->where('patrol_location_id', $location->id)
-                    ->whereDate('checked_in_at', today())
-                    ->latest('checked_in_at')
-                    ->first();
+            ->map(function ($location) use ($gate, $todayCheckins, $user, $patrolTaskId) {
+                // Get last check-in time from whichever system was used
+                $lastCheckedAt = null;
+
+                if ($patrolTaskId) {
+                    $taskLog = \App\Models\PatrolTaskLog::where('patrol_task_id', $patrolTaskId)
+                        ->where('patrol_location_id', $location->id)
+                        ->where('guard_user_id', $user->id)
+                        ->whereDate('checked_at', today())
+                        ->latest('checked_at')
+                        ->first();
+                    $lastCheckedAt = $taskLog ? $taskLog->checked_at->format('Y-m-d H:i:s') : null;
+                } else {
+                    $guardPatrol = GuardPatrol::where('guard_user_id', $user->id)
+                        ->where('patrol_location_id', $location->id)
+                        ->whereDate('checked_in_at', today())
+                        ->latest('checked_in_at')
+                        ->first();
+                    $taskLog = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
+                        ->where('patrol_location_id', $location->id)
+                        ->whereDate('checked_at', today())
+                        ->latest('checked_at')
+                        ->first();
+                    $gp = $guardPatrol ? $guardPatrol->checked_in_at->format('Y-m-d H:i:s') : null;
+                    $tl = $taskLog ? $taskLog->checked_at->format('Y-m-d H:i:s') : null;
+                    $lastCheckedAt = max($gp, $tl);
+                }
 
                 return [
                     'id' => $location->id,
@@ -328,7 +358,7 @@ class GuardPatrolController extends Controller
                     'gate_name' => $gate->name,
                     'qr_string' => $location->qr_string,
                     'is_completed' => in_array($location->id, $todayCheckins),
-                    'last_checked_at' => $lastCheckIn ? $lastCheckIn->checked_in_at->format('Y-m-d H:i:s') : null,
+                    'last_checked_at' => $lastCheckedAt,
                 ];
             });
 
@@ -379,22 +409,30 @@ class GuardPatrolController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Check GuardPatrol table (submitCheckin flow)
-        $guardPatrolCheckins = GuardPatrol::where('guard_user_id', $user->id)
-            ->whereDate('checked_in_at', today())
-            ->pluck('patrol_location_id')
-            ->unique()
-            ->toArray();
+        // If patrol_task_id is given, scope check-ins to that specific task only
+        if ($request->filled('patrol_task_id')) {
+            $todayCheckins = \App\Models\PatrolTaskLog::where('patrol_task_id', $request->patrol_task_id)
+                ->where('guard_user_id', $user->id)
+                ->whereDate('checked_at', today())
+                ->pluck('patrol_location_id')
+                ->unique()
+                ->toArray();
+        } else {
+            // Fallback: merge both tables (no task scoping)
+            $guardPatrolCheckins = GuardPatrol::where('guard_user_id', $user->id)
+                ->whereDate('checked_in_at', today())
+                ->pluck('patrol_location_id')
+                ->unique()
+                ->toArray();
 
-        // Check PatrolTaskLog table (submitTaskLocationCheckin flow)
-        $taskLogCheckins = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
-            ->whereDate('checked_at', today())
-            ->pluck('patrol_location_id')
-            ->unique()
-            ->toArray();
+            $taskLogCheckins = \App\Models\PatrolTaskLog::where('guard_user_id', $user->id)
+                ->whereDate('checked_at', today())
+                ->pluck('patrol_location_id')
+                ->unique()
+                ->toArray();
 
-        // Merge both — a location is done if checked via either system
-        $todayCheckins = array_unique(array_merge($guardPatrolCheckins, $taskLogCheckins));
+            $todayCheckins = array_unique(array_merge($guardPatrolCheckins, $taskLogCheckins));
+        }
 
         $nextLocation = null;
         $remaining = [];
