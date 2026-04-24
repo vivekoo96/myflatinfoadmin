@@ -30,7 +30,168 @@ class MoveInOutApiController extends Controller
         return response()->json(['success' => false, 'message' => 'User not found'], 404);
     }
 
-    // Owner creates tanent and move-in request
+    // Step 1: Owner creates tenant profile (with all form fields)
+    public function create_tenant_profile(Request $request)
+    {
+        $user = Auth::user();
+        $building = $user->building;
+
+        if (!$building) {
+            return response()->json(['error' => 'No building assigned to your account.'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'first_name' => 'required|string',
+            'last_name' => 'required|string',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'required|string|unique:users,phone',
+            'from_date' => 'required|date',
+            'to_date' => 'required|date|after:from_date',
+            'flat_id' => 'required|exists:flats,id',
+            'block_id' => 'required|exists:blocks,id',
+            'preferred_move_in_date' => 'required|date',
+            'additional_notes' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 422);
+        }
+
+        // Verify flat belongs to this building and owner
+        $flat = Flat::where('id', $request->flat_id)
+            ->where('building_id', $building->id)
+            ->where('owner_id', $user->id)
+            ->first();
+
+        if (!$flat) {
+            return response()->json(['error' => 'Flat not found or you do not own this flat.'], 403);
+        }
+
+        // Verify block belongs to building
+        $block = Block::where('id', $request->block_id)
+            ->where('building_id', $building->id)
+            ->first();
+
+        if (!$block) {
+            return response()->json(['error' => 'Block not found in this building.'], 403);
+        }
+
+        // Create Tenant User Account
+        $tenant = new User();
+        $tenant->first_name = $request->first_name;
+        $tenant->last_name = $request->last_name;
+        $tenant->email = $request->email;
+        $tenant->phone = $request->phone;
+        $tenant->password = Hash::make('MFI@' . rand(1000, 9999));
+        $tenant->role = 'user';
+        $tenant->status = 'Active';
+        $tenant->save();
+
+        // Assign 'User' role to this building
+        $userRole = Role::where('name', 'User')->first();
+        if ($userRole) {
+            BuildingUser::create([
+                'user_id' => $tenant->id,
+                'building_id' => $building->id,
+                'role_id' => $userRole->id
+            ]);
+        }
+
+        // Handle ID Proof file upload
+        $id_proof = null;
+        if ($request->hasFile('id_proof')) {
+            $file = $request->file('id_proof');
+            $filename = 'id_proofs/' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('images/move_in_out/'), $filename);
+            $id_proof = $filename;
+        }
+
+        return response()->json([
+            'success' => true,
+            'msg' => 'Tenant profile created successfully.',
+            'tenant' => [
+                'id' => $tenant->id,
+                'name' => $tenant->first_name . ' ' . $tenant->last_name,
+                'email' => $tenant->email,
+                'phone' => $tenant->phone,
+                'flat_number' => $flat->name,
+                'block' => $block->name,
+                'from_date' => $request->from_date,
+                'to_date' => $request->to_date,
+                'preferred_move_in_date' => $request->preferred_move_in_date
+            ]
+        ], 201);
+    }
+
+    // Step 2: Owner creates move-in request for the tenant
+    public function create_move_in_for_tenant(Request $request)
+    {
+        $user = Auth::user();
+        $building = $user->building;
+
+        if (!$building) {
+            return response()->json(['error' => 'No building assigned to your account.'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'tenant_id' => 'required|exists:users,id',
+            'flat_id' => 'required|exists:flats,id',
+            'preferred_move_in_date' => 'required|date',
+            'additional_notes' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 422);
+        }
+
+        $tenant = User::find($request->tenant_id);
+        $flat = Flat::where('id', $request->flat_id)
+            ->where('building_id', $building->id)
+            ->where('owner_id', $user->id)
+            ->first();
+
+        if (!$flat) {
+            return response()->json(['error' => 'Flat not found or you do not own this flat.'], 403);
+        }
+
+        // Verify tenant belongs to this building
+        $tenantBuilding = BuildingUser::where('user_id', $tenant->id)
+            ->where('building_id', $building->id)
+            ->first();
+
+        if (!$tenantBuilding) {
+            return response()->json(['error' => 'Tenant is not assigned to this building.'], 403);
+        }
+
+        // Create Move-In Request
+        $moveRequest = new MoveInOutRequest();
+        $moveRequest->building_id = $building->id;
+        $moveRequest->flat_id = $flat->id;
+        $moveRequest->user_id = $tenant->id;
+        $moveRequest->type = 'Move-In';
+        $moveRequest->person_type = 'Tanent';
+        $moveRequest->first_name = $tenant->first_name;
+        $moveRequest->last_name = $tenant->last_name;
+        $moveRequest->email = $tenant->email;
+        $moveRequest->phone = $tenant->phone;
+        $moveRequest->date_of_entry_exit = $request->preferred_move_in_date;
+        $moveRequest->comment = $request->additional_notes;
+        $moveRequest->status = 'Pending';
+        $moveRequest->save();
+
+        return response()->json([
+            'msg' => 'Move-In request submitted to BA for approval.',
+            'request_id' => $moveRequest->id,
+            'tenant' => [
+                'id' => $tenant->id,
+                'name' => $tenant->first_name . ' ' . $tenant->last_name,
+                'flat' => $flat->name,
+                'move_in_date' => $request->preferred_move_in_date
+            ]
+        ], 200);
+    }
+
+    // Legacy: Owner creates tanent and move-in request (combined - for backward compatibility)
     public function create_tanent_move_in(Request $request)
     {
         $user = Auth::user();
@@ -48,7 +209,6 @@ class MoveInOutApiController extends Controller
             'from_date' => 'required|date',
             'to_date' => 'required|date',
             'date_of_entry' => 'required|date',
-            // 'id_proof' => 'required|file'
         ]);
 
         if ($validator->fails()) {
@@ -90,14 +250,14 @@ class MoveInOutApiController extends Controller
         $moveRequest->to_date = $request->to_date;
         $moveRequest->date_of_entry_exit = $request->date_of_entry;
         $moveRequest->status = 'Pending';
-        
+
         if ($request->hasFile('id_proof')) {
             $file = $request->file('id_proof');
             $filename = 'id_proofs/' . uniqid() . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('images/move_in_out/'), $filename);
             $moveRequest->id_proof = $filename;
         }
-        
+
         $moveRequest->save();
 
         return response()->json(['msg' => 'Move-In request submitted to BA for approval.', 'request_id' => $moveRequest->id], 200);
@@ -209,12 +369,24 @@ class MoveInOutApiController extends Controller
     {
         $user = Auth::user();
         $pass = MoveInOutRequest::where('user_id', $user->id)
-            ->whereIn('status', ['Approved'])
+            ->where('status', 'Approved')
             ->whereNull('visited_at')
+            ->with(['flat.block'])
             ->first();
 
         if ($pass) {
-            return response()->json(['success' => true, 'passcode' => $pass->passcode, 'type' => $pass->type], 200);
+            return response()->json([
+                'success' => true,
+                'id' => $pass->id,
+                'passcode' => $pass->passcode,
+                'type' => $pass->type,
+                'person_type' => $pass->person_type,
+                'date_of_entry_exit' => $pass->date_of_entry_exit,
+                'flat' => $pass->flat ? [
+                    'name' => $pass->flat->name,
+                    'block' => $pass->flat->block ? $pass->flat->block->name : null,
+                ] : null,
+            ], 200);
         }
         return response()->json(['success' => false, 'message' => 'No active passcode found.'], 404);
     }
@@ -301,5 +473,84 @@ class MoveInOutApiController extends Controller
         }
 
         return response()->json(['msg' => 'Process completed successfully. Pass expired.'], 200);
+    }
+
+    // User: Get all move requests for themselves
+    public function get_my_move_requests()
+    {
+        $user = Auth::user();
+        $requests = MoveInOutRequest::where('user_id', $user->id)
+            ->with(['flat.block'])
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'type' => $r->type,
+                    'person_type' => $r->person_type,
+                    'status' => $r->status,
+                    'passcode' => in_array($r->status, ['Approved']) ? $r->passcode : null,
+                    'date_of_entry_exit' => $r->date_of_entry_exit,
+                    'flat' => $r->flat ? [
+                        'name' => $r->flat->name,
+                        'block' => $r->flat->block ? $r->flat->block->name : null,
+                    ] : null,
+                    'created_at' => $r->created_at,
+                ];
+            });
+
+        return response()->json(['success' => true, 'requests' => $requests], 200);
+    }
+
+    // Accounts: Get move-out requests pending accounts verification
+    public function get_accounts_move_out_requests(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'building_id' => 'required|exists:buildings,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 422);
+        }
+
+        $requests = MoveInOutRequest::where('building_id', $request->building_id)
+            ->where('type', 'Move-Out')
+            ->where('status', 'Pending Accounts')
+            ->with(['flat.block', 'user'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json(['success' => true, 'requests' => $requests], 200);
+    }
+
+    // Accounts: Approve or reject move-out request
+    public function accounts_approve_move_out(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'request_id' => 'required|exists:move_in_out_requests,id',
+            'action' => 'required|in:Approve,Reject',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 422);
+        }
+
+        $moveRequest = MoveInOutRequest::find($request->request_id);
+
+        if ($moveRequest->status !== 'Pending Accounts') {
+            return response()->json(['error' => 'Request is not pending accounts verification.'], 422);
+        }
+
+        if ($request->action === 'Approve') {
+            $moveRequest->status = 'Pending';
+            $msg = 'Verified by Accounts. Forwarded to BA for final approval.';
+        } else {
+            $moveRequest->status = 'Rejected';
+            $moveRequest->comment = $request->comment ?? 'Rejected by Accounts.';
+            $msg = 'Request rejected.';
+        }
+
+        $moveRequest->save();
+        return response()->json(['msg' => $msg], 200);
     }
 }

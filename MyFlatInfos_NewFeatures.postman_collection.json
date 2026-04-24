@@ -821,7 +821,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Cricket Match at Sports Complex\",\n  \"description\": \"Friendly cricket match. Bring your own equipment.\",\n  \"location\": \"Building Sports Complex\",\n  \"activity_datetime\": \"2026-04-20T15:00:00\",\n  \"response_type\": \"simple\",\n  \"post_type\": \"slot\",\n  \"max_slots\": 12\n}\n\n// RESPONSE TYPES:\n// \"simple\" → Users respond with: Interested / Not Interested\n// \"detailed\" → Users respond with: Attending / Maybe / Not Attending\n\n// POST TYPES:\n// \"slot\" → Limited capacity (max_slots required)\n// \"unlimited\" → No limit (max_slots not needed)\n\n// STATUS:\n// Activity created with status='pending' (requires BA approval)\n// Only approved activities visible to other users",
+              "raw": "{\n  \"title\": \"Cricket Match at Sports Complex\",\n  \"description\": \"Friendly cricket match. Bring your own equipment.\",\n  \"location\": \"Building Sports Complex\",\n  \"activity_datetime\": \"2026-04-20T15:00:00\",\n  \"response_type\": \"simple\",\n  \"post_type\": \"slot\",\n  \"max_slots\": 12\n}\n\n// RESPONSE TYPES:\n// \"simple\" â†’ Users respond with: Interested / Not Interested\n// \"detailed\" â†’ Users respond with: Attending / Maybe / Not Attending\n\n// POST TYPES:\n// \"slot\" â†’ Limited capacity (max_slots required)\n// \"unlimited\" â†’ No limit (max_slots not needed)\n\n// STATUS:\n// Activity created with status='pending' (requires BA approval)\n// Only approved activities visible to other users",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1877,61 +1877,41 @@
       ]
     },
     {
-      "name": "Move-In/Out (API)",
+      "name": "User App (Move-In & Move-Out) - UPDATED",
       "item": [
         {
-          "name": "get-user-by-contact",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"contact\": \"9876543210\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{BASE_URL}}/get-user-by-contact",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-user-by-contact"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "get-active-passcode",
+          "name": "1. Get Active Passcode",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}"
+                "value": "Bearer {{USER_TOKEN}}",
+                "type": "text"
               }
             ],
             "url": {
-              "raw": "{{BASE_URL}}/get-active-passcode",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-active-passcode"]
+              "raw": "{{BASE_URL}}/api/get-active-passcode",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "get-active-passcode"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "create-tanent-move-in",
+          "name": "2. Create Tenant Profile",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}"
+                "value": "Bearer {{USER_TOKEN}}",
+                "type": "text"
               },
               {
                 "key": "Content-Type",
@@ -1940,7 +1920,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"Move-In\",\n  \"expected_date\": \"2026-05-01\",\n  \"num_members\": 3,\n  \"members_detail\": \"Father, Mother, Son\",\n  \"items_detail\": \"Furniture, Electronics\",\n  \"num_vehicles\": 1,\n  \"vehicles_detail\": \"White Sedan (ABC-1234)\"\n}",
+              "raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"9876543210\",\n  \"from_date\": \"2026-05-01\",\n  \"to_date\": \"2026-12-31\",\n  \"flat_id\": 101,\n  \"block_id\": 1,\n  \"preferred_move_in_date\": \"2026-05-01\",\n  \"additional_notes\": \"No pets, quiet hours after 10pm\",\n  \"id_proof\": \"(optional file upload)\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1948,21 +1928,27 @@
               }
             },
             "url": {
-              "raw": "{{BASE_URL}}/create-tanent-move-in",
-              "host": ["{{BASE_URL}}"],
-              "path": ["create-tanent-move-in"]
+              "raw": "{{BASE_URL}}/api/create-tenant-profile",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "create-tenant-profile"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "create-move-out-request",
+          "name": "3. Create Move-In for Tenant",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}"
+                "value": "Bearer {{USER_TOKEN}}",
+                "type": "text"
               },
               {
                 "key": "Content-Type",
@@ -1971,7 +1957,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"Move-Out\",\n  \"expected_date\": \"2026-05-15\",\n  \"items_detail\": \"All household items\",\n  \"vehicles_detail\": \"Truck (XYZ-7890)\"\n}",
+              "raw": "{\n  \"tenant_id\": 10,\n  \"flat_id\": 101,\n  \"preferred_move_in_date\": \"2026-05-01\",\n  \"additional_notes\": \"Early move-in possible\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1979,48 +1965,27 @@
               }
             },
             "url": {
-              "raw": "{{BASE_URL}}/create-move-out-request",
-              "host": ["{{BASE_URL}}"],
-              "path": ["create-move-out-request"]
+              "raw": "{{BASE_URL}}/api/create-move-in-for-tenant",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "create-move-in-for-tenant"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "move-in-out-verify",
+          "name": "4. Create Tenant Move-In",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"passcode\": \"123456\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{BASE_URL}}/move-in-out-verify",
-              "host": ["{{BASE_URL}}"],
-              "path": ["move-in-out-verify"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "move-in-out-submit",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
+                "value": "Bearer {{USER_TOKEN}}",
+                "type": "text"
               },
               {
                 "key": "Content-Type",
@@ -2029,7 +1994,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"request_id\": 1,\n  \"entry_type\": \"entry\"\n}",
+              "raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"9876543210\",\n  \"from_date\": \"2026-05-01\",\n  \"to_date\": \"2026-12-31\",\n  \"date_of_entry\": \"2026-05-01\",\n  \"id_proof\": \"(optional file)\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2037,39 +2002,27 @@
               }
             },
             "url": {
-              "raw": "{{BASE_URL}}/move-in-out-submit",
-              "host": ["{{BASE_URL}}"],
-              "path": ["move-in-out-submit"]
+              "raw": "{{BASE_URL}}/api/create-tanent-move-in",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "create-tanent-move-in"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "get-security-requests",
+          "name": "5. Create Move-Out Request",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{BASE_URL}}/get-security-requests",
-              "host": ["{{BASE_URL}}"],
-              "path": ["get-security-requests"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "owner-approve-move-out",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
+                "value": "Bearer {{USER_TOKEN}}",
+                "type": "text"
               },
               {
                 "key": "Content-Type",
@@ -2078,7 +2031,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"request_id\": 1,\n  \"action\": \"approve\"\n}",
+              "raw": "{\n  \"date_of_exit\": \"2026-12-31\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2086,9 +2039,248 @@
               }
             },
             "url": {
-              "raw": "{{BASE_URL}}/owner-approve-move-out",
-              "host": ["{{BASE_URL}}"],
-              "path": ["owner-approve-move-out"]
+              "raw": "{{BASE_URL}}/api/create-move-out-request",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "create-move-out-request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. Owner Approve Tenant Move-Out",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{USER_TOKEN}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"request_id\": 1,\n  \"action\": \"Approve\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/owner-approve-move-out",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "owner-approve-move-out"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Security App (Move-In & Move-Out) - UPDATED",
+      "item": [
+        {
+          "name": "1. Get Security Requests",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{USER_TOKEN}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"Move-In\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/move-in-out-verify",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "move-in-out-verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. Verify Passcode",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{USER_TOKEN}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"passcode\": \"ABC12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/move-in-out-verify",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "move-in-out-verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. Submit Entry/Exit (Expire Pass)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{USER_TOKEN}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"passcode\": \"ABC12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/move-in-out-submit",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "move-in-out-submit"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Accounts App (Move-In & Move-Out) - UPDATED",
+      "item": [
+        {
+          "name": "1. Get Move-Out Requests (Pending Accounts)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCOUNTS_TOKEN}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"building_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/accounts/get-move-out-requests",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "accounts",
+                "get-move-out-requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. Approve/Reject Move-Out",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCOUNTS_TOKEN}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"request_id\": 1,\n  \"action\": \"Approve\",\n  \"comment\": \"(optional)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/accounts/approve-move-out",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "accounts",
+                "approve-move-out"
+              ]
             }
           },
           "response": []

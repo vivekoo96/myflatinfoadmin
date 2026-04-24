@@ -48,6 +48,7 @@ use App\Http\Controllers\Api\MoveInOutApiController;
         Route::post('get-flats',[CustomerController::class,'get_flats']);
         Route::post('select-flat',[CustomerController::class,'select_flat']);
         Route::get('get-active-passcode', [MoveInOutApiController::class, 'get_active_passcode']);
+        Route::get('get-my-move-requests', [MoveInOutApiController::class, 'get_my_move_requests']);
 
       Route::post('get-issue-comments-user',[CustomerController::class,'get_issue_comments_user']);
 
@@ -101,8 +102,11 @@ use App\Http\Controllers\Api\MoveInOutApiController;
             Route::post('update-checkin-checkout-status',[CustomerController::class,'update_checkin_checkout_status']);
             Route::post('create-gate-pass',[CustomerController::class,'create_gate_pass']);
             Route::post('get-gate-passes',[CustomerController::class,'get_gate_passes']);
+            Route::post('create-tenant-profile', [MoveInOutApiController::class, 'create_tenant_profile']);
+            Route::post('create-move-in-for-tenant', [MoveInOutApiController::class, 'create_move_in_for_tenant']);
             Route::post('create-tanent-move-in', [MoveInOutApiController::class, 'create_tanent_move_in']);
             Route::post('create-move-out-request', [MoveInOutApiController::class, 'create_move_out_request']);
+            Route::post('owner-approve-move-out', [MoveInOutApiController::class, 'owner_approve_move_out']);
             Route::post('take-gate-pass-action',[CustomerController::class,'take_gate_pass_action']);
             Route::post('gate-pass-details',[CustomerController::class,'gate_pass_details']);
             Route::post('my-visitor-in-out-history',[CustomerController::class,'my_visitor_in_out_history']);
@@ -236,7 +240,6 @@ use App\Http\Controllers\Api\MoveInOutApiController;
             Route::post('move-in-out-verify', [MoveInOutApiController::class, 'verify_passcode']);
             Route::post('move-in-out-submit', [MoveInOutApiController::class, 'submit_entry']);
             Route::post('get-security-requests', [MoveInOutApiController::class, 'get_security_requests']);
-            Route::post('owner-approve-move-out', [MoveInOutApiController::class, 'owner_approve_move_out']);
 
         });
 
@@ -347,6 +350,8 @@ use App\Http\Controllers\Api\MoveInOutApiController;
                 Route::post('get-bookings',[AccountController::class,'get_bookings']);
                 Route::post('get-facilities',[AccountController::class,'get_facilities']);
                 Route::post('society-fund',[AccountController::class,'society_fund']);
+                Route::post('get-move-out-requests', [MoveInOutApiController::class, 'get_accounts_move_out_requests']);
+                Route::post('approve-move-out', [MoveInOutApiController::class, 'accounts_approve_move_out']);
             });
             
         });
