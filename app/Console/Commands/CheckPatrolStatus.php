@@ -97,12 +97,13 @@ class CheckPatrolStatus extends Command
 
     private function isPatrolCompleted($schedule, $guard, $today)
     {
-        // Get total eligible locations for today
+        // Get total locations created BEFORE today (not on same day)
+        // This prevents new locations added during patrol day from affecting completion
         $totalLocations = PatrolLocation::where('building_id', $schedule->building_id)
             ->whereNull('gate_id')
             ->where('status', 'Active')
             ->whereNull('deleted_at')
-            ->whereDate('created_at', '<=', $today)
+            ->whereDate('created_at', '<', $today)
             ->count();
 
         if ($totalLocations === 0) return true;  // No locations to check
@@ -123,7 +124,7 @@ class CheckPatrolStatus extends Command
             return;
         }
 
-        $message = "Patrol not started! You have {$self::NOT_STARTED_MINUTES} minutes to start your patrol for {$schedule->gate->name} - {$shift->name} ({$shift->start_time}).";
+        $message = "Patrol not started! You have " . self::NOT_STARTED_MINUTES . " minutes to start your patrol for {$schedule->gate->name} - {$shift->name} ({$shift->start_time}).";
 
         NotificationHelper2::sendNotification(
             $guard->id,

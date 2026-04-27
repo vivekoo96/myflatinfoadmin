@@ -66,7 +66,7 @@ class PatrolTaskController extends Controller
         $isGuard = $gate ? true : false;
 
         $tasks = $schedules->map(function ($schedule) use ($user, $date, &$completedTasksCount, $isGuard) {
-            $totalLocations  = $this->getEligibleLocations($schedule->building_id, $date)->count();
+            $totalLocations  = $this->getCompletionCountLocations($schedule->building_id, $date);
 
             // If Guard: show their completion, If BA: show total completion by all guards
             $completedQuery = PatrolDailyLog::where('patrol_schedule_id', $schedule->id)
@@ -329,7 +329,7 @@ class PatrolTaskController extends Controller
         ]);
 
         // Calculate updated progress
-        $totalLocations     = $this->getEligibleLocations($building->id, $date)->count();
+        $totalLocations     = $this->getCompletionCountLocations($building->id, $date);
         $completedLocations = PatrolDailyLog::where('patrol_schedule_id', $schedule->id)
             ->where('guard_user_id', $user->id)
             ->where('patrol_date', $date)
@@ -354,7 +354,7 @@ class PatrolTaskController extends Controller
     // PRIVATE HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    // Get physical locations eligible for a given date
+    // Get physical locations eligible for check-in on a given date
     // Rule: locations created on or BEFORE the patrol date (includes same day)
     private function getEligibleLocations($buildingId, $date)
     {
@@ -365,6 +365,19 @@ class PatrolTaskController extends Controller
             ->whereDate('created_at', '<=', $date)
             ->orderBy('name')
             ->get();
+    }
+
+    // Get locations that count toward task completion for a given date
+    // Rule: locations created BEFORE the patrol date (not on same day)
+    // This prevents new locations added during patrol day from affecting completion percentage
+    private function getCompletionCountLocations($buildingId, $date)
+    {
+        return PatrolLocation::where('building_id', $buildingId)
+            ->whereNull('gate_id')
+            ->where('status', 'Active')
+            ->whereNull('deleted_at')
+            ->whereDate('created_at', '<', $date)
+            ->count();
     }
 
     // Calculate task status
