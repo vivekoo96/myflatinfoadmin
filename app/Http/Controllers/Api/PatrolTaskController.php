@@ -66,7 +66,7 @@ class PatrolTaskController extends Controller
         $isGuard = $gate ? true : false;
 
         $tasks = $schedules->map(function ($schedule) use ($user, $date, &$completedTasksCount, $isGuard) {
-            $totalLocations  = $this->getCompletionCountLocations($schedule->building_id, $date, $schedule);
+            $totalLocations  = $this->getCompletionCountLocations($schedule->building_id, $date, $schedule, $user, $isGuard);
 
             // If Guard: show their completion, If BA: show total completion by all guards
             $completedQuery = PatrolDailyLog::where('patrol_schedule_id', $schedule->id)
@@ -165,8 +165,8 @@ class PatrolTaskController extends Controller
             return response()->json(['success' => false, 'message' => 'Schedule not found for your gate'], 404);
         }
 
-        // Eligible locations: created before the schedule's patrol time
-        $locations = $this->getEligibleLocations($building->id, $date, $schedule);
+        // Eligible locations: created before the schedule's patrol time (or locked to completion time)
+        $locations = $this->getEligibleLocations($building->id, $date, $schedule, $user, $isGuard);
 
         $completedCount = 0;
         $isGuard = $gate ? true : false;
@@ -272,13 +272,15 @@ class PatrolTaskController extends Controller
             return response()->json(['success' => false, 'message' => 'Patrol task not found for your gate'], 404);
         }
 
-        // Verify location is eligible (created before the schedule's patrol time)
+        $cutoffTime = $this->getCutoffTimeForSchedule($building->id, $date, $schedule, $user, true);
+
+        // Verify location is eligible (created before the schedule's patrol time, or lock time)
         $location = PatrolLocation::where('id', $request->patrol_location_id)
             ->where('building_id', $building->id)
             ->whereNull('gate_id')
             ->where('status', 'Active')
             ->whereNull('deleted_at')
-            ->where('created_at', '<=', $date . ' ' . $schedule->patrol_time)
+            ->where('created_at', '<=', $cutoffTime)
             ->first();
 
         if (!$location) {
@@ -329,7 +331,7 @@ class PatrolTaskController extends Controller
         ]);
 
         // Calculate updated progress
-        $totalLocations     = $this->getCompletionCountLocations($building->id, $date, $schedule);
+        $totalLocations     = $this->getCompletionCountLocations($building->id, $date, $schedule, $user, true);
         $completedLocations = PatrolDailyLog::where('patrol_schedule_id', $schedule->id)
             ->where('guard_user_id', $user->id)
             ->where('patrol_date', $date)
@@ -354,31 +356,69 @@ class PatrolTaskController extends Controller
     // PRIVATE HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    // Get physical locations eligible for check-in on a given date
-    // Rule: locations created before the schedule's patrol time
-    private function getEligibleLocations($buildingId, $date, $schedule)
+    // Get the cutoff time for a schedule on a given date.
+    // If the task was already completed at the time of the last checkin, freeze the cutoff time to prevent
+    // newly added locations from reverting the status from 'Completed' to 'onProgress'.
+    private function getCutoffTimeForSchedule($buildingId, $date, $schedule, $user, $isGuard)
     {
-        $scheduleDateTime = $date . ' ' . $schedule->patrol_time;
+        $scheduleDateTime = Carbon::parse($date . ' ' . $schedule->patrol_time);
+
+        $logQuery = PatrolDailyLog::where('patrol_schedule_id', $schedule->id)
+            ->where('patrol_date', $date);
+
+        if ($isGuard && $user) {
+            $logQuery->where('guard_user_id', $user->id);
+        }
+
+        $completedLocations = $logQuery->count();
+        $lastCheckin = $logQuery->max('checked_at');
+
+        $cutoffTime = $scheduleDateTime->copy();
+
+        if ($lastCheckin) {
+            $lastCheckinTime = Carbon::parse($lastCheckin);
+            $cutoffAtLastCheckin = $scheduleDateTime->copy()->min($lastCheckinTime);
+
+            $totalAtLastCheckin = PatrolLocation::where('building_id', $buildingId)
+                ->whereNull('gate_id')
+                ->where('status', 'Active')
+                ->whereNull('deleted_at')
+                ->where('created_at', '<=', $cutoffAtLastCheckin)
+                ->count();
+
+            if ($totalAtLastCheckin > 0 && $completedLocations >= $totalAtLastCheckin) {
+                // Task was completed at the time of the last checkin. Freeze the cutoff.
+                $cutoffTime = $cutoffAtLastCheckin;
+            }
+        }
+
+        return $cutoffTime;
+    }
+
+    // Get physical locations eligible for check-in on a given date
+    private function getEligibleLocations($buildingId, $date, $schedule, $user, $isGuard)
+    {
+        $cutoffTime = $this->getCutoffTimeForSchedule($buildingId, $date, $schedule, $user, $isGuard);
+
         return PatrolLocation::where('building_id', $buildingId)
             ->whereNull('gate_id')
             ->where('status', 'Active')
             ->whereNull('deleted_at')
-            ->where('created_at', '<=', $scheduleDateTime)
+            ->where('created_at', '<=', $cutoffTime)
             ->orderBy('name')
             ->get();
     }
 
     // Get locations that count toward task completion for a given date
-    // Rule: locations created before the schedule's patrol time
-    // This prevents new locations from retroactively affecting completed past schedules
-    private function getCompletionCountLocations($buildingId, $date, $schedule)
+    private function getCompletionCountLocations($buildingId, $date, $schedule, $user, $isGuard)
     {
-        $scheduleDateTime = $date . ' ' . $schedule->patrol_time;
+        $cutoffTime = $this->getCutoffTimeForSchedule($buildingId, $date, $schedule, $user, $isGuard);
+
         return PatrolLocation::where('building_id', $buildingId)
             ->whereNull('gate_id')
             ->where('status', 'Active')
             ->whereNull('deleted_at')
-            ->where('created_at', '<=', $scheduleDateTime)
+            ->where('created_at', '<=', $cutoffTime)
             ->count();
     }
 
