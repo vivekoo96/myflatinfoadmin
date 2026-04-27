@@ -362,7 +362,8 @@ class PatrolTaskController extends Controller
     // newly added locations from reverting the status from 'Completed' to 'onProgress'.
     private function getCutoffTimeForSchedule($buildingId, $date, $schedule, $user, $isGuard)
     {
-        $scheduleDateTime = Carbon::parse($date . ' ' . $schedule->patrol_time);
+        $dateObj = Carbon::parse($date);
+        $cutoffTime = $dateObj->copy()->endOfDay(); // By default, include all locations created up to the end of the patrol date
 
         $logQuery = PatrolDailyLog::where('patrol_schedule_id', $schedule->id)
             ->where('patrol_date', $date);
@@ -374,11 +375,10 @@ class PatrolTaskController extends Controller
         $completedLocations = $logQuery->count();
         $lastCheckin = $logQuery->max('checked_at');
 
-        $cutoffTime = $scheduleDateTime->copy();
-
         if ($lastCheckin) {
             $lastCheckinTime = Carbon::parse($lastCheckin);
-            $cutoffAtLastCheckin = $scheduleDateTime->copy()->min($lastCheckinTime);
+            // Limit the check to the last checkin time
+            $cutoffAtLastCheckin = $lastCheckinTime->copy();
 
             $totalAtLastCheckin = PatrolLocation::where('building_id', $buildingId)
                 ->whereNull('gate_id')
