@@ -36,16 +36,14 @@ class GuardPatrolController extends Controller
 
         $shifts = BuildingShift::where('building_id', $building->id)->get();
 
+        // Only show physical locations (gate_id = null) in filter, not schedules
         $locations = PatrolLocation::where('building_id', $building->id)
+            ->whereNull('gate_id')
             ->whereNull('deleted_at')
             ->with('gate')
             ->get()
             ->map(function($loc) {
-                if ($loc->gate) {
-                    $loc->display_name = $loc->name . ' (Route: ' . ($loc->gate->name ?? 'N/A') . ')';
-                } else {
-                    $loc->display_name = $loc->name;
-                }
+                $loc->display_name = $loc->name;
                 return $loc;
             });
 
