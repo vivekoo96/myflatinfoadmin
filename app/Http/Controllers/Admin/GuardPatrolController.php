@@ -37,6 +37,7 @@ class GuardPatrolController extends Controller
         $shifts = BuildingShift::where('building_id', $building->id)->get();
 
         $locations = PatrolLocation::where('building_id', $building->id)
+            ->whereNull('deleted_at')
             ->with('gate')
             ->get()
             ->map(function($loc) {
