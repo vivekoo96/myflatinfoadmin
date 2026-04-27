@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PatrolLocation;
 use App\Models\PatrolDailyLog;
 use App\Models\Building;
+use App\Models\BuildingShift;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Auth;
