@@ -234,7 +234,6 @@ class PatrolTaskController extends Controller
         $validator = Validator::make($request->all(), [
             'patrol_task_id'      => 'required|exists:patrol_locations,id',
             'patrol_location_id'  => 'required|exists:patrol_locations,id',
-            'gate_id'             => 'required|exists:gates,id',
             'checkin_type'        => 'required|in:photo,qr',
             'photo'               => 'required_if:checkin_type,photo|nullable|image|mimes:jpg,jpeg,png|max:4096',
             'qr_scanned_value'    => 'required_if:checkin_type,qr|nullable|string',
@@ -247,10 +246,23 @@ class PatrolTaskController extends Controller
 
         $date     = $request->filled('date') ? $request->date : today()->toDateString();
         $building = $gate->building;
+        $gateId   = $gate->id;  // Auto-use guard's gate
+
+        // Auto-detect current shift based on present time
+        $currentTime = Carbon::now()->format('H:i');
+        $currentShift = BuildingShift::where('building_id', $building->id)
+            ->where('status', 'Active')
+            ->whereRaw("TIME(start_time) <= ?", [$currentTime])
+            ->whereRaw("TIME(end_time) >= ?", [$currentTime])
+            ->first();
+
+        if (!$currentShift) {
+            return response()->json(['success' => false, 'message' => 'No active shift found for current time'], 403);
+        }
 
         // Verify schedule belongs to guard's gate
         $schedule = PatrolLocation::where('id', $request->patrol_task_id)
-            ->where('gate_id', $gate->id)
+            ->where('gate_id', $gateId)
             ->where('building_id', $building->id)
             ->whereNull('deleted_at')
             ->first();

@@ -1653,25 +1653,19 @@
                   "key": "patrol_task_id",
                   "value": "66",
                   "type": "text",
-                  "description": "Patrol task ID (the scheduled task)"
+                  "description": "Patrol task ID (required)"
                 },
                 {
                   "key": "patrol_location_id",
                   "value": "1",
                   "type": "text",
-                  "description": "Physical location ID to check in"
-                },
-                {
-                  "key": "gate_id",
-                  "value": "1",
-                  "type": "text",
-                  "description": "Gate ID"
+                  "description": "Physical location ID to check in (required)"
                 },
                 {
                   "key": "checkin_type",
                   "value": "qr",
                   "type": "text",
-                  "description": "photo or qr"
+                  "description": "photo or qr (required)"
                 },
                 {
                   "key": "qr_scanned_value",
@@ -1686,13 +1680,6 @@
                   "type": "file",
                   "disabled": true,
                   "description": "Only for checkin_type=photo"
-                },
-                {
-                  "key": "date",
-                  "value": "2026-04-27",
-                  "type": "text",
-                  "disabled": true,
-                  "description": "Date in Y-m-d format (optional, defaults to today)"
                 }
               ]
             },
