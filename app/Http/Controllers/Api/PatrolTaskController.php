@@ -259,13 +259,13 @@ class PatrolTaskController extends Controller
             return response()->json(['success' => false, 'message' => 'Patrol task not found for your gate'], 404);
         }
 
-        // Verify location is eligible (created before patrol date)
+        // Verify location is eligible (created on or before patrol date)
         $location = PatrolLocation::where('id', $request->patrol_location_id)
             ->where('building_id', $building->id)
             ->whereNull('gate_id')
             ->where('status', 'Active')
             ->whereNull('deleted_at')
-            ->whereDate('created_at', '<', $date)
+            ->whereDate('created_at', '<=', $date)
             ->first();
 
         if (!$location) {
@@ -342,14 +342,14 @@ class PatrolTaskController extends Controller
     // ─────────────────────────────────────────────────────────────
 
     // Get physical locations eligible for a given date
-    // Rule: only locations created BEFORE the patrol date (not same day)
+    // Rule: locations created on or BEFORE the patrol date (includes same day)
     private function getEligibleLocations($buildingId, $date)
     {
         return PatrolLocation::where('building_id', $buildingId)
             ->whereNull('gate_id')
             ->where('status', 'Active')
             ->whereNull('deleted_at')
-            ->whereDate('created_at', '<', $date)
+            ->whereDate('created_at', '<=', $date)
             ->orderBy('name')
             ->get();
     }
