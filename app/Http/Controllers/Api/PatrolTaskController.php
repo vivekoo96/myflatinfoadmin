@@ -165,11 +165,12 @@ class PatrolTaskController extends Controller
             return response()->json(['success' => false, 'message' => 'Schedule not found for your gate'], 404);
         }
 
+        $isGuard = $gate ? true : false;
+
         // Eligible locations: created before the schedule's patrol time (or locked to completion time)
         $locations = $this->getEligibleLocations($building->id, $date, $schedule, $user, $isGuard);
 
         $completedCount = 0;
-        $isGuard = $gate ? true : false;
 
         $data = $locations->map(function ($location) use ($schedule, $user, $date, &$completedCount, $isGuard) {
             // If Guard: check their checkin, If BA: check any guard's checkin
