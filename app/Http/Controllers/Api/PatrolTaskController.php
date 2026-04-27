@@ -66,7 +66,7 @@ class PatrolTaskController extends Controller
         $isGuard = $gate ? true : false;
 
         $tasks = $schedules->map(function ($schedule) use ($user, $date, &$completedTasksCount, $isGuard) {
-            $totalLocations  = $this->getCompletionCountLocations($schedule->building_id, $date);
+            $totalLocations  = $this->getCompletionCountLocations($schedule->building_id, $date, $schedule);
 
             // If Guard: show their completion, If BA: show total completion by all guards
             $completedQuery = PatrolDailyLog::where('patrol_schedule_id', $schedule->id)
@@ -165,8 +165,8 @@ class PatrolTaskController extends Controller
             return response()->json(['success' => false, 'message' => 'Schedule not found for your gate'], 404);
         }
 
-        // Eligible locations: created BEFORE the patrol date (not on same day)
-        $locations = $this->getEligibleLocations($building->id, $date);
+        // Eligible locations: created before the schedule's patrol time
+        $locations = $this->getEligibleLocations($building->id, $date, $schedule);
 
         $completedCount = 0;
         $isGuard = $gate ? true : false;
@@ -272,13 +272,13 @@ class PatrolTaskController extends Controller
             return response()->json(['success' => false, 'message' => 'Patrol task not found for your gate'], 404);
         }
 
-        // Verify location is eligible (created on or before patrol date)
+        // Verify location is eligible (created before the schedule's patrol time)
         $location = PatrolLocation::where('id', $request->patrol_location_id)
             ->where('building_id', $building->id)
             ->whereNull('gate_id')
             ->where('status', 'Active')
             ->whereNull('deleted_at')
-            ->whereDate('created_at', '<=', $date)
+            ->where('created_at', '<=', $date . ' ' . $schedule->patrol_time)
             ->first();
 
         if (!$location) {
@@ -329,7 +329,7 @@ class PatrolTaskController extends Controller
         ]);
 
         // Calculate updated progress
-        $totalLocations     = $this->getCompletionCountLocations($building->id, $date);
+        $totalLocations     = $this->getCompletionCountLocations($building->id, $date, $schedule);
         $completedLocations = PatrolDailyLog::where('patrol_schedule_id', $schedule->id)
             ->where('guard_user_id', $user->id)
             ->where('patrol_date', $date)
@@ -355,28 +355,30 @@ class PatrolTaskController extends Controller
     // ─────────────────────────────────────────────────────────────
 
     // Get physical locations eligible for check-in on a given date
-    // Rule: locations created on or BEFORE the patrol date (includes same day)
-    private function getEligibleLocations($buildingId, $date)
+    // Rule: locations created before the schedule's patrol time
+    private function getEligibleLocations($buildingId, $date, $schedule)
     {
+        $scheduleDateTime = $date . ' ' . $schedule->patrol_time;
         return PatrolLocation::where('building_id', $buildingId)
             ->whereNull('gate_id')
             ->where('status', 'Active')
             ->whereNull('deleted_at')
-            ->whereDate('created_at', '<=', $date)
+            ->where('created_at', '<=', $scheduleDateTime)
             ->orderBy('name')
             ->get();
     }
 
     // Get locations that count toward task completion for a given date
-    // Rule: locations created BEFORE the patrol date (not on same day)
-    // This prevents new locations added during patrol day from affecting completion percentage
-    private function getCompletionCountLocations($buildingId, $date)
+    // Rule: locations created before the schedule's patrol time
+    // This prevents new locations from retroactively affecting completed past schedules
+    private function getCompletionCountLocations($buildingId, $date, $schedule)
     {
+        $scheduleDateTime = $date . ' ' . $schedule->patrol_time;
         return PatrolLocation::where('building_id', $buildingId)
             ->whereNull('gate_id')
             ->where('status', 'Active')
             ->whereNull('deleted_at')
-            ->whereDate('created_at', '<=', $date)
+            ->where('created_at', '<=', $scheduleDateTime)
             ->count();
     }
 
