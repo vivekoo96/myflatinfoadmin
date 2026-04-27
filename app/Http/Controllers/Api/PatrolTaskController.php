@@ -278,7 +278,7 @@ class PatrolTaskController extends Controller
             ->whereNull('gate_id')
             ->where('status', 'Active')
             ->whereNull('deleted_at')
-            ->whereDate('created_at', '<=', $date)
+            ->whereDate('created_at', '<', $date)
             ->first();
 
         if (!$location) {
@@ -362,7 +362,7 @@ class PatrolTaskController extends Controller
             ->whereNull('gate_id')
             ->where('status', 'Active')
             ->whereNull('deleted_at')
-            ->whereDate('created_at', '<=', $date)
+            ->whereDate('created_at', '<', $date)
             ->orderBy('name')
             ->get();
     }
