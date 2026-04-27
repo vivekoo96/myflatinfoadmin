@@ -162,8 +162,8 @@
                           data-patrol_time="{{ $loc->patrol_time }}">
                           <i class="fa fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger remove-assignment" data-id="{{ $loc->id }}">
-                          <i class="fa fa-times"></i>
+                        <button class="btn btn-sm btn-danger delete-schedule" data-id="{{ $loc->id }}">
+                          <i class="fa fa-trash"></i>
                         </button>
                     </td>
                     @endif
@@ -416,7 +416,26 @@
         $('#assign_shift_id').trigger('change');
     });
 
-    // Remove Assignment
+    // Delete Schedule (fully delete, not just clear assignment)
+    $(document).on('click', '.delete-schedule', function(){
+        var id = $(this).data('id');
+        if (!confirm('Delete this patrol schedule? This action cannot be undone.')) return;
+        $.ajax({
+            url: '/patrol-location/' + id,
+            type: 'DELETE',
+            data: {'_token': token},
+            success: function(data){
+                if(data.msg === 'success') {
+                    window.location.reload();
+                }
+            },
+            error: function() {
+                alert('Error deleting schedule');
+            }
+        });
+    });
+
+    // Remove Assignment (old handler - keeps location as physical location)
     $(document).on('click', '.remove-assignment', function(){
         var id = $(this).data('id');
         if (!confirm('Remove this assignment?')) return;
