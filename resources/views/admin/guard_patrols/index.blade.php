@@ -142,6 +142,8 @@
                         <td>
                           @if(($patrol->log_type ?? '') == 'task')
                             <span class="badge badge-info">Task</span>
+                          @elseif(($patrol->log_type ?? '') == 'daily')
+                            <span class="badge badge-success">Daily</span>
                           @else
                             <span class="badge badge-secondary">General</span>
                           @endif

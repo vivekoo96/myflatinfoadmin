@@ -62,7 +62,7 @@ class GuardPatrolController extends Controller
                 \DB::raw("'general' as log_type")
             ]);
 
-        // Query 2: Task Logs (joining to get shift info)
+        // Query 2: Task Logs (old patrol_task_logs table)
         $taskQuery = \DB::table('patrol_task_logs')
             ->join('patrol_locations', 'patrol_task_logs.patrol_task_id', '=', 'patrol_locations.id')
             ->leftJoin('building_shifts', 'patrol_locations.building_shift_id', '=', 'building_shifts.id')
@@ -70,7 +70,7 @@ class GuardPatrolController extends Controller
             ->select([
                 'patrol_task_logs.id',
                 'patrol_task_logs.guard_user_id',
-                'patrol_task_logs.patrol_location_id', // This is the physical point
+                'patrol_task_logs.patrol_location_id',
                 'patrol_task_logs.checkin_type',
                 'building_shifts.name as shift',
                 'patrol_task_logs.photo_url',
@@ -78,31 +78,52 @@ class GuardPatrolController extends Controller
                 \DB::raw("'task' as log_type")
             ]);
 
-        // Apply same filters to both
+        // Query 3: NEW Patrol Daily Logs (patrol_daily_logs table - date-based API)
+        $dailyLogsQuery = \DB::table('patrol_daily_logs')
+            ->join('patrol_locations as schedule', 'patrol_daily_logs.patrol_schedule_id', '=', 'schedule.id')
+            ->leftJoin('building_shifts', 'schedule.building_shift_id', '=', 'building_shifts.id')
+            ->where('patrol_daily_logs.building_id', $building->id)
+            ->select([
+                'patrol_daily_logs.id',
+                'patrol_daily_logs.guard_user_id',
+                'patrol_daily_logs.patrol_location_id',
+                'patrol_daily_logs.checkin_type',
+                'building_shifts.name as shift',
+                'patrol_daily_logs.photo_url',
+                'patrol_daily_logs.checked_at as checked_in_at',
+                \DB::raw("'daily' as log_type")
+            ]);
+
+        // Apply same filters to all three queries
         if ($request->filled('guard_user_id')) {
             $generalQuery->where('guard_user_id', $request->guard_user_id);
             $taskQuery->where('patrol_task_logs.guard_user_id', $request->guard_user_id);
+            $dailyLogsQuery->where('patrol_daily_logs.guard_user_id', $request->guard_user_id);
         }
         if ($request->filled('patrol_location_id')) {
             $generalQuery->where('patrol_location_id', $request->patrol_location_id);
             $taskQuery->where('patrol_task_logs.patrol_location_id', $request->patrol_location_id);
+            $dailyLogsQuery->where('patrol_daily_logs.patrol_location_id', $request->patrol_location_id);
         }
         if ($request->filled('shift')) {
             $generalQuery->where('shift', $request->shift);
             $taskQuery->where('building_shifts.name', $request->shift);
+            $dailyLogsQuery->where('building_shifts.name', $request->shift);
         }
         if ($request->filled('checkin_type')) {
             $generalQuery->where('checkin_type', $request->checkin_type);
             $taskQuery->where('patrol_task_logs.checkin_type', $request->checkin_type);
+            $dailyLogsQuery->where('patrol_daily_logs.checkin_type', $request->checkin_type);
         }
         if ($request->filled('date')) {
             $generalQuery->whereDate('checked_in_at', $request->date);
             $taskQuery->whereDate('patrol_task_logs.checked_at', $request->date);
+            $dailyLogsQuery->whereDate('patrol_daily_logs.checked_at', $request->date);
         }
 
-        // Combine and Paginate using union
-        // We use unionAll for better performance and to ensure all logs show up
-        $combinedResults = $generalQuery->unionAll($taskQuery)
+        // Combine all three sources and paginate
+        // unionAll combines results from all three queries
+        $combinedResults = $generalQuery->unionAll($taskQuery)->unionAll($dailyLogsQuery)
             ->orderBy('checked_in_at', 'desc')
             ->paginate(20)
             ->appends($request->query());
