@@ -22,6 +22,7 @@ class Kernel extends ConsoleKernel
         Commands\SendScheduledNoticeboardNotifications::class,
         Commands\CloseExpiredPolls::class,
         Commands\SendPatrolReminders::class,
+        Commands\CheckPatrolStatus::class,
     ];
 
     protected function schedule(Schedule $schedule)
@@ -40,6 +41,9 @@ class Kernel extends ConsoleKernel
          $schedule->command('classified:send-scheduled')->everyMinute()->evenInMaintenanceMode();
         $schedule->command('polls:close-expired')->everyMinute()->evenInMaintenanceMode();
         $schedule->command('patrol:send-reminders')->everyMinute()->evenInMaintenanceMode();
+
+        // Patrol Status Checker - runs every 5 minutes
+        $schedule->command('patrol:check-status')->everyFiveMinutes()->evenInMaintenanceMode();
     }
 
 //everyFiveMinutes()
