@@ -1571,6 +1571,146 @@
       ]
     },
     {
+      "name": "Guard Patrol (API) - Date Based - NEW",
+      "item": [
+        {
+          "name": "get-patrol-tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/get-patrol-tasks?date=2026-04-27",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "get-patrol-tasks"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2026-04-27",
+                  "description": "Date in Y-m-d format (optional, defaults to today)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-patrol-task-locations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/get-patrol-task-locations?schedule_id=66&date=2026-04-27",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "get-patrol-task-locations"
+              ],
+              "query": [
+                {
+                  "key": "schedule_id",
+                  "value": "66",
+                  "description": "Patrol schedule ID (required)"
+                },
+                {
+                  "key": "date",
+                  "value": "2026-04-27",
+                  "description": "Date in Y-m-d format (optional, defaults to today)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "patrol-task-checkin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "patrol_task_id",
+                  "value": "66",
+                  "type": "text",
+                  "description": "Patrol task ID (the scheduled task)"
+                },
+                {
+                  "key": "patrol_location_id",
+                  "value": "1",
+                  "type": "text",
+                  "description": "Physical location ID to check in"
+                },
+                {
+                  "key": "gate_id",
+                  "value": "1",
+                  "type": "text",
+                  "description": "Gate ID"
+                },
+                {
+                  "key": "checkin_type",
+                  "value": "qr",
+                  "type": "text",
+                  "description": "photo or qr"
+                },
+                {
+                  "key": "qr_scanned_value",
+                  "value": "",
+                  "type": "text",
+                  "disabled": false,
+                  "description": "Only for checkin_type=qr"
+                },
+                {
+                  "key": "photo",
+                  "value": "",
+                  "type": "file",
+                  "disabled": true,
+                  "description": "Only for checkin_type=photo"
+                },
+                {
+                  "key": "date",
+                  "value": "2026-04-27",
+                  "type": "text",
+                  "disabled": true,
+                  "description": "Date in Y-m-d format (optional, defaults to today)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/patrol-task-checkin",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "patrol-task-checkin"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Admin Panel - Guard Patrol - NEW",
       "item": [
         {

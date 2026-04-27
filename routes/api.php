@@ -255,6 +255,11 @@ use App\Http\Controllers\Api\MoveInOutApiController;
         Route::post('patrol-task-location-checkin',[App\Http\Controllers\Api\GuardPatrolController::class,'submitTaskLocationCheckin']);
         Route::get('patrol-task-progress',[App\Http\Controllers\Api\GuardPatrolController::class,'getTaskProgress']);
 
+        // New Patrol Task APIs (date-based, dynamic locations)
+        Route::get('get-patrol-tasks', [App\Http\Controllers\Api\PatrolTaskController::class, 'getPatrolTasks']);
+        Route::get('get-patrol-task-locations', [App\Http\Controllers\Api\PatrolTaskController::class, 'getTaskLocations']);
+        Route::post('patrol-task-checkin', [App\Http\Controllers\Api\PatrolTaskController::class, 'submitCheckin']);
+
         // Duty Check-in API
         Route::get('duty-checkin-status',[App\Http\Controllers\Api\DutyCheckinController::class,'status']);
         Route::post('duty-checkin',[App\Http\Controllers\Api\DutyCheckinController::class,'checkin']);
