@@ -1430,6 +1430,14 @@ class AdminController extends Controller
             }
         }
 
+        // Sync with Staff table if role is an issue/department role
+        if (isset($building_user) || isset($bu) || isset($buildingUser)) {
+            $assignment = $building_user ?? $bu ?? $buildingUser;
+            if ($assignment) {
+                $this->syncWithStaff($assignment);
+            }
+        }
+
         return redirect()->back()->with('success', $msg);
     }
 
@@ -2470,6 +2478,51 @@ class AdminController extends Controller
         }
         return response()->json(['exists' => $exists]);
     }
- 
 
+    /**
+     * Synchronize building workers (Issue/Custom roles) with the staffs table.
+     */
+    public function syncWithStaff($buildingUser)
+    {
+        // Use direct queries to avoid relationship caching issues on new records
+        $role = \App\Models\Role::find($buildingUser->role_id);
+        $user = \App\Models\User::find($buildingUser->user_id);
+        
+        // Only sync if role type is 'issue' or 'custom'
+        if (!$role || !in_array($role->type, ['issue', 'custom'])) {
+            return;
+        }
+
+        if (!$user) return;
+        
+        \Log::info('syncWithStaff: syncing worker (AdminController)', ['user_id' => $user->id, 'role' => $role->name]);
+
+        // Find or create staff record
+        $staff = \App\Models\Staff::where('user_id', $user->id)->first();
+        
+        if (!$staff) {
+            $staff = new \App\Models\Staff();
+            $staff->staff_id = $this->generateUniqueStaffId();
+        }
+
+        $staff->building_id = $buildingUser->building_id;
+        $staff->user_id = $user->id;
+        $staff->name = $user->name;
+        $staff->phone = $user->phone ?? '';
+        $staff->type = $role->name; // Role name as staff type (Gym, Plumbing, etc.)
+        $staff->category = 'building_staff';
+        $staff->status = $buildingUser->status ?? 'Active';
+        $staff->creator_id = Auth::id();
+        $staff->creator_type = 'admin';
+        $staff->save();
+    }
+
+    private function generateUniqueStaffId()
+    {
+        do {
+            $code = mt_rand(100000, 999999);
+        } while (\App\Models\Staff::where('staff_id', $code)->exists());
+        
+        return (string)$code;
+    }
 }
