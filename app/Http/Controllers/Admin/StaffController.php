@@ -14,7 +14,14 @@ class StaffController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Staff::query();
+        if(Auth::User()->role == 'BA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President') || Auth::User()->hasPermission('custom.staff_attendance'))
+        {
+            // Access granted
+        } else {
+            return redirect('permission-denied')->with('error','Permission denied!');
+        }
+
+        $query = Staff::where('building_id', Auth::user()->building_id);
 
         if ($request->has('search')) {
             $query->where('name', 'like', '%' . $request->search . '%')
@@ -52,7 +59,7 @@ class StaffController extends Controller
 
         $staff = new Staff($request->all());
         $staff->staff_id = $this->generateUniqueStaffId();
-        $staff->building_id = session('building_id') ?? 1; // Fallback or logic to get active building
+        $staff->building_id = Auth::user()->building_id;
         $staff->creator_id = Auth::id();
         $staff->creator_type = 'admin';
 

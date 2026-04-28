@@ -12,10 +12,18 @@ class AttendanceController extends Controller
 {
     public function index(Request $request)
     {
+        if(Auth::User()->role == 'BA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President') || Auth::User()->hasPermission('custom.staff_attendance'))
+        {
+            // Access granted
+        } else {
+            return redirect('permission-denied')->with('error','Permission denied!');
+        }
+
         $date = $request->get('date', date('Y-m-d'));
-        $query = Staff::with(['attendanceLogs' => function($q) use ($date) {
-            $q->where('date', $date);
-        }]);
+        $query = Staff::where('building_id', Auth::user()->building_id)
+            ->with(['attendanceLogs' => function($q) use ($date) {
+                $q->where('date', $date);
+            }]);
 
         if ($request->has('category')) {
             $query->where('category', $request->category);
@@ -55,9 +63,10 @@ class AttendanceController extends Controller
         $month = $request->get('month', date('m'));
         $year = $request->get('year', date('Y'));
         
-        $staffs = Staff::with(['attendanceLogs' => function($q) use ($month, $year) {
-            $q->whereMonth('date', $month)->whereYear('date', $year);
-        }])->get();
+        $staffs = Staff::where('building_id', Auth::user()->building_id)
+            ->with(['attendanceLogs' => function($q) use ($month, $year) {
+                $q->whereMonth('date', $month)->whereYear('date', $year);
+            }])->get();
 
         return view('admin.attendance.report', compact('staffs', 'month', 'year'));
     }
