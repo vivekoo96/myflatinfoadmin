@@ -4,6 +4,26 @@
     Monthly Attendance Report
 @endsection
 
+@section('style')
+<style>
+    .table-custom {
+        width: 100%;
+        margin-bottom: 1rem;
+        color: #212529;
+        border-collapse: collapse;
+    }
+    .table-custom th, .table-custom td {
+        padding: 0.75rem;
+        vertical-align: top;
+        border-top: 1px solid #dee2e6;
+    }
+    .table-custom thead th {
+        vertical-align: bottom;
+        border-bottom: 2px solid #dee2e6;
+    }
+</style>
+@endsection
+
 @section('content')
     <section class="content-header">
       <div class="container-fluid">
@@ -46,7 +66,7 @@
               </div>
               <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-sm">
+                    <table class="table-custom table-bordered table-sm">
                         <thead>
                             <tr>
                                 <th>Staff Name</th>

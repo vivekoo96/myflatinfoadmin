@@ -4,6 +4,26 @@
     Staff Management
 @endsection
 
+@section('style')
+<style>
+    .table-custom {
+        width: 100%;
+        margin-bottom: 1rem;
+        color: #212529;
+        border-collapse: collapse;
+    }
+    .table-custom th, .table-custom td {
+        padding: 0.75rem;
+        vertical-align: top;
+        border-top: 1px solid #dee2e6;
+    }
+    .table-custom thead th {
+        vertical-align: bottom;
+        border-bottom: 2px solid #dee2e6;
+    }
+</style>
+@endsection
+
 @section('content')
     <section class="content-header">
       <div class="container-fluid">
@@ -34,7 +54,7 @@
               </div>
               <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
+                    <table class="table-custom table-bordered table-striped">
                         <thead>
                             <tr>
                                 <th>Staff ID</th>
@@ -70,7 +90,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary edit-staff" data-id="{{ $staff->id }}"><i class="fa fa-edit"></i></button>
+                                    <a href="{{ route('admin.staff.edit', $staff->id) }}" class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></a>
                                     <form action="{{ route('admin.staff.destroy', $staff->id) }}" method="POST" style="display:inline;">
                                         @csrf
                                         @method('DELETE')
