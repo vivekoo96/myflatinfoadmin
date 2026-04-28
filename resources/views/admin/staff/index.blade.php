@@ -86,12 +86,12 @@
                                             data-toggle="modal"
                                             data-target="#editStaffModal"
                                             data-id="{{ $staff->id }}"
-                                            data-name="{{ $staff->name }}"
-                                            data-phone="{{ $staff->phone }}"
-                                            data-type="{{ $staff->type }}"
-                                            data-status="{{ $staff->status }}"
-                                            data-address="{{ $staff->address }}"
-                                            data-photo="{{ $staff->photo }}"><i class="fa fa-edit"></i></button>
+                                            data-name="{{ htmlspecialchars($staff->name, ENT_QUOTES) }}"
+                                            data-phone="{{ htmlspecialchars($staff->phone ?? '', ENT_QUOTES) }}"
+                                            data-type="{{ htmlspecialchars($staff->type ?? '', ENT_QUOTES) }}"
+                                            data-status="{{ $staff->status ?? 'Active' }}"
+                                            data-address="{{ htmlspecialchars($staff->address ?? '', ENT_QUOTES) }}"
+                                            data-photo="{{ htmlspecialchars($staff->photo ?? '', ENT_QUOTES) }}"><i class="fa fa-edit"></i></button>
                                         <form action="{{ route('admin.staff.destroy', $staff->id) }}" method="POST" style="display:inline;">
                                             @csrf
                                             @method('DELETE')
@@ -227,13 +227,24 @@
 <script>
 $('#editStaffModal').on('show.bs.modal', function(e) {
     const btn = $(e.relatedTarget);
-    const id = btn.data('id');
-    const name = btn.data('name');
-    const phone = btn.data('phone');
-    const type = btn.data('type');
-    const status = btn.data('status');
-    const address = btn.data('address');
-    const photo = btn.data('photo');
+
+    console.log('Button data:', {
+        id: btn.attr('data-id'),
+        name: btn.attr('data-name'),
+        phone: btn.attr('data-phone'),
+        type: btn.attr('data-type'),
+        status: btn.attr('data-status'),
+        address: btn.attr('data-address'),
+        photo: btn.attr('data-photo')
+    });
+
+    const id = btn.attr('data-id');
+    const name = btn.attr('data-name') || '';
+    const phone = btn.attr('data-phone') || '';
+    const type = btn.attr('data-type') || '';
+    const status = btn.attr('data-status') || 'Active';
+    const address = btn.attr('data-address') || '';
+    const photo = btn.attr('data-photo') || '';
 
     $('#edit_name').val(name);
     $('#edit_phone').val(phone);
@@ -242,10 +253,10 @@ $('#editStaffModal').on('show.bs.modal', function(e) {
     $('#edit_address').val(address);
 
     // Show photo preview if exists
-    if (photo) {
-        $('#edit_photo_preview').html('<img src="' + '{{ asset("") }}' + photo + '" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px;">');
+    if (photo && photo.trim()) {
+        $('#edit_photo_preview').html('<img src="{{ asset("") }}' + photo + '" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px;">');
     } else {
-        $('#edit_photo_preview').html('');
+        $('#edit_photo_preview').html('<p class="text-muted">No photo</p>');
     }
 
     // Update form action to the correct update route
