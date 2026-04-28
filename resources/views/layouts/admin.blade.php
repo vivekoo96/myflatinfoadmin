@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -446,7 +446,7 @@
                       
                         elseif (!empty($selectedRoleId) && $selectedRoleId != '0') {
                     
-                            // 🔹 This is the line you mentioned
+                            // ðŸ”¹ This is the line you mentioned
                             $role = Role::find($selectedRoleId);
                     
                             if ($role) {
@@ -464,7 +464,7 @@
                     
                         /*
                         |--------------------------------------------------------------------------
-                        | CASE 3: fallback → USERS TABLE ROLE
+                        | CASE 3: fallback â†’ USERS TABLE ROLE
                         |--------------------------------------------------------------------------
                         */
                         if ($displayRole === 'User' && !empty($user->role)) {
@@ -1101,6 +1101,40 @@
             </a>
           </li>
         @endif
+          @php
+            $isStaffAttendanceOpen = request()->is('staff*') || request()->is('attendance*');
+          @endphp
+          @if($user->role == 'BA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President') || Auth::User()->hasPermission('custom.staff_attendance'))
+          <li class="nav-item has-treeview {{ $isStaffAttendanceOpen ? 'menu-open' : '' }}">
+              <a href="#" class="nav-link {{ $isStaffAttendanceOpen ? 'active' : '' }}">
+                  <i class="nav-icon fas fa-user-check"></i>
+                  <p>
+                      Staff Attendance
+                      <i class="right fas fa-angle-left"></i>
+                  </p>
+              </a>
+              <ul class="nav nav-treeview second">
+                  <li class="nav-item">
+                      <a href="{{ route('admin.staff.index') }}" class="nav-link {{ request()->is('staff') ? 'second-active' : '' }}">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Manage Staff</p>
+                      </a>
+                  </li>
+                  <li class="nav-item">
+                      <a href="{{ route('admin.attendance.index') }}" class="nav-link {{ request()->is('attendance') ? 'second-active' : '' }}">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Attendance Logs</p>
+                      </a>
+                  </li>
+                  <li class="nav-item">
+                      <a href="{{ route('admin.attendance.report') }}" class="nav-link {{ request()->is('attendance/report') ? 'second-active' : '' }}">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Attendance Report</p>
+                      </a>
+                  </li>
+              </ul>
+          </li>
+          @endif
 
           @php
             $hasNotifFeature = $building && $building->hasPermission('Send Notification');
@@ -1705,5 +1739,6 @@ $(document).ready(function() {
 @yield('script')
 </body>
 </html>
+
 
 
