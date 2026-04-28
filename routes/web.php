@@ -363,6 +363,7 @@ Route::middleware('admin')->group(function () {
         Route::prefix('staff')->name('admin.staff.')->group(function () {
             Route::get('/', [StaffController::class, 'index'])->name('index');
             Route::post('/', [StaffController::class, 'store'])->name('store');
+            Route::get('/{staff}', [StaffController::class, 'show'])->name('show');
             Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('edit');
             Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
             Route::delete('/{staff}', [StaffController::class, 'destroy'])->name('destroy');
