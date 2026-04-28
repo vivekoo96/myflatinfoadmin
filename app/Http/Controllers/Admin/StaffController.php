@@ -40,11 +40,15 @@ class StaffController extends Controller
             $staffQuery->where('type', $request->type);
         }
 
-        $staffs = $staffQuery->get();
+        $staffs = $staffQuery->latest()->paginate(10);
+        $staffs->getCollection()->transform(function($staff) {
+            $staff->source = 'staff';
+            return $staff;
+        });
 
         // Fetch Building Workers (from BuildingUser with Building Worker role)
-        $buildingWorkers = collect();
         $guardRole = Role::whereRaw("LOWER(TRIM(COALESCE(slug, ''))) = ?", ['guard'])->first();
+        $buildingWorkers = collect();
 
         if ($guardRole) {
             $workers = BuildingUser::where('building_id', Auth::user()->building_id)
@@ -54,35 +58,22 @@ class StaffController extends Controller
 
             foreach ($workers as $worker) {
                 if ($worker->user) {
-                    $userData = $worker->user->toArray();
-                    $userData['source'] = 'building_worker';
-                    $userData['building_user_id'] = $worker->id;
-                    $userData['category'] = 'building_staff';
-                    $userData['type'] = $guardRole->name ?? 'Guard';
-                    $userData['status'] = $worker->status;
-                    $userData['staff_id'] = null;
-                    $buildingWorkers->push((object)$userData);
+                    $worker->user->source = 'building_worker';
+                    $worker->user->building_user_id = $worker->id;
+                    $worker->user->category = 'building_staff';
+                    $worker->user->type = $guardRole->name ?? 'Guard';
+                    $worker->user->status = $worker->status;
+                    $worker->user->staff_id = null;
+                    $buildingWorkers->push($worker->user);
                 }
             }
         }
 
-        // Combine Staff and Building Workers
-        $allStaff = $staffs->map(function($staff) {
-            $staff->source = 'staff';
-            return $staff;
-        })->merge($buildingWorkers);
+        // Merge both collections
+        $allStaff = $staffs->getCollection()->merge($buildingWorkers);
+        $staffs->setCollection($allStaff);
 
-        // Apply pagination manually
-        $perPage = 10;
-        $page = $request->get('page', 1);
-        $paginated = new \Illuminate\Pagination\Paginator(
-            $allStaff->forPage($page, $perPage)->values(),
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
-
-        return view('admin.staff.index', ['staffs' => $paginated]);
+        return view('admin.staff.index', compact('staffs'));
     }
 
     public function create()
