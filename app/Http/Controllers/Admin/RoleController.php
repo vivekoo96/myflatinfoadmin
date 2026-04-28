@@ -654,9 +654,9 @@ class RoleController extends Controller
      */
     public function syncWithStaff($buildingUser)
     {
-        // Ensure relationships are loaded, especially for new records
-        $role = $buildingUser->role()->first();
-        $user = $buildingUser->user()->first();
+        // Use direct queries to avoid relationship caching issues on new records
+        $role = Role::find($buildingUser->role_id);
+        $user = \App\Models\User::find($buildingUser->user_id);
         
         // Only sync if role type is 'issue' or 'custom'
         if (!$role || !in_array($role->type, ['issue', 'custom'])) {
@@ -664,6 +664,8 @@ class RoleController extends Controller
         }
 
         if (!$user) return;
+        
+        Log::info('syncWithStaff: syncing worker', ['user_id' => $user->id, 'role' => $role->name]);
 
         // Find or create staff record
         $staff = Staff::where('user_id', $user->id)->first();
