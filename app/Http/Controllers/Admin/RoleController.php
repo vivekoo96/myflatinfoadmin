@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Role;
 use App\Models\Permission;
 use App\Models\BuildingUser;
+use App\Models\Staff;
 
 use \Auth;
 use \DB;
@@ -403,6 +404,8 @@ class RoleController extends Controller
                 $user->save();
             }
 
+            $this->syncWithStaff($building_user);
+            
             // If request was AJAX, return JSON so the client can append the row
             if ($request->ajax() || $request->wantsJson()) {
                 $building_user->load(['user', 'user.city', 'role']);
@@ -609,6 +612,8 @@ class RoleController extends Controller
             $user->save();
         }
     
+        $this->syncWithStaff($building_user);
+
         if ($request->ajax() || $request->wantsJson()) {
             Log::info('update_user_role: returning JSON', ['id' => $building_user->id]);
             return response()->json(['success' => true, 'message' => 'User information updated successfully', 'building_user' => $building_user], 200);
@@ -642,6 +647,54 @@ class RoleController extends Controller
             $building_user->restore();
             return response()->json(['success' => true, 'message' => 'Restored'], 200);
         }
+    }
+
+    /**
+     * Synchronize building workers (Issue/Custom roles) with the staffs table.
+     */
+    public function syncWithStaff($buildingUser)
+    {
+        $role = $buildingUser->role;
+        
+        // Only sync if role type is 'issue' or 'custom'
+        if (!$role || !in_array($role->type, ['issue', 'custom'])) {
+            return;
+        }
+
+        $user = $buildingUser->user;
+        if (!$user) return;
+
+        // Find or create staff record
+        $staff = Staff::where('user_id', $user->id)->first();
+        
+        if (!$staff) {
+            $staff = new Staff();
+            $staff->staff_id = $this->generateUniqueStaffId();
+        }
+
+        $staff->building_id = $buildingUser->building_id;
+        $staff->user_id = $user->id;
+        $staff->name = $user->name;
+        $staff->phone = $user->phone ?? '';
+        $staff->type = $role->name; // e.g., "Gym", "Plumber"
+        $staff->category = 'building_staff';
+        $staff->status = $buildingUser->status ?? 'Active';
+        $staff->creator_id = 1; // System/Admin
+        $staff->creator_type = 'admin';
+        
+        $staff->save();
+    }
+
+    /**
+     * Generate a unique 6-digit staff ID.
+     */
+    private function generateUniqueStaffId()
+    {
+        do {
+            $id = mt_rand(100000, 999999);
+        } while (Staff::where('staff_id', $id)->exists());
+
+        return $id;
     }
 
 }

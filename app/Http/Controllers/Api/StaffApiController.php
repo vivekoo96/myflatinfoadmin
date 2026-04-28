@@ -97,7 +97,7 @@ class StaffApiController extends Controller
         // Find or create today's society entry
         $attendanceLog = StaffAttendance::firstOrCreate(
             ['staff_id' => $request->staff_id, 'date' => $today],
-            ['building_id' => $flat->building_id, 'status' => 'Present']
+            ['building_id' => $flat->building_id, 'status' => 'Present', 'marked_by' => Auth::id(), 'source' => 'flat']
         );
 
         StaffFlatAttendance::create([
@@ -108,6 +108,48 @@ class StaffApiController extends Controller
         ]);
 
         return response()->json(['msg' => 'Attendance marked present for your flat'], 200);
+    }
+
+    public function markDepartmentStaffPresent(Request $request)
+    {
+        $request->validate([
+            'staff_id' => 'required', // Can be database ID or 6-digit staff_id_code
+            'status' => 'required|in:Present,Absent,On Leave',
+            'date' => 'nullable|date',
+        ]);
+
+        $staff = Staff::where('id', $request->staff_id)
+            ->orWhere('staff_id', $request->staff_id)
+            ->first();
+
+        if (!$staff) {
+            return response()->json(['error' => 'Staff not found'], 404);
+        }
+
+        $date = $request->date ?? date('Y-m-d');
+
+        $attendance = StaffAttendance::updateOrCreate(
+            [
+                'staff_id' => $staff->id,
+                'date' => $date,
+            ],
+            [
+                'building_id' => $staff->building_id,
+                'status' => $request->status,
+                'marked_by' => Auth::id(),
+                'source' => 'department',
+            ]
+        );
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Attendance marked successfully',
+            'staff' => [
+                'name' => $staff->name,
+                'staff_id' => $staff->staff_id,
+                'status' => $attendance->status
+            ]
+        ], 200);
     }
 
     public function getStaffAttendanceHistory(Request $request)
@@ -147,6 +189,8 @@ class StaffApiController extends Controller
         $log = StaffAttendance::firstOrNew(['staff_id' => $staff->id, 'date' => $today]);
         $log->building_id = $staff->building_id;
         $log->gate_id = $request->gate_id;
+        $log->source = 'gate';
+        $log->marked_by = Auth::id();
         
         if ($request->action == 'entry') {
             $log->entry_time = now();
