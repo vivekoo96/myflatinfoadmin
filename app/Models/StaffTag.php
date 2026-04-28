@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class StaffTag extends Model
 {
     use HasFactory;
+    
+    protected $table = 'staff_flat_tags';
 
     protected $fillable = [
         'staff_id',
