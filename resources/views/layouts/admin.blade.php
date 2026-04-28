@@ -1421,7 +1421,7 @@
 
 <script>
 $(document).ready(function(){
-        $(".table").DataTable({
+        $(".table:not(.no-dt)").DataTable({
           "responsive": false, 
           "scrollX": true,  
           "ordering": true, 
@@ -1739,6 +1739,7 @@ $(document).ready(function() {
 @yield('script')
 </body>
 </html>
+
 
 
 
