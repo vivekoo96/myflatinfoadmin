@@ -22,13 +22,26 @@ class StaffApiController extends Controller
         $flat = AuthHelper::flat();
         if (!$flat) return response()->json(['error' => 'Flat not found'], 404);
 
-        $staffs = Staff::whereHas('tags', function($q) use ($flat) {
+        $query = Staff::whereHas('tags', function($q) use ($flat) {
             $q->where('flat_id', $flat->id)->where('status', 'Active');
         })->with(['attendanceLogs' => function($q) {
             $q->where('date', date('Y-m-d'));
-        }])->get();
+        }]);
 
-        return response()->json(['staffs' => $staffs], 200);
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('phone', 'LIKE', "%{$search}%")
+                  ->orWhere('type', 'LIKE', "%{$search}%")
+                  ->orWhere('staff_id', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $perPage = $request->input('per_page', 20);
+        $staffs = $query->paginate($perPage);
+
+        return response()->json($staffs, 200);
     }
 
     public function addFlatEmp(Request $request)
