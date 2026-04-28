@@ -76,6 +76,11 @@ class StaffController extends Controller
         return view('admin.staff.index', compact('staffs'));
     }
 
+    public function show(Staff $staff)
+    {
+        return response()->json($staff);
+    }
+
     public function create()
     {
         return view('admin.staff.create');
