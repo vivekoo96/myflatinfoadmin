@@ -170,6 +170,12 @@ use App\Http\Controllers\Api\MoveInOutApiController;
             Route::delete('delete-activity', [ActivityController::class, 'delete']);
             Route::get('activity-stats', [ActivityController::class, 'stats']);
 
+            // Staff Attendance
+            Route::post('get-flat-emps', [App\Http\Controllers\Api\StaffApiController::class, 'getFlatEmps']);
+            Route::post('add-flat-emp', [App\Http\Controllers\Api\StaffApiController::class, 'addFlatEmp']);
+            Route::post('mark-staff-present', [App\Http\Controllers\Api\StaffApiController::class, 'markStaffPresent']);
+            Route::post('get-staff-attendance-history', [App\Http\Controllers\Api\StaffApiController::class, 'getStaffAttendanceHistory']);
+
         });
         //Route::post('create-razorpay-order', [CustomerController::class,'create_razorpay_order']);
         //Route::post('verify-razorpay-signature', [CustomerController::class,'verify_razorpay_signature']);
@@ -240,6 +246,10 @@ use App\Http\Controllers\Api\MoveInOutApiController;
             Route::post('move-in-out-verify', [MoveInOutApiController::class, 'verify_passcode']);
             Route::post('move-in-out-submit', [MoveInOutApiController::class, 'submit_entry']);
             Route::post('get-security-requests', [MoveInOutApiController::class, 'get_security_requests']);
+
+            // Gate Staff Attendance
+            Route::post('gate-staff-punch', [App\Http\Controllers\Api\StaffApiController::class, 'gateStaffPunch']);
+            Route::post('verify-staff-code', [App\Http\Controllers\Api\StaffApiController::class, 'verifyStaffCode']);
 
         });
 
@@ -376,5 +386,3 @@ Route::post('video_tutorials/create_module', [VideoTutorialController::class, 'c
 Route::get('video_tutorials/create_module', [VideoTutorialController::class, 'getModules']);
 Route::post('video_tutorials/post_video', [VideoTutorialController::class, 'postVideo']);
 Route::get('video_tutorials/post_video', [VideoTutorialController::class, 'getVideos']);
-
-

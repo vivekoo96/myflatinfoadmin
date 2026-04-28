@@ -49,6 +49,8 @@ use App\Http\Controllers\Admin\GstController;
 use App\Http\Controllers\Admin\AssetController;
 use App\Http\Controllers\Admin\AssetAmcController;
 use App\Http\Controllers\Admin\MoveInOutController;
+use App\Http\Controllers\Admin\StaffController;
+use App\Http\Controllers\Admin\AttendanceController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\Setting;
@@ -356,6 +358,21 @@ Route::middleware('admin')->group(function () {
         Route::post('/community-activities/{id}/approve', [ActivityAdminController::class, 'approve'])->name('activity.approve');
         Route::post('/community-activities/{id}/reject', [ActivityAdminController::class, 'reject'])->name('activity.reject');
         Route::delete('/community-activities/{id}', [ActivityAdminController::class, 'delete'])->name('activity.delete');
+
+        // Staff Attendance Management
+        Route::prefix('staff')->name('admin.staff.')->group(function () {
+            Route::get('/', [StaffController::class, 'index'])->name('index');
+            Route::post('/', [StaffController::class, 'store'])->name('store');
+            Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('edit');
+            Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
+            Route::delete('/{staff}', [StaffController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('attendance')->name('admin.attendance.')->group(function () {
+            Route::get('/', [AttendanceController::class, 'index'])->name('index');
+            Route::post('/mark', [AttendanceController::class, 'markAttendance'])->name('mark');
+            Route::get('/report', [AttendanceController::class, 'report'])->name('report');
+        });
 
         // Meetings
         Route::get('/meeting', [MeetingController::class, 'index'])->name('meeting.index');
