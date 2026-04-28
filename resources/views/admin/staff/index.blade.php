@@ -50,7 +50,7 @@
                         <tbody>
                             @forelse($staffs as $staff)
                             <tr>
-                                <td>{{ $staff->staff_id }}</td>
+                                <td>{{ $staff->staff_id ?? 'N/A' }}</td>
                                 <td>
                                     @if($staff->photo)
                                         <img src="{{ asset($staff->photo) }}" style="width: 40px; height: 40px; border-radius: 50%;">
@@ -60,22 +60,46 @@
                                         </div>
                                     @endif
                                 </td>
-                                <td>{{ $staff->name }}</td>
+                                <td>
+                                    @if($staff->source === 'building_worker')
+                                        {{ $staff->first_name ?? '' }} {{ $staff->last_name ?? '' }}
+                                    @else
+                                        {{ $staff->name }}
+                                    @endif
+                                </td>
                                 <td>{{ $staff->phone }}</td>
                                 <td>{{ $staff->type }}</td>
-                                <td><span class="badge badge-info">{{ str_replace('_', ' ', ucfirst($staff->category)) }}</span></td>
+                                <td>
+                                    <span class="badge badge-info">{{ str_replace('_', ' ', ucfirst($staff->category)) }}</span>
+                                    @if($staff->source === 'building_worker')
+                                        <span class="badge badge-secondary" style="margin-left: 5px;">From Other Users</span>
+                                    @endif
+                                </td>
                                 <td>
                                     <span class="badge badge-{{ $staff->status == 'Active' ? 'success' : 'danger' }}">
                                         {{ $staff->status }}
                                     </span>
                                 </td>
                                 <td>
-                                    <a href="{{ route('admin.staff.edit', $staff->id) }}" class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></a>
-                                    <form action="{{ route('admin.staff.destroy', $staff->id) }}" method="POST" style="display:inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')"><i class="fa fa-trash"></i></button>
-                                    </form>
+                                    @if($staff->source === 'staff')
+                                        <button class="btn btn-sm btn-primary edit-staff-btn"
+                                            data-toggle="modal"
+                                            data-target="#editStaffModal"
+                                            data-id="{{ $staff->id }}"
+                                            data-name="{{ $staff->name }}"
+                                            data-phone="{{ $staff->phone }}"
+                                            data-type="{{ $staff->type }}"
+                                            data-status="{{ $staff->status }}"
+                                            data-address="{{ $staff->address }}"
+                                            data-photo="{{ $staff->photo }}"><i class="fa fa-edit"></i></button>
+                                        <form action="{{ route('admin.staff.destroy', $staff->id) }}" method="POST" style="display:inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')"><i class="fa fa-trash"></i></button>
+                                        </form>
+                                    @else
+                                        <span class="text-muted">View in Other Users</span>
+                                    @endif
                                 </td>
                             </tr>
                             @empty
@@ -122,7 +146,6 @@
                         <div class="form-group">
                             <label>Category</label>
                             <select name="category" class="form-control" required>
-                                <option value="building_staff">Building Worker (General)</option>
                                 <option value="external_staff">External Employee (Tracking Only)</option>
                                 <option value="flat_staff">Flat Domestic Staff</option>
                             </select>
@@ -150,4 +173,84 @@
             </div>
         </div>
     </div>
+
+<!-- Edit Staff Modal -->
+<div class="modal fade" id="editStaffModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="editStaffForm" method="POST" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Staff</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" name="name" id="edit_name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="text" name="phone" id="edit_phone" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <input type="text" name="type" id="edit_type" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status" id="edit_status" class="form-control" required>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Photo</label>
+                        <div id="edit_photo_preview" class="mb-2"></div>
+                        <input type="file" name="photo" id="edit_photo" class="form-control-file">
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <textarea name="address" id="edit_address" class="form-control"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update Staff</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+$('#editStaffModal').on('show.bs.modal', function(e) {
+    const btn = $(e.relatedTarget);
+    const id = btn.data('id');
+    const name = btn.data('name');
+    const phone = btn.data('phone');
+    const type = btn.data('type');
+    const status = btn.data('status');
+    const address = btn.data('address');
+    const photo = btn.data('photo');
+
+    $('#edit_name').val(name);
+    $('#edit_phone').val(phone);
+    $('#edit_type').val(type);
+    $('#edit_status').val(status);
+    $('#edit_address').val(address);
+
+    // Show photo preview if exists
+    if (photo) {
+        $('#edit_photo_preview').html('<img src="' + '{{ asset("") }}' + photo + '" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px;">');
+    } else {
+        $('#edit_photo_preview').html('');
+    }
+
+    // Update form action to the correct update route
+    const form = document.getElementById('editStaffForm');
+    form.action = '{{ url("admin/staff") }}/' + id;
+});
+</script>
 @endsection

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Staff;
 use App\Models\Building;
 use App\Models\User;
+use App\Models\BuildingUser;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -21,25 +23,66 @@ class StaffController extends Controller
             return redirect('permission-denied')->with('error','Permission denied!');
         }
 
-        $query = Staff::where('building_id', Auth::user()->building_id);
+        // Fetch Staff records
+        $staffQuery = Staff::where('building_id', Auth::user()->building_id);
 
         if ($request->has('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%')
+            $staffQuery->where('name', 'like', '%' . $request->search . '%')
                   ->orWhere('phone', 'like', '%' . $request->search . '%')
                   ->orWhere('staff_id', 'like', '%' . $request->search . '%');
         }
 
         if ($request->has('category')) {
-            $query->where('category', $request->category);
+            $staffQuery->where('category', $request->category);
         }
 
         if ($request->has('type')) {
-            $query->where('type', $request->type);
+            $staffQuery->where('type', $request->type);
         }
 
-        $staffs = $query->latest()->paginate(10);
+        $staffs = $staffQuery->get();
 
-        return view('admin.staff.index', compact('staffs'));
+        // Fetch Building Workers (from BuildingUser with Building Worker role)
+        $buildingWorkers = collect();
+        $guardRole = Role::whereRaw("LOWER(TRIM(COALESCE(slug, ''))) = ?", ['guard'])->first();
+
+        if ($guardRole) {
+            $workers = BuildingUser::where('building_id', Auth::user()->building_id)
+                ->where('role_id', $guardRole->id)
+                ->with('user')
+                ->get();
+
+            foreach ($workers as $worker) {
+                if ($worker->user) {
+                    $userData = $worker->user->toArray();
+                    $userData['source'] = 'building_worker';
+                    $userData['building_user_id'] = $worker->id;
+                    $userData['category'] = 'building_staff';
+                    $userData['type'] = $guardRole->name ?? 'Guard';
+                    $userData['status'] = $worker->status;
+                    $userData['staff_id'] = null;
+                    $buildingWorkers->push((object)$userData);
+                }
+            }
+        }
+
+        // Combine Staff and Building Workers
+        $allStaff = $staffs->map(function($staff) {
+            $staff->source = 'staff';
+            return $staff;
+        })->merge($buildingWorkers);
+
+        // Apply pagination manually
+        $perPage = 10;
+        $page = $request->get('page', 1);
+        $paginated = new \Illuminate\Pagination\Paginator(
+            $allStaff->forPage($page, $perPage)->values(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('admin.staff.index', ['staffs' => $paginated]);
     }
 
     public function create()
