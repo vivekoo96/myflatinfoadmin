@@ -654,14 +654,15 @@ class RoleController extends Controller
      */
     public function syncWithStaff($buildingUser)
     {
-        $role = $buildingUser->role;
+        // Ensure relationships are loaded, especially for new records
+        $role = $buildingUser->role()->first();
+        $user = $buildingUser->user()->first();
         
         // Only sync if role type is 'issue' or 'custom'
         if (!$role || !in_array($role->type, ['issue', 'custom'])) {
             return;
         }
 
-        $user = $buildingUser->user;
         if (!$user) return;
 
         // Find or create staff record
