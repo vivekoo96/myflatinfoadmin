@@ -115,22 +115,8 @@ class GuardController extends Controller
             return redirect()->back()->with('error', $validation->errors()->first());
         }
 
-        // Check if gate is already assigned to another active guard
-        $existingGuard = Guard::where('gate_id', $request->gate_id)
-            ->where('building_id', $request->building_id)
-            ->where('status', 'Active')
-            ->whereNull('deleted_at');
+                
 
-        if ($request->id) {
-            $existingGuard = $existingGuard->where('id', '!=', $request->id);
-        }
-
-        $existingGuard = $existingGuard->first();
-
-        if ($existingGuard) {
-            $guardUser = User::find($existingGuard->user_id);
-            return redirect()->back()->with('error', 'This gate is already assigned to ' . ($guardUser->name ?? $guardUser->first_name) . '. Please select a different gate or change the existing guard\'s assignment.');
-        }
 
         $building = Auth::User()->building;
         $total_other_users = User::where('created_by', Auth::User()->building_id)->where('created_type', 'other')->withTrashed()->count();
@@ -327,22 +313,6 @@ class GuardController extends Controller
             return redirect()->back()->with('error', $validation->errors()->first());
         }
 
-        // Check if gate is already assigned to another active guard
-        $existingGuard = Guard::where('gate_id', $request->gate_id)
-            ->where('building_id', $request->building_id)
-            ->where('status', 'Active')
-            ->whereNull('deleted_at');
-
-        if ($request->id) {
-            $existingGuard = $existingGuard->where('id', '!=', $request->id);
-        }
-
-        $existingGuard = $existingGuard->first();
-
-        if ($existingGuard) {
-            $guardUser = User::find($existingGuard->user_id);
-            return redirect()->back()->with('error', 'This gate is already assigned to ' . ($guardUser->name ?? $guardUser->first_name) . '. Please select a different gate or change the existing guard\'s assignment.');
-        }
 
         $guard = new Guard();
 
