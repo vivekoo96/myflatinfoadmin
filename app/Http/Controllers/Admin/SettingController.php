@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\BuildingUser;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 use \Auth;
 
 class SettingController extends Controller
@@ -55,14 +56,15 @@ class SettingController extends Controller
         }else{
             return redirect('permission-denied')->with('error','Permission denied!');
         }
-        // Phone validation
-        // Support both 10-digit Indian numbers and ones prefixed with +91 or 91. We'll normalize before saving.
+        // Phone validation — 'sometimes|nullable' means:
+        //   - If field not present or empty string → skip all rules (UPI form passes empty hidden fields)
+        //   - If field has a value → validate format
         $rules = [
-            'call_support_number' => ['required', 'regex:/^(?:\+?91)?[6-9][0-9]{9}$/'],
-            'whatsapp_support_number' => ['required', 'regex:/^(?:\+?91)?[6-9][0-9]{9}$/'],
+            'call_support_number'     => ['sometimes', 'nullable', 'regex:/^(?:\+?91)?[6-9][0-9]{9}$/'],
+            'whatsapp_support_number' => ['sometimes', 'nullable', 'regex:/^(?:\+?91)?[6-9][0-9]{9}$/'],
         ];
         $messages = [
-            'call_support_number.regex' => 'Please enter a valid 10-digit Indian mobile number starting from 6 to 9.',
+            'call_support_number.regex'     => 'Please enter a valid 10-digit Indian mobile number starting from 6 to 9.',
             'whatsapp_support_number.regex' => 'Please enter a valid 10-digit Indian mobile number starting from 6 to 9.',
         ];
         $validation = Validator::make($request->all(), $rules, $messages);
@@ -74,26 +76,46 @@ class SettingController extends Controller
         $building->razorpay_key = $request->razorpay_key;
         $building->razorpay_secret = $request->razorpay_secret;
         $building->gst_no = $request->gst_no;
-        // $building->classified_limit_within_building = $request->classified_limit_within_building;
-        // $building->classified_limit_all_building = $request->classified_limit_all_building;
-        // Normalize phone numbers to 10-digit format before saving
-        $callNumber = preg_replace('/\D+/', '', $request->call_support_number);
-        if (strlen($callNumber) == 12 && substr($callNumber, 0, 2) == '91') {
-            $callNumber = substr($callNumber, 2);
+
+        // Only update phone numbers when they are actually provided (not empty hidden fields from UPI form)
+        if ($request->filled('call_support_number')) {
+            $callNumber = preg_replace('/\D+/', '', $request->call_support_number);
+            if (strlen($callNumber) == 12 && substr($callNumber, 0, 2) == '91') {
+                $callNumber = substr($callNumber, 2);
+            }
+            $building->call_support_number = $callNumber;
         }
-        $whatsappNumber = preg_replace('/\D+/', '', $request->whatsapp_support_number);
-        if (strlen($whatsappNumber) == 12 && substr($whatsappNumber, 0, 2) == '91') {
-            $whatsappNumber = substr($whatsappNumber, 2);
+        if ($request->filled('whatsapp_support_number')) {
+            $whatsappNumber = preg_replace('/\D+/', '', $request->whatsapp_support_number);
+            if (strlen($whatsappNumber) == 12 && substr($whatsappNumber, 0, 2) == '91') {
+                $whatsappNumber = substr($whatsappNumber, 2);
+            }
+            $building->whatsapp_support_number = $whatsappNumber;
         }
-        $building->call_support_number = $callNumber;
-        $building->whatsapp_support_number = $whatsappNumber;
-        // Normalize treasurer type to correct spelling if user submits a typo
-        $treasurerType = $request->treasurer_type;
-        if (strtolower($treasurerType) == 'presedent') {
-            $treasurerType = 'President';
+
+        // Only update treasurer fields when provided by the main form
+        if ($request->has('treasurer_type') && $request->input('treasurer_type') !== null) {
+            $treasurerType = $request->treasurer_type;
+            if (strtolower($treasurerType) == 'presedent') {
+                $treasurerType = 'President';
+            }
+            $building->treasurer_type = $treasurerType;
         }
-        $building->treasurer_type = $treasurerType;
-        $building->treasurer_id = $request->treasurer_id;
+        if ($request->filled('treasurer_id')) {
+            $building->treasurer_id = $request->treasurer_id;
+        }
+
+        // UPI Payment Settings
+        if ($request->filled('upi_id')) {
+            $building->upi_id = $request->upi_id;
+        }
+        if ($request->hasFile('upi_qr_code')) {
+            $file = $request->file('upi_qr_code');
+            $filename = 'upi_qr_' . $building->id . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('upi_qr_codes'), $filename);
+            $building->upi_qr_code = $filename;
+        }
+
         $building->save();
         return redirect()->back()->with('success','Setting saved');
     }

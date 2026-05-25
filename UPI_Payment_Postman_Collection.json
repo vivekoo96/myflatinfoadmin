@@ -1,0 +1,136 @@
+{
+	"info": {
+		"name": "MyFlatInfo - UPI Maintenance Payment API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Get Maintenance Payments List",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/maintenance-payments",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"maintenance-payments"
+					]
+				},
+				"description": "Returns the list of unpaid maintenance invoices. We recently updated this to include a `upi_details` object and a `upi_payment_enabled` flag (which ensures the button is disabled 24hrs before the due date)."
+			}
+		},
+		{
+			"name": "2. Get UPI Details",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/get-upi-details",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"get-upi-details"
+					]
+				},
+				"description": "Returns the UPI ID and QR code URL for the user's building, which allows the mobile app to display the payment scanner screen."
+			}
+		},
+		{
+			"name": "3. Submit UPI Payment",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "maintenance_payment_id",
+							"value": "1",
+							"type": "text",
+							"description": "ID of the maintenance_payments row"
+						},
+						{
+							"key": "amount_paid",
+							"value": "3500",
+							"type": "text",
+							"description": "(Optional) Amount paid for display on the success screen"
+						},
+						{
+							"key": "flat_number",
+							"value": "A-101",
+							"type": "text",
+							"description": "(Optional) Flat label for display on the success screen"
+						},
+						{
+							"key": "screenshot",
+							"type": "file",
+							"src": [],
+							"description": "The screenshot image file uploaded by the user"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{base_url}}/api/submit-upi-payment",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"submit-upi-payment"
+					]
+				},
+				"description": "Submits the payment screenshot. Requires `multipart/form-data`. Responds with the exact fields needed to render the 'Payment Successful' screen from Figma."
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://myflatinfos.test",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "YOUR_BEARER_TOKEN_HERE",
+			"type": "string"
+		}
+	]
+}

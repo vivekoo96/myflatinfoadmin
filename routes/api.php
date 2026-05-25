@@ -126,6 +126,10 @@ use App\Http\Controllers\Api\MoveInOutApiController;
             Route::post('create-maintenance-payment-order',[CustomerController::class,'create_maintenance_payment_order']);
             Route::post('verify-maintenance-payment-signature',[CustomerController::class,'verify_maintenance_payment_signature']);
             
+            // UPI Payment (without payment gateway)
+            Route::post('get-upi-details',[CustomerController::class,'get_upi_details']);
+            Route::post('submit-upi-payment',[CustomerController::class,'submit_upi_payment']);
+            
             Route::post('maintenance-invoice',[CustomerController::class,'maintenance_invoice']);
             Route::post('maintenance-reciept',[CustomerController::class,'maintenance_reciept']);
             

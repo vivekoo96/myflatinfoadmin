@@ -250,6 +250,8 @@ Route::middleware('admin')->group(function () {
         Route::resource('/maintenance', MaintenanceController::class)->middleware('maintenance');
         Route::post('/update-maintenance-status',[MaintenanceController::class, 'update_maintenance_status'])->middleware('maintenance');
         Route::post('/store-maintenance-payment',[MaintenanceController::class, 'store_maintenance_payment'])->middleware('maintenance');
+        Route::post('/approve-upi-payment',[MaintenanceController::class, 'approve_upi_payment'])->middleware('maintenance');
+        Route::post('/reject-upi-payment',[MaintenanceController::class, 'reject_upi_payment'])->middleware('maintenance');
         
         Route::resource('/essential', EssentialController::class)->middleware('essential');
         Route::post('/update-essential-status',[EssentialController::class, 'update_essential_status'])->middleware('essential');

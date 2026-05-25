@@ -167,6 +167,131 @@
                 </div>
             </div>
             </div>
+
+            {{-- ===================== UPI PAYMENT SETTINGS ===================== --}}
+            <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-primary card-outline">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-qrcode mr-2"></i> UPI Payment Settings
+                    </h3>
+                    <small class="text-muted ml-2">Allow residents to pay maintenance via UPI without a payment gateway</small>
+                </div>
+                <div class="card-body">
+                    @if($isBA)
+                    <form action="{{ route('setting.store') }}" method="post" enctype="multipart/form-data">
+                        @csrf
+                        {{-- Hidden fields to satisfy form validation for unchanged fields --}}
+                        <input type="hidden" name="razorpay_key" value="{{ $building->razorpay_key }}">
+                        <input type="hidden" name="razorpay_secret" value="{{ $building->razorpay_secret }}">
+                        <input type="hidden" name="gst_no" value="{{ $building->gst_no }}">
+                        <input type="hidden" name="call_support_number" value="{{ $building->call_support_number }}">
+                        <input type="hidden" name="whatsapp_support_number" value="{{ $building->whatsapp_support_number }}">
+                        <input type="hidden" name="treasurer_type" value="{{ $building->treasurer_type }}">
+                        <input type="hidden" name="treasurer_id" value="{{ $building->treasurer_id }}">
+
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <label><i class="fas fa-university mr-1"></i> UPI ID</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           name="upi_id"
+                                           id="upi_id_input"
+                                           value="{{ $building->upi_id }}"
+                                           placeholder="e.g. societyname@upi"
+                                           autocomplete="off">
+                                    <small class="form-text text-muted">This will be displayed to residents in the app for payment.</small>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <label><i class="fas fa-qrcode mr-1"></i> UPI QR Code Image</label>
+                                    <div class="custom-file">
+                                        <input type="file"
+                                               class="custom-file-input"
+                                               id="upi_qr_code_input"
+                                               name="upi_qr_code"
+                                               accept="image/*"
+                                               onchange="previewQrCode(this)">
+                                        <label class="custom-file-label" for="upi_qr_code_input">Choose QR code image...</label>
+                                    </div>
+                                    <small class="form-text text-muted">Upload a QR code image for UPI payment (PNG/JPG).</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-center">
+                                @if($building->upi_qr_code)
+                                <div class="text-center" id="current-qr-wrapper">
+                                    <p class="text-muted mb-1" style="font-size:11px;">Current QR</p>
+                                    <a href="{{ asset('upi_qr_codes/' . $building->upi_qr_code) }}" target="_blank">
+                                        <img id="qr-preview"
+                                             src="{{ asset('upi_qr_codes/' . $building->upi_qr_code) }}"
+                                             alt="UPI QR Code"
+                                             class="img-thumbnail"
+                                             style="max-width:100px; cursor:pointer; border:2px solid #007bff;">
+                                    </a>
+                                </div>
+                                @else
+                                <div class="text-center" id="current-qr-wrapper" style="display:none!important;">
+                                    <img id="qr-preview" src="#" alt="QR Preview" class="img-thumbnail" style="max-width:100px; display:none;">
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- QR live preview (shows after file selected) --}}
+                        <div class="row" id="new-qr-preview-row" style="display:none;">
+                            <div class="col-md-12">
+                                <div class="alert alert-info d-flex align-items-center">
+                                    <i class="fas fa-eye mr-2"></i>
+                                    <strong>New QR Preview:&nbsp;</strong>
+                                    <img id="new-qr-img" src="#" alt="New QR Preview"
+                                         style="max-height:120px; max-width:120px; margin-left:10px; border:2px dashed #17a2b8; border-radius:4px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save mr-1"></i> Save UPI Settings
+                                </button>
+                                @if($building->upi_id || $building->upi_qr_code)
+                                <span class="badge badge-success ml-3" style="font-size:13px; padding:6px 12px;">
+                                    <i class="fas fa-check-circle mr-1"></i> UPI Payment Mode Active
+                                </span>
+                                @endif
+                            </div>
+                        </div>
+                    </form>
+                    @else
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label><i class="fas fa-university mr-1"></i> UPI ID</label>
+                                <input type="text" class="form-control" value="{{ $building->upi_id ?? 'Not set' }}" disabled>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            @if($building->upi_qr_code)
+                            <label><i class="fas fa-qrcode mr-1"></i> UPI QR Code</label><br>
+                            <a href="{{ asset('upi_qr_codes/' . $building->upi_qr_code) }}" target="_blank">
+                                <img src="{{ asset('upi_qr_codes/' . $building->upi_qr_code) }}"
+                                     alt="UPI QR Code"
+                                     class="img-thumbnail"
+                                     style="max-width:120px;">
+                            </a>
+                            @else
+                            <p class="text-muted mt-4"><i class="fas fa-info-circle"></i> No QR code uploaded yet.</p>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                </div>
+            </div>
+            </div>
         </div>
         </section>
         
@@ -239,6 +364,23 @@
             });
         }
     });
+    </script>
+
+    <script>
+    // QR Code live preview when file is selected
+    function previewQrCode(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $('#new-qr-img').attr('src', e.target.result);
+                $('#new-qr-preview-row').show();
+            };
+            reader.readAsDataURL(input.files[0]);
+            // Update label text
+            var fileName = input.files[0].name;
+            $(input).next('.custom-file-label').text(fileName);
+        }
+    }
     </script>
 
     @endsection

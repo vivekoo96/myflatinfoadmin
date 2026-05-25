@@ -42,15 +42,23 @@ class MaintenanceController extends Controller
             $buildings = method_exists($user, 'allBuildings') ? $user->allBuildings() : collect();
             if ($buildings->count() > 0) {
                 foreach ($buildings as $building) {
+                    // Skip Razorpay check if building uses UPI-only mode
+                    if (!empty($building->upi_id) || !empty($building->upi_qr_code)) {
+                        continue;
+                    }
                     if ($building->payment_is_active === 'Yes' && $building->maintenance_is_active === 'Yes') {
                         if ($building->razorpay_key === '' || $building->razorpay_secret === '') {
                             return redirect()->route('setting.index')->with('error', 'Razorpay key and secret is not yet set in settings for one or more buildings, please set that first and try again');
                         }
                     }
                 }
-            } else if ($user && $user->building && $user->building->payment_is_active === 'Yes' && $user->building->maintenance_is_active === 'Yes') {
-                if ($user->building->razorpay_key === '' || $user->building->razorpay_secret === '') {
-                    return redirect()->route('setting.index')->with('error', 'Razorpay key and secret is not yet set in settings, please set that first and try again');
+            } else if ($user && $user->building) {
+                // Skip Razorpay check if building uses UPI-only mode
+                $isUpiMode = !empty($user->building->upi_id) || !empty($user->building->upi_qr_code);
+                if (!$isUpiMode && $user->building->payment_is_active === 'Yes' && $user->building->maintenance_is_active === 'Yes') {
+                    if ($user->building->razorpay_key === '' || $user->building->razorpay_secret === '') {
+                        return redirect()->route('setting.index')->with('error', 'Razorpay key and secret is not yet set in settings, please set that first and try again');
+                    }
                 }
             }
             return $next($request);
@@ -61,7 +69,11 @@ class MaintenanceController extends Controller
         $this->keySecret = $rdata->razorpay_secret;
         $this->displayCurrency = 'INR';
 
-        $this->api = new Api($this->keyId, $this->keySecret);
+        // Only instantiate Razorpay API if keys are set
+        if (!empty($this->keyId) && !empty($this->keySecret)) {
+            $this->api = new Api($this->keyId, $this->keySecret);
+        }
+        
         $this->authProvider = ApnsToken::create([
             'key_id' => '4KAVV6FLG4',
             'team_id' => 'XY9Q57Z367',
@@ -415,6 +427,118 @@ class MaintenanceController extends Controller
         $maintenance_payment->save();
     
         return redirect()->back()->with('success', $msg);
+    }
+
+    /**
+     * Admin approves a UPI maintenance payment submission.
+     */
+    public function approve_upi_payment(Request $request)
+    {
+        $payment = MaintenancePayment::find($request->id);
+        if (!$payment) {
+            return response()->json(['msg' => 'error', 'error' => 'Payment not found'], 404);
+        }
+
+        $payment->upi_payment_status = 'Approved';
+        $payment->status = 'Paid';
+        $payment->paid_amount = $payment->dues_amount;
+        $payment->dues_amount = 0;
+        $payment->type = 'UPI';
+        $payment->upi_remarks = $request->remarks ?? null;
+        $payment->save();
+
+        // Notify the resident
+        $user = $payment->user;
+        if ($user) {
+            $title = 'UPI Payment Approved';
+            $body = 'Your UPI maintenance payment has been approved. Thank you!';
+            $dataPayload = [
+                'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                'screen'       => 'MaintenancePage',
+                'params'       => json_encode([
+                    'maintenanceId' => $payment->maintenance_id,
+                    'flat_id'       => $payment->flat_id,
+                    'building_id'   => $payment->building_id,
+                    'user_id'       => $user->id,
+                ]),
+                'categoryId' => '',
+                'channelId'  => '',
+                'sound'      => 'bellnotificationsound.wav',
+                'type'       => 'UPI_PAYMENT_APPROVED',
+            ];
+            NotificationHelper::sendNotification(
+                $user->id,
+                $title,
+                $body,
+                $dataPayload,
+                [
+                    'from_id'     => Auth::id(),
+                    'flat_id'     => $payment->flat_id,
+                    'building_id' => $payment->building_id,
+                    'type'        => 'upi_payment_approved',
+                    'apns_client' => $this->apnsClient ?? null,
+                    'ios_sound'   => $dataPayload['sound'],
+                ],
+                ['user']
+            );
+        }
+
+        return response()->json(['msg' => 'success']);
+    }
+
+    /**
+     * Admin rejects a UPI maintenance payment submission.
+     */
+    public function reject_upi_payment(Request $request)
+    {
+        $payment = MaintenancePayment::find($request->id);
+        if (!$payment) {
+            return response()->json(['msg' => 'error', 'error' => 'Payment not found'], 404);
+        }
+
+        $payment->upi_payment_status = 'Rejected';
+        $payment->status = 'Unpaid';
+        $payment->upi_remarks = $request->remarks ?? null;
+        $payment->save();
+
+        // Notify the resident
+        $user = $payment->user;
+        if ($user) {
+            $remarks = $request->remarks ? ' Reason: ' . $request->remarks : '';
+            $title = 'UPI Payment Rejected';
+            $body = 'Your UPI maintenance payment submission was rejected.' . $remarks . ' Please re-submit with a valid screenshot.';
+            $dataPayload = [
+                'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                'screen'       => 'MaintenancePage',
+                'params'       => json_encode([
+                    'maintenanceId' => $payment->maintenance_id,
+                    'flat_id'       => $payment->flat_id,
+                    'building_id'   => $payment->building_id,
+                    'user_id'       => $user->id,
+                ]),
+                'categoryId' => '',
+                'channelId'  => '',
+                'sound'      => 'bellnotificationsound.wav',
+                'type'       => 'UPI_PAYMENT_REJECTED',
+            ];
+            NotificationHelper::sendNotification(
+                $user->id,
+                $title,
+                $body,
+                $dataPayload,
+                [
+                    'from_id'     => Auth::id(),
+                    'flat_id'     => $payment->flat_id,
+                    'building_id' => $payment->building_id,
+                    'type'        => 'upi_payment_rejected',
+                    'apns_client' => $this->apnsClient ?? null,
+                    'ios_sound'   => $dataPayload['sound'],
+                ],
+                ['user']
+            );
+        }
+
+        return response()->json(['msg' => 'success']);
     }
 
 }

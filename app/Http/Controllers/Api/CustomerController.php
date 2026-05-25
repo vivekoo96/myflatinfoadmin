@@ -5558,6 +5558,20 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
             $payment->gst = $total * $payment->maintenance->gst / 100;
             $total_payment += $total;
             $total_gst += $payment->gst;
+
+            // ── UPI Payment Enabled check ──────────────────────────────────────────
+            // Button is DISABLED in the last 24 hours before the due date.
+            // i.e. enabled from invoice creation until (due_date - 24h).
+            $upiEnabled = false;
+            if ($maintenance && $maintenance->due_date) {
+                $cutoff = Carbon::parse($maintenance->due_date)->endOfDay()->subHours(24);
+                $upiEnabled = Carbon::now()->lt($cutoff);
+            }
+            $payment->upi_payment_enabled = $upiEnabled;
+
+            // ── Current UPI submission status ─────────────────────────────────────
+            $payment->upi_payment_status = $payment->upi_payment_status ?? null;
+            $payment->upi_submitted_at   = $payment->upi_submitted_at ?? null;
         }
 
         $gst = $total_gst;
@@ -5588,6 +5602,21 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
     // ->orderBy('id', 'desc')
     // ->get();
 
+        // ── Building UPI Details ───────────────────────────────────────────────────
+        $building   = $flat->building;
+        $upiDetails = null;
+        if ($building) {
+            $hasUpi = !empty($building->upi_id) || !empty($building->upi_qr_code);
+            $upiDetails = [
+                'has_upi'      => $hasUpi,
+                'upi_id'       => $building->upi_id,
+                'upi_qr_code'  => $building->upi_qr_code
+                    ? asset('upi_qr_codes/' . $building->upi_qr_code)
+                    : null,
+                'has_razorpay' => !empty($building->razorpay_key) && !empty($building->razorpay_secret),
+            ];
+        }
+
         return response()->json([
             'maintenance_payments' => $maintenance_payments,
             // 'paid_maintenance_payments' => $paid_maintenance_payments,
@@ -5595,7 +5624,8 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
             'total_payment' => $total_payment,
             'gst' => $gst,
             'grand_total' => $grand_total,
-            'last_paid_date' => $last_paid_date
+            'last_paid_date' => $last_paid_date,
+            'upi_details'    => $upiDetails,
         ], 200);
     }
     
@@ -11260,6 +11290,188 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
         return response()->json([
             'note'    => $note,
             'message' => 'Note updated successfully'
+        ], 200);
+    }
+
+    // =================== UPI PAYMENT METHODS ===================
+
+    /**
+     * Get UPI payment details (UPI ID + QR code URL) for the user's building.
+     * Mobile app calls this to show the payment screen.
+     */
+    public function get_upi_details(Request $request)
+    {
+        $user = Auth::user();
+        $flat = AuthHelper::flat();
+
+        if (!$flat) {
+            return response()->json(['status' => false, 'message' => 'No flat associated.'], 422);
+        }
+
+        $building = $flat->building;
+
+        if (!$building) {
+            return response()->json(['status' => false, 'message' => 'Building not found.'], 404);
+        }
+
+        $qrCodeUrl = null;
+        if ($building->upi_qr_code) {
+            $qrCodeUrl = asset('upi_qr_codes/' . $building->upi_qr_code);
+        }
+
+        return response()->json([
+            'status'       => true,
+            'upi_id'       => $building->upi_id,
+            'upi_qr_code'  => $qrCodeUrl,
+            'has_upi'      => !empty($building->upi_id) || !empty($building->upi_qr_code),
+        ], 200);
+    }
+
+    /**
+     * Submit a UPI payment (user uploads screenshot after paying via UPI).
+     * Enforces 24-hour cutoff before the due date.
+     */
+    public function submit_upi_payment(Request $request)
+    {
+        $user = Auth::user();
+        $flat = AuthHelper::flat();
+
+        if (!$flat) {
+            return response()->json(['status' => false, 'message' => 'No flat found for this user.'], 422);
+        }
+
+        $rules = [
+            'maintenance_payment_id' => 'required|exists:maintenance_payments,id',
+            'screenshot'             => 'required|image|max:5120', // 5MB max
+            'amount_paid'            => 'nullable|numeric|min:0',   // optional, for display
+            'flat_number'            => 'nullable|string|max:50',   // optional flat name label
+        ];
+
+        $validation = Validator::make($request->all(), $rules);
+        if ($validation->fails()) {
+            return response()->json(['status' => false, 'message' => $validation->errors()->first()], 422);
+        }
+
+        $maintenancePayment = MaintenancePayment::with(['maintenance', 'flat'])->find($request->maintenance_payment_id);
+
+        if (!$maintenancePayment) {
+            return response()->json(['status' => false, 'message' => 'Maintenance payment not found.'], 404);
+        }
+
+        // Check flat ownership
+        if ($maintenancePayment->flat_id != $flat->id) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        // Already paid (approved)
+        if ($maintenancePayment->status === 'Paid') {
+            return response()->json(['status' => false, 'message' => 'This payment is already marked as Paid.'], 422);
+        }
+
+        // Already pending — don't allow re-submission
+        if ($maintenancePayment->upi_payment_status === 'Pending') {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Your payment screenshot is already submitted and awaiting admin approval. Please wait.',
+            ], 422);
+        }
+
+        // ========== TIME WINDOW CHECK ==========
+        // Paid option disabled 24 hours before due date (per Figma spec: "disabled on 9th Jan" for 10th Jan due date)
+        $maintenance = $maintenancePayment->maintenance;
+        if ($maintenance && $maintenance->due_date) {
+            $dueDate = Carbon::parse($maintenance->due_date)->endOfDay();
+            $cutoff  = $dueDate->copy()->subHours(24);
+            $now     = Carbon::now();
+
+            if ($now->greaterThanOrEqualTo($cutoff)) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'UPI payment submission is closed 24 hours before the due date (' . $dueDate->format('d M Y') . '). Please contact your building admin.',
+                ], 422);
+            }
+        }
+
+        // ========== STORE SCREENSHOT ==========
+        $screenshotPath = null;
+        if ($request->hasFile('screenshot')) {
+            $file      = $request->file('screenshot');
+            $filename  = 'upi_' . $maintenancePayment->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('maintenance_screenshots'), $filename);
+            $screenshotPath = $filename;
+        }
+
+        // ========== UPDATE PAYMENT RECORD ==========
+        $maintenancePayment->type               = 'UPI';
+        $maintenancePayment->payment_screenshot = $screenshotPath;
+        $maintenancePayment->upi_payment_status = 'Pending';
+        $maintenancePayment->upi_submitted_at   = now();
+        $maintenancePayment->save();
+
+        // ========== NOTIFY ADMIN / TREASURER ==========
+        $building = $flat->building;
+        if ($building) {
+            $baUser = $building->user;
+            if ($baUser) {
+                $title = 'UPI Payment Submitted';
+                $body  = ($user->name ?? 'A resident') . ' has submitted a UPI payment screenshot for Flat ' . ($flat->name ?? $flat->id) . '. Please review and approve.';
+                $dataPayload = [
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    'screen'       => 'MaintenancePage',
+                    'params'       => json_encode([
+                        'maintenanceId' => $maintenancePayment->maintenance_id,
+                        'flat_id'       => $flat->id,
+                        'building_id'   => $building->id,
+                    ]),
+                    'categoryId'   => '',
+                    'channelId'    => '',
+                    'sound'        => 'bellnotificationsound.wav',
+                    'type'         => 'UPI_PAYMENT_SUBMITTED',
+                ];
+
+                NotificationHelper::sendNotification(
+                    $baUser->id,
+                    $title,
+                    $body,
+                    $dataPayload,
+                    [
+                        'from_id'     => $user->id,
+                        'flat_id'     => $flat->id,
+                        'building_id' => $building->id,
+                        'type'        => 'upi_payment_submitted',
+                        'apns_client' => $this->apnsClient ?? null,
+                        'ios_sound'   => $dataPayload['sound'],
+                    ],
+                    ['admin']
+                );
+            }
+        }
+
+        // ========== SUCCESS RESPONSE (Figma: Payment Successful screen) ==========
+        $amountPaid   = $request->filled('amount_paid')
+            ? $request->amount_paid
+            : $maintenancePayment->dues_amount;
+        $flatLabel    = $request->filled('flat_number')
+            ? $request->flat_number
+            : ($flat->name ?? ('Flat #' . $flat->id));
+        $screenshotUrl = $screenshotPath
+            ? asset('maintenance_screenshots/' . $screenshotPath)
+            : null;
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Payment screenshot submitted successfully. Awaiting admin approval.',
+            // Figma "Payment Successful" screen fields:
+            'result'  => [
+                'flats_paid'         => $flatLabel,
+                'total_amount'       => $amountPaid,
+                'payment_method'     => 'UPI/Scanner',
+                'upi_payment_status' => 'Pending',
+                'upi_submitted_at'   => $maintenancePayment->upi_submitted_at,
+                'screenshot_url'     => $screenshotUrl,
+                'payment_id'         => $maintenancePayment->id,
+                'maintenance_id'     => $maintenancePayment->maintenance_id,
+            ],
         ], 200);
     }
 }
