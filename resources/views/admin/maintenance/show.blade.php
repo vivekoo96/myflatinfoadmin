@@ -118,10 +118,35 @@
                       <tbody>
                         <?php $i = 0;?>
                         @forelse($maintenance->payments as $payment)
-                        <?php $i++; ?>
+                        <?php 
+                           $i++; 
+                           $late_fine = 0;
+                           if ($maintenance->due_date) {
+                               $dueDate = \Carbon\Carbon::parse($maintenance->due_date);
+                               $calcDate = $payment->upi_submitted_at ? \Carbon\Carbon::parse($payment->upi_submitted_at) : ($payment->updated_at ?? now());
+                               if ($dueDate->lt($calcDate->startOfDay())) {
+                                   $late_days = $dueDate->diffInDays($calcDate);
+                                   if ($maintenance->late_fine_type == 'Daily') $late_fine = $late_days * $maintenance->late_fine_value;
+                                   elseif ($maintenance->late_fine_type == 'Fixed') $late_fine = $maintenance->late_fine_value;
+                                   elseif ($maintenance->late_fine_type == 'Percentage') $late_fine = (($payment->dues_amount + $payment->paid_amount) * $maintenance->late_fine_value) / 100;
+                               }
+                           }
+                           $total_before_gst = ($payment->dues_amount + $payment->paid_amount) + $late_fine;
+                           $gst_amount = ($total_before_gst * $maintenance->gst) / 100;
+                           $grand_total = ceil($total_before_gst + $gst_amount);
+                           
+                           // Use transaction amount if available and paid for accuracy
+                           if ($payment->status == 'Paid' && $payment->transaction) {
+                               $grand_total = $payment->transaction->amount;
+                           }
+                        ?>
                         <tr>
                           <td>{{$i}}</td>
-                          <td>{{ $payment->flat->name ?? '-' }}</td>
+                          <td>
+                            <strong>{{ $payment->flat->name ?? '-' }}</strong>
+                            <br><small class="text-muted">Owner: {{ $payment->flat->owner->name ?? 'N/A' }}</small>
+                            <br><small class="text-muted">Tenant: {{ $payment->flat->tanent->name ?? 'N/A' }}</small>
+                          </td>
                           <td><a href="{{url('user',$payment->user_id)}}" target="_blank">{{$payment->user->name ?? '-'}}</a></td>
                           <td>
                             @if($payment->type == 'UPI')
@@ -134,7 +159,7 @@
                               <span class="badge badge-light">{{$payment->type}}</span>
                             @endif
                           </td>
-                          <td>₹{{ number_format(($payment->dues_amount ?? 0) + ($payment->paid_amount ?? 0), 2) }}</td>
+                          <td>₹{{ number_format($grand_total, 2) }}</td>
                           <td>{{$payment->created_at ? $payment->created_at->format('d M Y') : '-'}}</td>
                           <td>
                             @if($payment->status == 'Paid')
@@ -223,13 +248,29 @@
                     @else
                     <div class="row">
                       @foreach($pendingUpi as $payment)
+                      <?php 
+                           $late_fine = 0;
+                           if ($maintenance->due_date) {
+                               $dueDate = \Carbon\Carbon::parse($maintenance->due_date);
+                               $calcDate = $payment->upi_submitted_at ? \Carbon\Carbon::parse($payment->upi_submitted_at) : ($payment->updated_at ?? now());
+                               if ($dueDate->lt($calcDate->startOfDay())) {
+                                   $late_days = $dueDate->diffInDays($calcDate);
+                                   if ($maintenance->late_fine_type == 'Daily') $late_fine = $late_days * $maintenance->late_fine_value;
+                                   elseif ($maintenance->late_fine_type == 'Fixed') $late_fine = $maintenance->late_fine_value;
+                                   elseif ($maintenance->late_fine_type == 'Percentage') $late_fine = (($payment->dues_amount + $payment->paid_amount) * $maintenance->late_fine_value) / 100;
+                               }
+                           }
+                           $total_before_gst = ($payment->dues_amount + $payment->paid_amount) + $late_fine;
+                           $gst_amount = ($total_before_gst * $maintenance->gst) / 100;
+                           $grand_total = ceil($total_before_gst + $gst_amount);
+                      ?>
                       <div class="col-md-6 mb-3">
                         <div class="card card-warning card-outline">
                           <div class="card-header">
                             <h3 class="card-title">
                               <i class="fas fa-mobile-alt mr-1"></i>
                               Flat: <strong>{{ $payment->flat->name ?? $payment->flat_id }}</strong>
-                              &nbsp;|&nbsp; {{ $payment->user->name ?? 'Unknown User' }}
+                              <br><small class="text-dark">Owner: <strong>{{ $payment->flat->owner->name ?? 'N/A' }}</strong> | Tenant: <strong>{{ $payment->flat->tanent->name ?? 'N/A' }}</strong></small>
                             </h3>
                             <div class="card-tools">
                               <span class="badge badge-warning">Pending</span>
@@ -238,7 +279,7 @@
                           <div class="card-body">
                             <div class="row">
                               <div class="col-md-6">
-                                <p><strong>Amount Due:</strong> ₹{{ number_format($payment->dues_amount + $payment->paid_amount, 2) }}</p>
+                                <p><strong>Amount Due:</strong> ₹{{ number_format($grand_total, 2) }}</p>
                                 <p><strong>Submitted:</strong> {{ $payment->upi_submitted_at ? \Carbon\Carbon::parse($payment->upi_submitted_at)->format('d M Y, h:i A') : ($payment->updated_at ? $payment->updated_at->format('d M Y, h:i A') : '-') }}</p>
                               </div>
                               <div class="col-md-6 text-center">
