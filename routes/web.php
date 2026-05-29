@@ -282,6 +282,7 @@ Route::middleware('admin')->group(function () {
         Route::get('/account/maintenance/reciept/{maintenance_payment_id}',[AccountController::class, 'maintenance_reciept'])->middleware('maintenance');
         
         Route::get('/account/pending-bills',[AccountController::class, 'pending_bills']);
+        Route::get('/account/upi-pending',[AccountController::class, 'upi_pending']);
         Route::post('/account/send-due-notifications',[AccountController::class, 'send_due_notifications']);
         Route::get('/account/gst',[GstController::class, 'index'])->name('gst.index');
 

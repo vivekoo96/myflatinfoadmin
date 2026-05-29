@@ -5882,8 +5882,7 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
             $maintenance_payment->paid_amount = $maintenance_payment->dues_amount;
             $maintenance_payment->paid_date = now()->toDateString();
             $maintenance_payment->dues_amount = 0;
-            $maintenance_payment->type = 'Credit';
-            $maintenance_payment->payment_type = 'InBank';
+            $maintenance_payment->type = 'Online';
             $maintenance_payment->desc = 'Maintenance Payment paid by flat number '. AuthHelper::flat()->name;
             $maintenance_payment->transaction_id = $transaction->id;
             $maintenance_payment->status = 'Paid';
@@ -5899,8 +5898,7 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
                 $maintenance_payment->paid_amount = $maintenance_payment->dues_amount;
                 $maintenance_payment->paid_date = now()->toDateString();
                 $maintenance_payment->dues_amount = 0;
-                $maintenance_payment->type = 'Credit';
-                $maintenance_payment->payment_type = 'InBank';
+                $maintenance_payment->type = 'Online';
                 $maintenance_payment->desc = 'Paid Through Razorpay';
                 $maintenance_payment->transaction_id = $transaction->id;
                 $maintenance_payment->status = 'Paid';
@@ -6367,8 +6365,7 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
             $essential_payment = $paid_essential;
             $essential_payment->paid_amount = $order->amount;
             $essential_payment->dues_amount = 0;
-            $essential_payment->type = 'Credit';
-            $essential_payment->payment_type = 'InBank';
+            $essential_payment->type = 'Online';
             $essential_payment->status = 'Paid';
             $essential_payment->date = now()->toDateTimeString();
 
@@ -6595,7 +6592,6 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
             $payment->user_id = Auth::User()->id;
             $payment->event_id = $order->model_id;
             $payment->flat_id = $flat->id;
-            $payment->type = 'Credit';
 $payment->date = Carbon::parse($request->date)->format('Y-m-d');
             $payment->payment_type = 'InBank';
             $payment->amount = $order->amount;

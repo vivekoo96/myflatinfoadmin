@@ -1025,6 +1025,27 @@ class AccountController extends Controller
         return view('admin.account.pending_bills', compact('maintenance_payments', 'essential_payments', 'blocks', 'flat_id', 'bill_type'));
     }
 
+    public function upi_pending(Request $request)
+    {
+        if(Auth::User()->role == 'BA' || Auth::User()->hasRole('president') || Auth::User()->hasRole('accounts'))
+        {
+            // allowed
+        }else{
+            return redirect('permission-denied')->with('error','Permission denied!');
+        }
+
+        $user = Auth::user();
+        $building = $user->building;
+
+        $pendingUpi = \App\Models\MaintenancePayment::with(['flat', 'user', 'maintenance', 'flat.owner', 'flat.tanent'])
+            ->where('building_id', $building->id)
+            ->where('type', 'UPI')
+            ->where('upi_payment_status', 'Pending')
+            ->orderBy('upi_submitted_at', 'asc')
+            ->get();
+
+        return view('admin.account.upi_pending', compact('pendingUpi'));
+    }
 
     // public function pending_bills(Request $request)
     // {
