@@ -232,14 +232,18 @@ function indian_money($amount, $decimals = 2) {
                                @php
     // Use same calculation as controller - get all payments in the transaction
     $transaction = $payment->transaction;
-    $maintenance_payments = $transaction->maintenance_payments()
-        ->with(['maintenance', 'flat.owner', 'flat.tanent', 'flat.block', 'flat.building'])
-        ->orderBy('id', 'desc')
-        ->get();
+    if ($transaction) {
+        $maintenance_payments_calc = $transaction->maintenance_payments()
+            ->with(['maintenance', 'flat.owner', 'flat.tanent', 'flat.block', 'flat.building'])
+            ->orderBy('id', 'desc')
+            ->get();
+    } else {
+        $maintenance_payments_calc = collect([$payment]);
+    }
 
     $total_payment = 0;
     $total_gst = 0;
-    foreach ($maintenance_payments as $pay) {
+    foreach ($maintenance_payments_calc as $pay) {
         $maint = $pay->maintenance;
         $late_fine = 0;
 
