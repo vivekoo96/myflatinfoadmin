@@ -38,7 +38,7 @@ class MaintenancePayment extends Model
     public function getPaymentScreenshotAttribute($value)
     {
         if ($value) {
-            return asset('maintenance_screenshots/' . $value);
+            return asset('public/maintenance_screenshots/' . $value);
         }
         return null;
     }
