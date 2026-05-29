@@ -11317,7 +11317,7 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
 
         $qrCodeUrl = null;
         if ($building->upi_qr_code) {
-            $qrCodeUrl = asset('upi_qr_codes/' . $building->upi_qr_code);
+            $qrCodeUrl = asset('public/upi_qr_codes/' . $building->upi_qr_code);
         }
 
         return response()->json([
