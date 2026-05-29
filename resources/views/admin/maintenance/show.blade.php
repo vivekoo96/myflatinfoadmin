@@ -163,8 +163,8 @@
                           </td>
                           <td>
                             @if($payment->payment_screenshot)
-                              <a href="{{ asset('public/maintenance_screenshots/' . $payment->payment_screenshot) }}" target="_blank">
-                                <img src="{{ asset('public/maintenance_screenshots/' . $payment->payment_screenshot) }}"
+                              <a href="{{ $payment->payment_screenshot }}" target="_blank">
+                                <img src="{{ $payment->payment_screenshot }}"
                                      alt="Screenshot"
                                      style="max-width:50px; max-height:50px; border-radius:4px; border:1px solid #dee2e6; cursor:pointer;"
                                      title="Click to view full screenshot">
@@ -244,8 +244,8 @@
                               <div class="col-md-6 text-center">
                                 @if($payment->payment_screenshot)
                                   <p><strong>Payment Screenshot</strong></p>
-                                  <a href="{{ asset('public/maintenance_screenshots/' . $payment->payment_screenshot) }}" target="_blank">
-                                    <img src="{{ asset('public/maintenance_screenshots/' . $payment->payment_screenshot) }}"
+                                  <a href="{{ $payment->payment_screenshot }}" target="_blank">
+                                    <img src="{{ $payment->payment_screenshot }}"
                                          alt="Payment Screenshot"
                                          class="img-thumbnail"
                                          style="max-width:140px; max-height:140px; cursor:pointer;">
@@ -505,11 +505,12 @@
         data: { _token: token, id: id, remarks: remarks },
         success: function() {
           $('#upiApproveModal').modal('hide');
-          toastr.success('Payment approved successfully!');
-          setTimeout(function(){ window.location.reload(); }, 1200);
+          if (typeof toastr !== 'undefined') toastr.success('Payment approved successfully!');
+          setTimeout(function(){ window.location.reload(); }, 800);
         },
         error: function() {
-          toastr.error('Error approving payment. Please try again.');
+          if (typeof toastr !== 'undefined') toastr.error('Error approving payment. Please try again.');
+          else alert('Error approving payment. Please try again.');
           $btn.prop('disabled', false).html('<i class="fas fa-check mr-1"></i> Confirm Approve');
         }
       });
@@ -518,7 +519,11 @@
     $('#confirmRejectBtn').on('click', function() {
       var id = $('#reject-payment-id').val();
       var remarks = $('#reject-remarks').val().trim();
-      if (!remarks) { toastr.warning('Please provide a rejection reason.'); return; }
+      if (!remarks) { 
+          if (typeof toastr !== 'undefined') toastr.warning('Please provide a rejection reason.');
+          else alert('Please provide a rejection reason.');
+          return; 
+      }
       var $btn = $(this);
       $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Rejecting...');
       $.ajax({
@@ -527,11 +532,12 @@
         data: { _token: token, id: id, remarks: remarks },
         success: function() {
           $('#upiRejectModal').modal('hide');
-          toastr.warning('Payment rejected and user notified.');
-          setTimeout(function(){ window.location.reload(); }, 1200);
+          if (typeof toastr !== 'undefined') toastr.warning('Payment rejected and user notified.');
+          setTimeout(function(){ window.location.reload(); }, 800);
         },
         error: function() {
-          toastr.error('Error rejecting payment. Please try again.');
+          if (typeof toastr !== 'undefined') toastr.error('Error rejecting payment. Please try again.');
+          else alert('Error rejecting payment. Please try again.');
           $btn.prop('disabled', false).html('<i class="fas fa-times mr-1"></i> Confirm Reject');
         }
       });
