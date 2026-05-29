@@ -86,7 +86,7 @@
                     <td>{{$maintenance->gst}}</td>
                     <td>{{$maintenance->status}}</td>
                     <td>
-                      <!--<a href="{{route('maintenance.show',$maintenance->id)}}" target="_blank"  class="btn btn-sm btn-warning"><i class="fa fa-eye"></i></a>-->
+                      <a href="{{route('maintenance.show',$maintenance->id)}}" class="btn btn-sm btn-warning" title="View Details & Verify UPI"><i class="fa fa-eye"></i></a>
                        @if(Auth::User()->role == 'BA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'Accounts'))
                       <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#addModal" data-id="{{$maintenance->id}}" data-from_date="{{$maintenance->from_date}}" data-maintenance_type="{{$maintenance->maintenance_type}}" data-vacant_amount="{{$maintenance->vacant_amount}}"
                       data-to_date="{{$maintenance->to_date}}" data-building_id="{{$maintenance->building_id}}" data-amount="{{$maintenance->amount}}" data-status="{{$maintenance->status}}" data-gst="{{$maintenance->gst}}" 
