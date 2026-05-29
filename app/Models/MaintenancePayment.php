@@ -35,4 +35,17 @@ class MaintenancePayment extends Model
         return $this->belongsTo('App\Models\Transaction');
     }
 
+    public function getPaymentScreenshotAttribute($value)
+    {
+        if ($value) {
+            return asset('maintenance_screenshots/' . $value);
+        }
+        return null;
+    }
+
+    public function getPaymentScreenshotFilenameAttribute()
+    {
+        return $this->attributes['payment_screenshot'] ?? null;
+    }
+
 }

@@ -5560,12 +5560,13 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
             $total_gst += $payment->gst;
 
             // ── UPI Payment Enabled check ──────────────────────────────────────────
-            // Button is DISABLED in the last 24 hours before the due date.
-            // i.e. enabled from invoice creation until (due_date - 24h).
+            // Button is DISABLED in the last 24 hours before the due date and on the due date.
+            // i.e. disabled from (due_date - 24h) until due_date end. Enabled for late payments.
             $upiEnabled = false;
             if ($maintenance && $maintenance->due_date) {
-                $cutoff = Carbon::parse($maintenance->due_date)->endOfDay()->subHours(24);
-                $upiEnabled = Carbon::now()->lt($cutoff);
+                $dueDate = Carbon::parse($maintenance->due_date)->endOfDay();
+                $cutoff  = Carbon::parse($maintenance->due_date)->startOfDay()->subHours(24);
+                $upiEnabled = !(Carbon::now()->between($cutoff, $dueDate));
             }
             $payment->upi_payment_enabled = $upiEnabled;
 
@@ -11377,14 +11378,15 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
         }
 
         // ========== TIME WINDOW CHECK ==========
-        // Paid option disabled 24 hours before due date (per Figma spec: "disabled on 9th Jan" for 10th Jan due date)
+        // Paid option disabled 24 hours before due date and on the due date itself.
+        // It is re-enabled after the due date for late payments.
         $maintenance = $maintenancePayment->maintenance;
         if ($maintenance && $maintenance->due_date) {
             $dueDate = Carbon::parse($maintenance->due_date)->endOfDay();
-            $cutoff  = $dueDate->copy()->subHours(24);
+            $cutoff  = Carbon::parse($maintenance->due_date)->startOfDay()->subHours(24);
             $now     = Carbon::now();
 
-            if ($now->greaterThanOrEqualTo($cutoff)) {
+            if ($now->between($cutoff, $dueDate)) {
                 return response()->json([
                     'status'  => false,
                     'message' => 'UPI payment submission is closed 24 hours before the due date (' . $dueDate->format('d M Y') . '). Please contact your building admin.',
