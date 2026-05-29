@@ -134,7 +134,7 @@
                               <span class="badge badge-light">{{$payment->type}}</span>
                             @endif
                           </td>
-                          <td>₹{{ number_format($payment->paid_amount ?? 0, 2) }}</td>
+                          <td>₹{{ number_format(($payment->dues_amount ?? 0) + ($payment->paid_amount ?? 0), 2) }}</td>
                           <td>{{$payment->created_at ? $payment->created_at->format('d M Y') : '-'}}</td>
                           <td>
                             @if($payment->status == 'Paid')
@@ -163,8 +163,8 @@
                           </td>
                           <td>
                             @if($payment->payment_screenshot)
-                              <a href="{{ asset('maintenance_screenshots/' . $payment->payment_screenshot) }}" target="_blank">
-                                <img src="{{ asset('maintenance_screenshots/' . $payment->payment_screenshot) }}"
+                              <a href="{{ asset('public/maintenance_screenshots/' . $payment->payment_screenshot) }}" target="_blank">
+                                <img src="{{ asset('public/maintenance_screenshots/' . $payment->payment_screenshot) }}"
                                      alt="Screenshot"
                                      style="max-width:50px; max-height:50px; border-radius:4px; border:1px solid #dee2e6; cursor:pointer;"
                                      title="Click to view full screenshot">
@@ -244,8 +244,8 @@
                               <div class="col-md-6 text-center">
                                 @if($payment->payment_screenshot)
                                   <p><strong>Payment Screenshot</strong></p>
-                                  <a href="{{ asset('maintenance_screenshots/' . $payment->payment_screenshot) }}" target="_blank">
-                                    <img src="{{ asset('maintenance_screenshots/' . $payment->payment_screenshot) }}"
+                                  <a href="{{ asset('public/maintenance_screenshots/' . $payment->payment_screenshot) }}" target="_blank">
+                                    <img src="{{ asset('public/maintenance_screenshots/' . $payment->payment_screenshot) }}"
                                          alt="Payment Screenshot"
                                          class="img-thumbnail"
                                          style="max-width:140px; max-height:140px; cursor:pointer;">
