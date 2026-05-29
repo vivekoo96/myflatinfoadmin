@@ -11450,14 +11450,30 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
         }
 
         // ========== SUCCESS RESPONSE (Figma: Payment Successful screen) ==========
+        // Calculate grand total including late fines and GST
+        $late_fine = 0;
+        if ($maintenance->due_date) {
+            $dueDate = \Carbon\Carbon::parse($maintenance->due_date);
+            $calcDate = now();
+            if ($dueDate->lt($calcDate->startOfDay())) {
+                $late_days = $dueDate->diffInDays($calcDate);
+                if ($maintenance->late_fine_type == 'Daily') $late_fine = $late_days * $maintenance->late_fine_value;
+                elseif ($maintenance->late_fine_type == 'Fixed') $late_fine = $maintenance->late_fine_value;
+                elseif ($maintenance->late_fine_type == 'Percentage') $late_fine = ($maintenancePayment->dues_amount * $maintenance->late_fine_value) / 100;
+            }
+        }
+        $total_before_gst = $maintenancePayment->dues_amount + $late_fine;
+        $gst_amount = ($total_before_gst * $maintenance->gst) / 100;
+        $grand_total = ceil($total_before_gst + $gst_amount);
+
         $amountPaid   = $request->filled('amount_paid')
             ? $request->amount_paid
-            : $maintenancePayment->dues_amount;
+            : $grand_total;
         $flatLabel    = $request->filled('flat_number')
             ? $request->flat_number
             : ($flat->name ?? ('Flat #' . $flat->id));
         $screenshotUrl = $screenshotPath
-            ? asset('maintenance_screenshots/' . $screenshotPath)
+            ? asset('public/maintenance_screenshots/' . $screenshotPath)
             : null;
 
         return response()->json([
