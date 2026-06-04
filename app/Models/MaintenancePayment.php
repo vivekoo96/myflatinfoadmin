@@ -49,37 +49,49 @@ class MaintenancePayment extends Model
     }
 
     /**
-     * Grand total payable for this bill = ceil(dues + late fine + GST).
-     * $asOf controls the date the late fine is calculated against:
-     *   - pending-bills passes null  -> now()
-     *   - upi-pending  passes upi_submitted_at (frozen at submission)
+     * Total outstanding maintenance payable for a flat = ceil( sum of
+     * (dues + late fine + GST) across ALL unpaid maintenance bills of the flat ).
+     *
+     * This is the single source of truth for the "Total" shown on
+     * account/pending-bills, account/upi-pending and the pending-bills API,
+     * so they always agree.
      */
-    public function calculateGrandTotal($asOf = null)
+    public static function flatOutstandingTotal($flatId)
     {
-        $maintenance = $this->maintenance;
-        if (!$maintenance) {
-            return ceil($this->dues_amount);
-        }
+        $payments = self::where('flat_id', $flatId)
+            ->where('status', 'Unpaid')
+            ->with('maintenance')
+            ->get();
 
-        $asOf = $asOf ? \Carbon\Carbon::parse($asOf) : now();
-        $late_fine = 0;
+        $total_amount = 0;
+        $total_gst    = 0;
 
-        if ($maintenance->due_date) {
-            $dueDate = \Carbon\Carbon::parse($maintenance->due_date);
-            if ($dueDate->lt($asOf->copy()->startOfDay())) {
-                $late_days = $dueDate->diffInDays($asOf);
-                switch ($maintenance->late_fine_type) {
-                    case 'Daily':      $late_fine = $late_days * $maintenance->late_fine_value; break;
-                    case 'Fixed':      $late_fine = $maintenance->late_fine_value;              break;
-                    case 'Percentage': $late_fine = ($this->dues_amount * $maintenance->late_fine_value) / 100; break;
+        foreach ($payments as $payment) {
+            if (!$payment->maintenance) {
+                continue;
+            }
+
+            $late_fine   = 0;
+            $maintenance = $payment->maintenance;
+
+            if ($maintenance->due_date) {
+                $dueDate = \Carbon\Carbon::parse($maintenance->due_date);
+                if ($dueDate->lt(now()->startOfDay())) {
+                    $late_days = $dueDate->diffInDays(now());
+                    switch ($maintenance->late_fine_type) {
+                        case 'Daily':      $late_fine = $late_days * $maintenance->late_fine_value; break;
+                        case 'Fixed':      $late_fine = $maintenance->late_fine_value;              break;
+                        case 'Percentage': $late_fine = ($payment->dues_amount * $maintenance->late_fine_value) / 100; break;
+                    }
                 }
             }
+
+            $amount        = $payment->dues_amount + $late_fine;
+            $total_amount += $amount;
+            $total_gst    += ($amount * ($maintenance->gst ?? 0)) / 100;
         }
 
-        $total_before_gst = $this->dues_amount + $late_fine;
-        $gst_amount       = ($total_before_gst * ($maintenance->gst ?? 0)) / 100;
-
-        return ceil($total_before_gst + $gst_amount);
+        return ceil($total_amount + $total_gst);
     }
 
 }

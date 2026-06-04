@@ -1841,13 +1841,20 @@ public function form_reciepts()
         $flat_id   = $request->flat_id;
         $bill_type = $request->bill_type ?? 'all';
 
-        // ---------- Maintenance pending bills ----------
+        // ---------- Maintenance pending bills (one row per flat) ----------
         $maintenance_payments = collect();
         if ($bill_type === 'all' || $bill_type === 'maintenance') {
             $maintenanceQuery = MaintenancePayment::where('building_id', $building->id)
                 ->where('status', 'Unpaid')
                 ->with(['maintenance', 'flat.owner', 'flat.tanent', 'flat.block', 'flat.building:id,name'])
-                ->whereHas('maintenance');
+                ->whereHas('maintenance')
+                ->whereIn('id', function ($subquery) use ($building) {
+                    $subquery->selectRaw('MAX(id)')
+                        ->from('maintenance_payments')
+                        ->where('building_id', $building->id)
+                        ->where('status', 'Unpaid')
+                        ->groupBy('flat_id');
+                });
 
             if ($request->filled('flat_id') && $request->flat_id > 0) {
                 $maintenanceQuery->where('flat_id', $request->flat_id);
@@ -1868,20 +1875,30 @@ public function form_reciepts()
                 $total_before_gst = $payment->dues_amount + $late_fine;
                 $gst_amount       = $total_before_gst * $gst_rate / 100;
 
-                $payment->late_fine   = $late_fine;
+                // Per-bill breakdown for this row
+                $payment->late_fine    = $late_fine;
                 $payment->total_amount = $total_before_gst;
-                $payment->gst_amount  = $gst_amount;
-                $payment->grand_total = ceil($total_before_gst + $gst_amount);
+                $payment->gst_amount   = $gst_amount;
+                // Headline "Total" = full outstanding maintenance for the flat
+                // (sum of all unpaid bills), identical to account/pending-bills.
+                $payment->grand_total  = MaintenancePayment::flatOutstandingTotal($payment->flat_id);
             }
         }
 
-        // ---------- Essential pending bills ----------
+        // ---------- Essential pending bills (one row per flat) ----------
         $essential_payments = collect();
         if ($bill_type === 'all' || $bill_type === 'essential') {
             $essentialQuery = EssentialPayment::where('building_id', $building->id)
                 ->where('status', 'Unpaid')
                 ->with(['essential', 'flat.owner', 'flat.tanent', 'flat.block', 'flat.building:id,name'])
-                ->whereHas('essential');
+                ->whereHas('essential')
+                ->whereIn('id', function ($subquery) use ($building) {
+                    $subquery->selectRaw('MAX(id)')
+                        ->from('essential_payments')
+                        ->where('building_id', $building->id)
+                        ->where('status', 'Unpaid')
+                        ->groupBy('flat_id');
+                });
 
             if ($request->filled('flat_id') && $request->flat_id > 0) {
                 $essentialQuery->where('flat_id', $request->flat_id);

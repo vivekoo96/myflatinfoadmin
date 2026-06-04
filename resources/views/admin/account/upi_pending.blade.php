@@ -36,9 +36,9 @@
                     <div class="row">
                       @foreach($pendingUpi as $payment)
                       <?php
-                           // Same calculation as account/pending-bills (shared helper),
-                           // but late fine is frozen at the submission date.
-                           $grand_total = $payment->calculateGrandTotal($payment->upi_submitted_at);
+                           // Full outstanding maintenance for the flat — same total
+                           // shown on account/pending-bills (shared helper).
+                           $grand_total = \App\Models\MaintenancePayment::flatOutstandingTotal($payment->flat_id);
                       ?>
                       <div class="col-md-6 mb-3">
                         <div class="card card-warning card-outline">
