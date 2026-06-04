@@ -61,8 +61,8 @@
                               <div class="col-md-6 text-center">
                                 @if($payment->payment_screenshot)
                                   <p><strong>Payment Screenshot</strong></p>
-                                  <a href="{{ asset('public/maintenance_screenshots/'.$payment->payment_screenshot) }}" target="_blank">
-                                    <img src="{{ asset('public/maintenance_screenshots/'.$payment->payment_screenshot) }}"
+                                  <a href="{{ $payment->payment_screenshot }}" target="_blank">
+                                    <img src="{{ $payment->payment_screenshot }}"
                                          alt="Payment Screenshot"
                                          class="img-thumbnail"
                                          style="max-width:140px; max-height:140px; cursor:pointer;">
