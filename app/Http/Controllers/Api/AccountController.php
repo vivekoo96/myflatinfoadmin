@@ -1972,6 +1972,161 @@ public function form_reciepts()
         }
     }
 
+    /**
+     * List pending UPI maintenance payments awaiting admin approval for the
+     * current building. Mirrors the account/upi-pending web page.
+     *
+     * Each row's `grand_total` is the full outstanding maintenance for the flat
+     * (same "Amount Due" shown on the web page), and `payment_screenshot` is the
+     * full image URL (resolved by the model accessor).
+     */
+    public function upi_pending(Request $request)
+    {
+        $building = Auth::user()->building;
+
+        $pendingUpi = MaintenancePayment::with(['flat', 'user', 'maintenance', 'flat.owner', 'flat.tanent'])
+            ->where('building_id', $building->id)
+            ->where('type', 'UPI')
+            ->where('upi_payment_status', 'Pending')
+            ->orderBy('upi_submitted_at', 'asc')
+            ->get();
+
+        foreach ($pendingUpi as $payment) {
+            $payment->grand_total = MaintenancePayment::flatOutstandingTotal($payment->flat_id);
+        }
+
+        return response()->json([
+            'pending_upi' => $pendingUpi->values(),
+            'count'       => $pendingUpi->count(),
+        ], 200);
+    }
+
+    /**
+     * Approve a pending UPI maintenance payment for the current building.
+     * Creates a Credit transaction and marks the bill Paid.
+     * Mirrors Admin\MaintenanceController::approve_upi_payment.
+     */
+    public function approve_upi_payment(Request $request)
+    {
+        $building = Auth::user()->building;
+
+        $payment = MaintenancePayment::where('id', $request->id)
+            ->where('building_id', $building->id)
+            ->first();
+
+        if (!$payment) {
+            return response()->json(['msg' => 'error', 'error' => 'Payment not found'], 404);
+        }
+
+        if ($payment->upi_payment_status !== 'Pending') {
+            return response()->json(['msg' => 'error', 'error' => 'This payment is not pending approval'], 422);
+        }
+
+        // Settle the flat's FULL outstanding maintenance (matches the ₹ total
+        // shown on the pending pages), recording one UPI transaction.
+        $settlement  = MaintenancePayment::settleFlatOutstanding($payment->flat_id, $payment, $request->remarks ?? null);
+        $grand_total = $settlement['grand_total'] ?? 0;
+
+        // Notify the resident
+        $user = $payment->user;
+        if ($user) {
+            $dataPayload = [
+                'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                'screen'       => 'MaintenancePage',
+                'params'       => json_encode([
+                    'maintenanceId' => $payment->maintenance_id,
+                    'flat_id'       => $payment->flat_id,
+                    'building_id'   => $payment->building_id,
+                    'user_id'       => $user->id,
+                ]),
+                'categoryId' => '',
+                'channelId'  => '',
+                'sound'      => 'bellnotificationsound.wav',
+                'type'       => 'UPI_PAYMENT_APPROVED',
+            ];
+            NotificationHelper::sendNotification(
+                $user->id,
+                'UPI Payment Approved',
+                'Your UPI maintenance payment has been approved. Thank you!',
+                $dataPayload,
+                [
+                    'from_id'     => Auth::id(),
+                    'flat_id'     => $payment->flat_id,
+                    'building_id' => $payment->building_id,
+                    'type'        => 'upi_payment_approved',
+                    'apns_client' => $this->apnsClient ?? null,
+                    'ios_sound'   => $dataPayload['sound'],
+                ],
+                ['user']
+            );
+        }
+
+        return response()->json(['msg' => 'success', 'amount' => $grand_total]);
+    }
+
+    /**
+     * Reject a pending UPI maintenance payment for the current building.
+     * Mirrors Admin\MaintenanceController::reject_upi_payment.
+     */
+    public function reject_upi_payment(Request $request)
+    {
+        $building = Auth::user()->building;
+
+        $payment = MaintenancePayment::where('id', $request->id)
+            ->where('building_id', $building->id)
+            ->first();
+
+        if (!$payment) {
+            return response()->json(['msg' => 'error', 'error' => 'Payment not found'], 404);
+        }
+
+        if ($payment->upi_payment_status !== 'Pending') {
+            return response()->json(['msg' => 'error', 'error' => 'This payment is not pending approval'], 422);
+        }
+
+        $payment->upi_payment_status = 'Rejected';
+        $payment->status             = 'Unpaid';
+        $payment->upi_remarks        = $request->remarks ?? null;
+        $payment->save();
+
+        // Notify the resident
+        $user = $payment->user;
+        if ($user) {
+            $remarks = $request->remarks ? ' Reason: ' . $request->remarks : '';
+            $dataPayload = [
+                'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                'screen'       => 'MaintenancePage',
+                'params'       => json_encode([
+                    'maintenanceId' => $payment->maintenance_id,
+                    'flat_id'       => $payment->flat_id,
+                    'building_id'   => $payment->building_id,
+                    'user_id'       => $user->id,
+                ]),
+                'categoryId' => '',
+                'channelId'  => '',
+                'sound'      => 'bellnotificationsound.wav',
+                'type'       => 'UPI_PAYMENT_REJECTED',
+            ];
+            NotificationHelper::sendNotification(
+                $user->id,
+                'UPI Payment Rejected',
+                'Your UPI maintenance payment submission was rejected.' . $remarks . ' Please re-submit with a valid screenshot.',
+                $dataPayload,
+                [
+                    'from_id'     => Auth::id(),
+                    'flat_id'     => $payment->flat_id,
+                    'building_id' => $payment->building_id,
+                    'type'        => 'upi_payment_rejected',
+                    'apns_client' => $this->apnsClient ?? null,
+                    'ios_sound'   => $dataPayload['sound'],
+                ],
+                ['user']
+            );
+        }
+
+        return response()->json(['msg' => 'success']);
+    }
+
     public function pay_maintenance(Request $request)
     {
         $flat = Flat::where('id',$request->flat_id)->where('building_id',Auth::User()->building_id)->with([

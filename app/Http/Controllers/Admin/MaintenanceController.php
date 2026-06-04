@@ -439,60 +439,10 @@ class MaintenanceController extends Controller
             return response()->json(['msg' => 'error', 'error' => 'Payment not found'], 404);
         }
 
-        $maintenance = $payment->maintenance;
-        $late_fine = 0;
-
-        $dueDate = \Carbon\Carbon::parse($maintenance->due_date);
-        $calcDate = $payment->upi_submitted_at ? \Carbon\Carbon::parse($payment->upi_submitted_at) : now();
-
-        if ($maintenance && $dueDate->lt($calcDate->startOfDay())) {
-            $late_days = $dueDate->diffInDays($calcDate);
-
-            switch ($maintenance->late_fine_type) {
-                case 'Daily':
-                    $late_fine = $late_days * $maintenance->late_fine_value;
-                    break;
-                case 'Fixed':
-                    $late_fine = $maintenance->late_fine_value;
-                    break;
-                case 'Percentage':
-                    $late_fine = ($payment->dues_amount * $maintenance->late_fine_value) / 100;
-                    break;
-            }
-        }
-
-        $payment->late_fine = $late_fine;
-        $total_before_gst = $payment->dues_amount + $late_fine;
-        $gst_amount = ($total_before_gst * $maintenance->gst) / 100;
-        $grand_total = ceil($total_before_gst + $gst_amount);
-
-        // Transaction creation
-        $transaction = new \App\Models\Transaction();
-        $transaction->building_id = $payment->building_id;
-        $transaction->user_id = $payment->user_id;
-        $transaction->flat_id = $payment->flat_id;
-        $transaction->block_id = $payment->flat->block_id ?? null;
-        $transaction->model = 'Maintenance';
-        $transaction->model_id = $payment->maintenance_id;
-        $transaction->type = 'Credit';
-        $transaction->payment_type = 'InBank';
-        $transaction->amount = $grand_total;
-        $transaction->gst_amount = $gst_amount;
-        $transaction->reciept_no = 'UPI' . $payment->id . rand(1000, 9999);
-        $transaction->desc = 'Maintenance Payment paid by flat number ' . ($payment->flat->name ?? 'Unknown') . ' via UPI';
-        $transaction->status = 'Success';
-        $transaction->date = now()->toDateString();
-        $transaction->save();
-
-        $payment->transaction_id = $transaction->id;
-        $payment->upi_payment_status = 'Approved';
-        $payment->status = 'Paid';
-        $payment->paid_amount = $payment->dues_amount;
-        $payment->dues_amount = 0;
-        $payment->type = 'UPI';
-        $payment->payment_type = 'InBank';
-        $payment->upi_remarks = $request->remarks ?? null;
-        $payment->save();
+        // Settle the flat's FULL outstanding maintenance (matches the ₹ total
+        // shown on the pending pages), recording one UPI transaction.
+        $settlement  = MaintenancePayment::settleFlatOutstanding($payment->flat_id, $payment, $request->remarks ?? null);
+        $grand_total = $settlement['grand_total'] ?? 0;
 
         // Notify the resident
         $user = $payment->user;
