@@ -35,25 +35,10 @@
                     @else
                     <div class="row">
                       @foreach($pendingUpi as $payment)
-                      <?php 
-                           $maintenance = $payment->maintenance;
-                           $late_fine = 0;
-                           if ($maintenance && $maintenance->due_date) {
-                               $dueDate = \Carbon\Carbon::parse($maintenance->due_date);
-                               $calcDate = $payment->upi_submitted_at ? \Carbon\Carbon::parse($payment->upi_submitted_at) : ($payment->updated_at ?? now());
-                               if ($dueDate->lt($calcDate->startOfDay())) {
-                                   $late_days = $dueDate->diffInDays($calcDate);
-                                   if ($maintenance->late_fine_type == 'Daily') $late_fine = $late_days * $maintenance->late_fine_value;
-                                   elseif ($maintenance->late_fine_type == 'Fixed') $late_fine = $maintenance->late_fine_value;
-                                   elseif ($maintenance->late_fine_type == 'Percentage') $late_fine = ($payment->dues_amount * $maintenance->late_fine_value) / 100;
-                               }
-                           }
-                           $gst_amount = 0;
-                           $total_before_gst = $payment->dues_amount + $late_fine;
-                           if($maintenance) {
-                               $gst_amount = ($total_before_gst * $maintenance->gst) / 100;
-                           }
-                           $grand_total = ceil($total_before_gst + $gst_amount);
+                      <?php
+                           // Same calculation as account/pending-bills (shared helper),
+                           // but late fine is frozen at the submission date.
+                           $grand_total = $payment->calculateGrandTotal($payment->upi_submitted_at);
                       ?>
                       <div class="col-md-6 mb-3">
                         <div class="card card-warning card-outline">
