@@ -259,7 +259,7 @@ function indian_money($amount, $decimals = 2) {
                                     <td>₹{{number_format($payment->dues_amount, 2)}}</td>
                                     <td>₹{{number_format($payment->late_fine, 2)}}</td>
                                     <td>₹{{number_format($payment->gst_amount, 2)}}</td>
-                                    <td><strong>₹@php echo indian_money(getMaintenanceFinalAmount($payment->flat_id));@endphp</strong></td>
+                                    <td><strong>₹@php echo indian_money(ceil($payment->grand_total));@endphp</strong></td>
                                     <td>
                                         <span class="badge badge-danger">Unpaid</span>
                                     </td>
@@ -335,7 +335,7 @@ function indian_money($amount, $decimals = 2) {
                                     <td>₹{{number_format($payment->dues_amount, 2)}}</td>
                                     <td>₹{{number_format($payment->late_fine, 2)}}</td>
                                     <td>₹{{number_format($payment->gst_amount, 2)}}</td>
-                                    <td><strong>₹{{number_format($payment->grand_total, 2)}}</strong></td>
+                                    <td><strong>₹{{number_format(ceil($payment->grand_total), 2)}}</strong></td>
                                     <td>
                                         <span class="badge badge-danger">Unpaid</span>
                                     </td>
