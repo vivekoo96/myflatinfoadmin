@@ -345,6 +345,7 @@ use App\Http\Controllers\Api\MoveInOutApiController;
                 Route::post('add-new-maintenance',[AccountController::class,'add_new_maintenance']);
                 Route::post('update-maintenance',[AccountController::class,'add_new_maintenance']);
                 Route::post('manage-maintenance',[AccountController::class,'manage_maintenance']);
+                Route::post('pending-bills',[AccountController::class,'pending_bills']);
                 Route::post('pay-maintenance',[AccountController::class,'pay_maintenance']);
                 Route::post('pay-maintenance-bill',[AccountController::class,'pay_maintenance_bill']);
                 Route::post('maintenance-invoice',[AccountController::class,'maintenance_invoice']);

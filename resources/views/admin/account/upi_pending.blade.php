@@ -45,11 +45,11 @@
                                    $late_days = $dueDate->diffInDays($calcDate);
                                    if ($maintenance->late_fine_type == 'Daily') $late_fine = $late_days * $maintenance->late_fine_value;
                                    elseif ($maintenance->late_fine_type == 'Fixed') $late_fine = $maintenance->late_fine_value;
-                                   elseif ($maintenance->late_fine_type == 'Percentage') $late_fine = (($payment->dues_amount + $payment->paid_amount) * $maintenance->late_fine_value) / 100;
+                                   elseif ($maintenance->late_fine_type == 'Percentage') $late_fine = ($payment->dues_amount * $maintenance->late_fine_value) / 100;
                                }
                            }
                            $gst_amount = 0;
-                           $total_before_gst = ($payment->dues_amount + $payment->paid_amount) + $late_fine;
+                           $total_before_gst = $payment->dues_amount + $late_fine;
                            if($maintenance) {
                                $gst_amount = ($total_before_gst * $maintenance->gst) / 100;
                            }

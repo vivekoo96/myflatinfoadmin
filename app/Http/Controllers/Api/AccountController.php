@@ -1825,7 +1825,136 @@ public function form_reciepts()
             'flat_id' => $flat_id,
         ], 200);
     }
-    
+
+    /**
+     * List all pending (Unpaid) maintenance and/or essential bills for the
+     * current building, with calculated late fine, GST and grand total.
+     *
+     * Optional request params:
+     *   - flat_id   : filter to a single flat
+     *   - bill_type : 'all' (default) | 'maintenance' | 'essential'
+     */
+    public function pending_bills(Request $request)
+    {
+        $user      = Auth::user();
+        $building  = $user->building;
+        $flat_id   = $request->flat_id;
+        $bill_type = $request->bill_type ?? 'all';
+
+        // ---------- Maintenance pending bills ----------
+        $maintenance_payments = collect();
+        if ($bill_type === 'all' || $bill_type === 'maintenance') {
+            $maintenanceQuery = MaintenancePayment::where('building_id', $building->id)
+                ->where('status', 'Unpaid')
+                ->with(['maintenance', 'flat.owner', 'flat.tanent', 'flat.block', 'flat.building:id,name'])
+                ->whereHas('maintenance');
+
+            if ($request->filled('flat_id') && $request->flat_id > 0) {
+                $maintenanceQuery->where('flat_id', $request->flat_id);
+            }
+
+            $maintenance_payments = $maintenanceQuery->orderBy('created_at', 'desc')->get();
+
+            foreach ($maintenance_payments as $payment) {
+                $bill      = $payment->maintenance;
+                $gst_rate  = $bill->gst ?? 0;
+                $late_fine = $this->calculatePendingLateFine(
+                    $bill->due_date ?? null,
+                    $bill->late_fine_type ?? null,
+                    $bill->late_fine_value ?? 0,
+                    $payment->dues_amount
+                );
+
+                $total_before_gst = $payment->dues_amount + $late_fine;
+                $gst_amount       = $total_before_gst * $gst_rate / 100;
+
+                $payment->late_fine   = $late_fine;
+                $payment->total_amount = $total_before_gst;
+                $payment->gst_amount  = $gst_amount;
+                $payment->grand_total = ceil($total_before_gst + $gst_amount);
+            }
+        }
+
+        // ---------- Essential pending bills ----------
+        $essential_payments = collect();
+        if ($bill_type === 'all' || $bill_type === 'essential') {
+            $essentialQuery = EssentialPayment::where('building_id', $building->id)
+                ->where('status', 'Unpaid')
+                ->with(['essential', 'flat.owner', 'flat.tanent', 'flat.block', 'flat.building:id,name'])
+                ->whereHas('essential');
+
+            if ($request->filled('flat_id') && $request->flat_id > 0) {
+                $essentialQuery->where('flat_id', $request->flat_id);
+            }
+
+            $essential_payments = $essentialQuery->orderBy('created_at', 'desc')->get();
+
+            foreach ($essential_payments as $payment) {
+                $bill      = $payment->essential;
+                $gst_rate  = $bill->gst ?? 0;
+                $late_fine = $this->calculatePendingLateFine(
+                    $bill->due_date ?? null,
+                    $bill->late_fine_type ?? null,
+                    $bill->late_fine_value ?? 0,
+                    $payment->dues_amount
+                );
+
+                $total_before_gst = $payment->dues_amount + $late_fine;
+                $gst_amount       = $total_before_gst * $gst_rate / 100;
+
+                $payment->late_fine   = $late_fine;
+                $payment->total_amount = $total_before_gst;
+                $payment->gst_amount  = $gst_amount;
+                $payment->grand_total = ceil($total_before_gst + $gst_amount);
+            }
+        }
+
+        $summary = [
+            'maintenance_count'  => $maintenance_payments->count(),
+            'essential_count'    => $essential_payments->count(),
+            'maintenance_total'  => $maintenance_payments->sum('grand_total'),
+            'essential_total'    => $essential_payments->sum('grand_total'),
+            'grand_total'        => $maintenance_payments->sum('grand_total') + $essential_payments->sum('grand_total'),
+        ];
+
+        return response()->json([
+            'maintenance_payments' => $maintenance_payments->values(),
+            'essential_payments'   => $essential_payments->values(),
+            'summary'              => $summary,
+            'flat_id'              => $flat_id,
+            'bill_type'            => $bill_type,
+        ], 200);
+    }
+
+    /**
+     * Shared late-fine calculation for pending bills.
+     * Uses dues_amount only, matching the approval/charge logic.
+     */
+    private function calculatePendingLateFine($due_date, $late_fine_type, $late_fine_value, $dues_amount)
+    {
+        if (!$due_date) {
+            return 0;
+        }
+
+        $dueDate = Carbon::parse($due_date);
+        if (!$dueDate->lt(now()->startOfDay())) {
+            return 0;
+        }
+
+        $late_days = $dueDate->diffInDays(now());
+
+        switch ($late_fine_type) {
+            case 'Daily':
+                return $late_days * $late_fine_value;
+            case 'Fixed':
+                return $late_fine_value;
+            case 'Percentage':
+                return ($dues_amount * $late_fine_value) / 100;
+            default:
+                return 0;
+        }
+    }
+
     public function pay_maintenance(Request $request)
     {
         $flat = Flat::where('id',$request->flat_id)->where('building_id',Auth::User()->building_id)->with([
