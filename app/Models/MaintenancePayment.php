@@ -49,30 +49,44 @@ class MaintenancePayment extends Model
     }
 
     /**
-     * Total outstanding maintenance payable for a flat = ceil( sum of
-     * (dues + late fine + GST) across ALL unpaid maintenance bills of the flat ).
+     * Full breakdown of a flat's outstanding maintenance across ALL unpaid bills.
+     * Single source of truth used by flatOutstandingTotal() and by the
+     * pending-bills web view / API so the displayed columns and the Total agree.
      *
-     * This is the single source of truth for the "Total" shown on
-     * account/pending-bills, account/upi-pending and the pending-bills API,
-     * so they always agree.
+     * Returns:
+     *   current_dues - dues of the latest (highest-id) unpaid bill
+     *   arrears      - sum of dues of the OLDER unpaid bills
+     *   dues_total   - current_dues + arrears (all unpaid dues)
+     *   late_fine    - sum of late fine across all unpaid bills (now() reference)
+     *   gst          - sum of GST across all unpaid bills
+     *   total        - ceil(dues_total + late_fine + gst)
+     *
+     * @param  int $flatId
+     * @return array{current_dues:float,arrears:float,dues_total:float,late_fine:float,gst:float,total:float}
      */
-    public static function flatOutstandingTotal($flatId)
+    public static function flatOutstandingBreakdown($flatId)
     {
         $payments = self::where('flat_id', $flatId)
             ->where('status', 'Unpaid')
             ->with('maintenance')
+            ->orderBy('id', 'desc')
             ->get();
 
-        $total_amount = 0;
-        $total_gst    = 0;
+        $current_dues = 0;
+        $arrears      = 0;
+        $dues_total   = 0;
+        $late_total   = 0;
+        $gst_total    = 0;
+
+        $latestId = optional($payments->first())->id;
 
         foreach ($payments as $payment) {
             if (!$payment->maintenance) {
                 continue;
             }
 
-            $late_fine   = 0;
             $maintenance = $payment->maintenance;
+            $late_fine   = 0;
 
             if ($maintenance->due_date) {
                 $dueDate = \Carbon\Carbon::parse($maintenance->due_date);
@@ -86,12 +100,39 @@ class MaintenancePayment extends Model
                 }
             }
 
-            $amount        = $payment->dues_amount + $late_fine;
-            $total_amount += $amount;
-            $total_gst    += ($amount * ($maintenance->gst ?? 0)) / 100;
+            $amount      = $payment->dues_amount + $late_fine;
+            $dues_total += $payment->dues_amount;
+            $late_total += $late_fine;
+            $gst_total  += ($amount * ($maintenance->gst ?? 0)) / 100;
+
+            if ($payment->id === $latestId) {
+                $current_dues = $payment->dues_amount;
+            } else {
+                $arrears += $payment->dues_amount;
+            }
         }
 
-        return ceil($total_amount + $total_gst);
+        return [
+            'current_dues' => $current_dues,
+            'arrears'      => $arrears,
+            'dues_total'   => $dues_total,
+            'late_fine'    => $late_total,
+            'gst'          => $gst_total,
+            'total'        => ceil($dues_total + $late_total + $gst_total),
+        ];
+    }
+
+    /**
+     * Total outstanding maintenance payable for a flat = ceil( sum of
+     * (dues + late fine + GST) across ALL unpaid maintenance bills of the flat ).
+     *
+     * This is the single source of truth for the "Total" shown on
+     * account/pending-bills, account/upi-pending and the pending-bills API,
+     * so they always agree.
+     */
+    public static function flatOutstandingTotal($flatId)
+    {
+        return self::flatOutstandingBreakdown($flatId)['total'];
     }
 
     /**

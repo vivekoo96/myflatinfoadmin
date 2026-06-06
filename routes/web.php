@@ -283,7 +283,9 @@ Route::middleware('admin')->group(function () {
         
         Route::get('/account/pending-bills',[AccountController::class, 'pending_bills']);
         Route::get('/account/upi-pending',[AccountController::class, 'upi_pending']);
+        Route::get('/account/upi-history',[AccountController::class, 'upi_history']);
         Route::post('/account/send-due-notifications',[AccountController::class, 'send_due_notifications']);
+        Route::get('/account/reminder-history',[AccountController::class, 'reminder_history']);
         Route::get('/account/gst',[GstController::class, 'index'])->name('gst.index');
 
         // Asset & Inventory Management

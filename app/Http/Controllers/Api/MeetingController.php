@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\MeetingMinute;
+use App\Helpers\AuthHelper;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -30,8 +31,18 @@ class MeetingController extends Controller
             ];
             $sortColumn = $columnMap[$sortField] ?? 'datetime';
 
+            // Scope to the authenticated user's building so a user never sees
+            // other buildings' meeting minutes.
+            $flat = AuthHelper::flat();
+            if (! $flat) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No flat/building context found.',
+                ], 422);
+            }
+
             // Build query - MeetingMinute model
-            $query = MeetingMinute::query();
+            $query = MeetingMinute::where('building_id', $flat->building_id);
 
             // Apply filters if provided
             if ($search) {
@@ -89,10 +100,19 @@ class MeetingController extends Controller
         ]);
 
         try {
+            $flat = AuthHelper::flat();
+            if (! $flat) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No flat/building context found.',
+                ], 422);
+            }
+
             // Set default datetime to current if not provided
             $datetime = $request->datetime ?? Carbon::now()->format('Y-m-d\TH:i:s');
 
             $minute = MeetingMinute::create([
+                'building_id'     => $flat->building_id,
                 'title'           => $request->title,
                 'description'     => $request->description,
                 'datetime'        => $datetime,
@@ -118,7 +138,10 @@ class MeetingController extends Controller
     public function show($id)
     {
         try {
-            $minute = MeetingMinute::find($id);
+            $flat = AuthHelper::flat();
+            $minute = MeetingMinute::where('id', $id)
+                ->when($flat, fn($q) => $q->where('building_id', $flat->building_id))
+                ->first();
 
             if (!$minute) {
                 return response()->json([

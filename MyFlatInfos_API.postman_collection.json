@@ -1,0 +1,316 @@
+{
+  "info": {
+    "_postman_id": "b6f1c2a4-7d8e-4a1b-9c33-myflatinfos01",
+    "name": "MyFlatInfos API (fixed endpoints)",
+    "description": "Endpoints touched/added in the accounts, UPI & meeting-minutes fix batch.\n\nAuth = Laravel Passport (Bearer token).\n1) Run **Auth > Resident Login** then **Auth > Select Flat** (binds a flat to the token) for resident endpoints.\n2) Run **Auth > Accounts Login** for the /accounts/* endpoints.\nLogin requests auto-save the token into collection variables.\n\nSet `base_url`, `flat_id`, `maintenance_payment_id`, `meeting_id` in the collection variables tab.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://admin.test", "type": "string" },
+    { "key": "resident_token", "value": "", "type": "string" },
+    { "key": "accounts_token", "value": "", "type": "string" },
+    { "key": "flat_id", "value": "123", "type": "string" },
+    { "key": "maintenance_payment_id", "value": "456", "type": "string" },
+    { "key": "meeting_id", "value": "5", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Resident Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json; try { json = pm.response.json(); } catch (e) {}",
+                  "if (json) {",
+                  "  const t = json.token || json.access_token || (json.data && json.data.token);",
+                  "  if (t) { pm.collectionVariables.set('resident_token', t); console.log('resident_token saved'); }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "contact", "value": "9999999999", "type": "text" },
+                { "key": "password", "value": "secret", "type": "text" },
+                { "key": "login_type", "value": "user", "type": "text" },
+                { "key": "fcm_token", "value": "dummy", "type": "text" },
+                { "key": "platform", "value": "android", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/login", "host": [ "{{base_url}}" ], "path": [ "api", "login" ] }
+          }
+        },
+        {
+          "name": "Select Flat (binds flat to token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{resident_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [ { "key": "flat_id", "value": "{{flat_id}}", "type": "text" } ]
+            },
+            "url": { "raw": "{{base_url}}/api/select-flat", "host": [ "{{base_url}}" ], "path": [ "api", "select-flat" ] }
+          }
+        },
+        {
+          "name": "Accounts Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json; try { json = pm.response.json(); } catch (e) {}",
+                  "if (json) {",
+                  "  const t = json.token || json.access_token || (json.data && json.data.token);",
+                  "  if (t) { pm.collectionVariables.set('accounts_token', t); console.log('accounts_token saved'); }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "contact", "value": "8888888888", "type": "text" },
+                { "key": "password", "value": "secret", "type": "text" },
+                { "key": "login_type", "value": "user", "type": "text" },
+                { "key": "fcm_token", "value": "dummy", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/accounts/login", "host": [ "{{base_url}}" ], "path": [ "api", "accounts", "login" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pending Bills & UPI",
+      "item": [
+        {
+          "name": "Pending Bills (#9 breakdown + upi_enabled)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accounts_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "bill_type", "value": "all", "type": "text", "description": "all | maintenance | essential" },
+                { "key": "flat_id", "value": "{{flat_id}}", "type": "text", "disabled": true }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/accounts/pending-bills", "host": [ "{{base_url}}" ], "path": [ "api", "accounts", "pending-bills" ] }
+          }
+        },
+        {
+          "name": "Submit UPI Payment (#7 alerts BA + Accounts)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{resident_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "maintenance_payment_id", "value": "{{maintenance_payment_id}}", "type": "text" },
+                { "key": "screenshot", "type": "file", "src": "" },
+                { "key": "amount_paid", "value": "1250", "type": "text", "disabled": true },
+                { "key": "flat_number", "value": "A-101", "type": "text", "disabled": true }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/submit-upi-payment", "host": [ "{{base_url}}" ], "path": [ "api", "submit-upi-payment" ] }
+          }
+        },
+        {
+          "name": "UPI Pending (queue)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accounts_token}}" }
+            ],
+            "body": { "mode": "formdata", "formdata": [] },
+            "url": { "raw": "{{base_url}}/api/accounts/upi-pending", "host": [ "{{base_url}}" ], "path": [ "api", "accounts", "upi-pending" ] }
+          }
+        },
+        {
+          "name": "Approve UPI Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accounts_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "id", "value": "{{maintenance_payment_id}}", "type": "text" },
+                { "key": "remarks", "value": "Verified", "type": "text", "disabled": true }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/accounts/approve-upi-payment", "host": [ "{{base_url}}" ], "path": [ "api", "accounts", "approve-upi-payment" ] }
+          }
+        },
+        {
+          "name": "Reject UPI Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accounts_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "id", "value": "{{maintenance_payment_id}}", "type": "text" },
+                { "key": "remarks", "value": "Blurry screenshot", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/accounts/reject-upi-payment", "host": [ "{{base_url}}" ], "path": [ "api", "accounts", "reject-upi-payment" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Statements (#8 Success-only)",
+      "item": [
+        {
+          "name": "Income & Expenditure",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accounts_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "from_date", "value": "2026-01-01", "type": "text" },
+                { "key": "to_date", "value": "2026-06-06", "type": "text" },
+                { "key": "model", "value": "Maintenance", "type": "text", "disabled": true },
+                { "key": "model_id", "value": "1", "type": "text", "disabled": true }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/accounts/income-and-expenditure", "host": [ "{{base_url}}" ], "path": [ "api", "accounts", "income-and-expenditure" ] }
+          }
+        },
+        {
+          "name": "Society Fund",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accounts_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "from_date", "value": "2026-01-01", "type": "text", "disabled": true },
+                { "key": "to_date", "value": "2026-06-06", "type": "text", "disabled": true }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/accounts/society-fund", "host": [ "{{base_url}}" ], "path": [ "api", "accounts", "society-fund" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Meeting Minutes (#3 building-scoped)",
+      "item": [
+        {
+          "name": "Meetings - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{resident_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/meetings?limit=10&page=1&sortField=datetime&sortOrder=desc",
+              "host": [ "{{base_url}}" ],
+              "path": [ "api", "meetings" ],
+              "query": [
+                { "key": "limit", "value": "10" },
+                { "key": "page", "value": "1" },
+                { "key": "sortField", "value": "datetime" },
+                { "key": "sortOrder", "value": "desc" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "fromDate", "value": "2026-01-01", "disabled": true },
+                { "key": "toDate", "value": "2026-06-06", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Meetings - Show",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{resident_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/meetings/{{meeting_id}}", "host": [ "{{base_url}}" ], "path": [ "api", "meetings", "{{meeting_id}}" ] }
+          }
+        },
+        {
+          "name": "Meetings - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{resident_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "AGM 2026", "type": "text" },
+                { "key": "description", "value": "Minutes of the meeting...", "type": "text" },
+                { "key": "created_by", "value": "123", "type": "text" },
+                { "key": "datetime", "value": "2026-06-06T18:30", "type": "text", "disabled": true },
+                { "key": "created_by_role", "value": "User", "type": "text", "disabled": true }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/meetings", "host": [ "{{base_url}}" ], "path": [ "api", "meetings" ] }
+          }
+        },
+        {
+          "name": "Get Meeting Minutes (other reader)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{resident_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "count", "value": "10", "type": "text" },
+                { "key": "page", "value": "1", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/get-meeting-minutes", "host": [ "{{base_url}}" ], "path": [ "api", "get-meeting-minutes" ] }
+          }
+        }
+      ]
+    }
+  ]
+}

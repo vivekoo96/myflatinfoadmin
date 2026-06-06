@@ -162,6 +162,11 @@ use App\Http\Controllers\Api\MoveInOutApiController;
             // Meeting Minutes
             Route::post('get-meeting-minutes', [MeetingMinuteController::class, 'getMeetingMinutes']);
 
+            // Meetings (scoped to the authenticated user's building)
+            Route::get('meetings', [MeetingController::class, 'index']);
+            Route::post('meetings', [MeetingController::class, 'store']);
+            Route::get('meetings/{id}', [MeetingController::class, 'show']);
+
             // Community Activities
             Route::post('create-activity', [ActivityController::class, 'create']);
             Route::get('get-activities', [ActivityController::class, 'index']); // type=active (default) or type=my
@@ -383,11 +388,6 @@ use App\Http\Controllers\Api\MoveInOutApiController;
     
 // });
 
-
-// Meetings routes
-Route::get('meetings', [MeetingController::class, 'index']);
-Route::post('meetings', [MeetingController::class, 'store']);
-Route::get('meetings/{id}', [MeetingController::class, 'show']);
 
 // Video Tutorials routes
 Route::post('video_tutorials/create_module', [VideoTutorialController::class, 'createModule']);

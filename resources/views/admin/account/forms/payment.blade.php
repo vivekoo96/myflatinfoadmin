@@ -78,7 +78,7 @@
                         </div>
                         <div class="form-group col-md-6">
                           <label for="code" class="col-form-label">Bill Image:<image src="" id="image2" style="width:40px;"></image></label>
-                          <input type="file" name="image" class="form-control" id="image" accept="image/*">
+                          <input type="file" name="image" class="form-control" id="image" accept="image/*" capture="environment">
                         </div>
                         <div class="form-group col-md-6">
                           <label for="code" class="col-form-label">Date:</label>

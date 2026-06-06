@@ -12,6 +12,7 @@ use App\Models\Flat;
 use App\Models\User;
 use App\Models\Building;
 use App\Models\ClassifiedBuilding;
+use App\Helpers\NotificationHelper2;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
@@ -142,34 +143,49 @@ class SendClassifiedNotification implements ShouldQueue
                 'flat_count' => $flats->count(),
             ]);
 
-            // Send notification to each user
+            // Notification content for the (already building/block-scoped) audience.
+            $title = 'New Classified Posted';
+            $body  = $this->classified->title
+                ? ('New classified: ' . $this->classified->title)
+                : 'A new classified has been posted in your community.';
+
+            $dataPayload = [
+                'click_action'  => 'FLUTTER_NOTIFICATION_CLICK',
+                'screen'        => 'Classifieds',
+                'params'        => json_encode(['ScreenTab' => 'All Post', 'classified_id' => (string) $this->classified->id]),
+                'categoryId'    => 'Classifieds',
+                'channelId'     => 'Community',
+                'sound'         => 'bellnotificationsound.wav',
+                'type'          => 'CLASSIFIED_NEW',
+                'classified_id' => (string) $this->classified->id,
+            ];
+
+            // For "All Buildings" the notification isn't tied to one building.
+            $notifBuildingId = ($this->classified->category === 'All Buildings' || $this->classified->building_id == 0)
+                ? null
+                : $this->classified->building_id;
+
+            // Send (and persist) one notification per scoped recipient via the
+            // shared helper — it saves the DB notification and pushes FCM/APNs.
             $sentCount = 0;
             $failedCount = 0;
 
             foreach ($users as $user) {
                 try {
-                    // Option 1: Send via email (if configured)
-                    if ($user->email) {
-                        Log::info('Classified notification sent to user', [
-                            'classified_id' => $this->classified->id,
-                            'user_id' => $user->id,
-                            'user_email' => $user->email,
-                            'title' => $this->classified->title,
-                            'category' => $this->classified->category,
-                        ]);
-                        $sentCount++;
-                    }
-
-                    // Option 2: Send via SMS (if configured)
-                    if ($user->phone) {
-                        Log::info('Classified SMS would be sent', [
-                            'user_id' => $user->id,
-                            'phone' => $user->phone,
-                        ]);
-                    }
-
-                    // Option 3: Send via push notification (if configured)
-                    // Add Firebase/push notification logic here
+                    NotificationHelper2::sendNotification(
+                        $user->id,
+                        $title,
+                        $body,
+                        $dataPayload,
+                        [
+                            'from_id'     => $this->classified->user_id,
+                            'building_id' => $notifBuildingId,
+                            'type'        => 'classified_new',
+                            'save_to_db'  => true,
+                            'ios_sound'   => $dataPayload['sound'],
+                        ]
+                    );
+                    $sentCount++;
                 } catch (\Exception $e) {
                     $failedCount++;
                     Log::error('Failed to send notification to user', [

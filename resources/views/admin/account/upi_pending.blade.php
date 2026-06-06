@@ -25,6 +25,11 @@
             <div class="card card-outline card-warning">
                 <div class="card-header">
                     <h3 class="card-title">Pending UPI Payments</h3>
+                    <div class="card-tools">
+                        <a href="{{ url('account/upi-history') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-history mr-1"></i> View History
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
                     @if($pendingUpi->count() == 0)

@@ -935,7 +935,9 @@ class AccountController extends Controller
     public function income_and_expenditure(Request $request)
     {
         $building = Auth::User()->building;
-        $transactionsQuery = Transaction::where('building_id', $building->id);
+        // Only successful transactions count as income/expenditure.
+        $transactionsQuery = Transaction::where('building_id', $building->id)
+            ->where('status', 'Success');
 
         // Filter by model and model_id
         if ($request->filled('model') && $request->model != 'All') {
@@ -1863,25 +1865,21 @@ public function form_reciepts()
             $maintenance_payments = $maintenanceQuery->orderBy('created_at', 'desc')->get();
 
             foreach ($maintenance_payments as $payment) {
-                $bill      = $payment->maintenance;
-                $gst_rate  = $bill->gst ?? 0;
-                $late_fine = $this->calculatePendingLateFine(
-                    $bill->due_date ?? null,
-                    $bill->late_fine_type ?? null,
-                    $bill->late_fine_value ?? 0,
-                    $payment->dues_amount
-                );
+                // Full-flat outstanding breakdown (all unpaid months), identical
+                // to account/pending-bills, so the app can show Amount + arrears
+                // + late fine and a Total that matches flatOutstandingTotal().
+                $breakdown = MaintenancePayment::flatOutstandingBreakdown($payment->flat_id);
 
-                $total_before_gst = $payment->dues_amount + $late_fine;
-                $gst_amount       = $total_before_gst * $gst_rate / 100;
-
-                // Per-bill breakdown for this row
-                $payment->late_fine    = $late_fine;
-                $payment->total_amount = $total_before_gst;
-                $payment->gst_amount   = $gst_amount;
-                // Headline "Total" = full outstanding maintenance for the flat
-                // (sum of all unpaid bills), identical to account/pending-bills.
-                $payment->grand_total  = MaintenancePayment::flatOutstandingTotal($payment->flat_id);
+                $payment->current_dues = $breakdown['current_dues'];
+                $payment->arrears      = $breakdown['arrears'];
+                $payment->dues_total   = $breakdown['dues_total'];
+                $payment->late_fine    = $breakdown['late_fine'];
+                $payment->total_amount = $breakdown['dues_total'] + $breakdown['late_fine'];
+                $payment->gst_amount   = $breakdown['gst'];
+                $payment->grand_total  = $breakdown['total'];
+                // UPI "Pay" is available for overdue bills (past due date); the
+                // resident pays the current amount (dues + latest late fee + GST).
+                $payment->upi_enabled  = $this->isUpiEnabledForBill($payment->maintenance);
             }
         }
 
@@ -1970,6 +1968,26 @@ public function form_reciepts()
             default:
                 return 0;
         }
+    }
+
+    /**
+     * Whether the resident can submit a UPI payment for a bill right now.
+     * Single source of truth shared with submit_upi_payment(): UPI is open
+     * EXCEPT in the window from 24h before the due date through the due date.
+     * Once the bill is overdue it stays enabled (the resident pays the current
+     * amount = dues + latest late fee + GST). No due date => always enabled.
+     */
+    private function isUpiEnabledForBill($maintenance)
+    {
+        if (!$maintenance || !$maintenance->due_date) {
+            return true;
+        }
+
+        $dueEnd = Carbon::parse($maintenance->due_date)->endOfDay();
+        $cutoff = Carbon::parse($maintenance->due_date)->startOfDay()->subHours(24);
+
+        // Disabled only inside the pre-due cutoff window.
+        return !now()->between($cutoff, $dueEnd);
     }
 
     /**
@@ -3760,9 +3778,11 @@ public function get_user_by_email(Request $request)
     {
         $user = Auth::user();
         $building = $user->building;
-    
-        $transactionsQuery = Transaction::where('building_id', $building->id);
-    
+
+        // Only successful transactions count toward the fund statement.
+        $transactionsQuery = Transaction::where('building_id', $building->id)
+            ->where('status', 'Success');
+
         // Filter by model and model_id
         if ($request->filled('model')) {
             $transactionsQuery->where('model', $request->model);

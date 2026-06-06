@@ -11,63 +11,6 @@ function indian_money($amount, $decimals = 2) {
 }
 @endphp
 
-
- @php
- function getMaintenanceFinalAmount($flatId) {
-        $maintenance_payments = App\Models\MaintenancePayment::where('flat_id', $flatId)
-            ->where('status', 'Unpaid')
-            ->with('maintenance')
-            ->orderBy('id', 'desc')
-            ->get();
-
-       $total_amount = 0;
-        $total_gst = 0;
-
-        foreach ($maintenance_payments as $payment) {
-
-            if (!$payment->maintenance) {
-                continue;
-            }
-
-            /* ---------- Late fine calculation ---------- */
-            $late_fine = 0;
-            $dueDate = Carbon\Carbon::parse($payment->maintenance->due_date);
-
-            if ($dueDate->lt(now()->startOfDay())) {
-                $late_days = $dueDate->diffInDays(now());
-
-                switch ($payment->maintenance->late_fine_type) {
-                    case 'Daily':
-                        $late_fine = $late_days * $payment->maintenance->late_fine_value;
-                        break;
-
-                    case 'Fixed':
-                        $late_fine = $payment->maintenance->late_fine_value;
-                        break;
-
-                    case 'Percentage':
-                        $late_fine = ($payment->dues_amount * $payment->maintenance->late_fine_value) / 100;
-                        break;
-                }
-            }
-
-            /* ---------- Amount before GST ---------- */
-            $amount = $payment->dues_amount + $late_fine;
-
-            /* ---------- GST from maintenances table ---------- */
-            $gst = ($amount * $payment->maintenance->gst) / 100;
-
-            /* ---------- Totals ---------- */
-            $total_amount += $amount;
-            $total_gst += $gst;
-        }
-
-        $grand_total = ceil($total_amount + $total_gst);
-        return $grand_total;
-      }
-                
-                  
-                @endphp
     <!-- Content Header -->
     <div class="content-header">
         <div class="container-fluid">
@@ -163,6 +106,11 @@ function indian_money($amount, $decimals = 2) {
                     <h3 class="card-title">
                         <i class="fas fa-bell"></i> Send Due Notifications
                     </h3>
+                    <div class="card-tools">
+                        <a href="{{ url('account/reminder-history') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-history mr-1"></i> Reminder History
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{url('account/send-due-notifications')}}" id="notificationForm">
@@ -221,12 +169,13 @@ function indian_money($amount, $decimals = 2) {
                         <table class="table table-bordered table-striped" id="maintenanceTablewww">
                             <thead>
                                 <tr>
-                                      <th>S No</th> 
+                                      <th>S No</th>
                                     <th>Flat</th>
                                     <th>Owner/Tenant</th>
                                     <th>Maintenance Period</th>
                                     <th>Due Date</th>
                                     <th>Amount</th>
+                                    <th>Arrears</th>
                                     <th>Late Fine</th>
                                     <th>GST</th>
                                     <th>Total</th>
@@ -256,10 +205,11 @@ function indian_money($amount, $decimals = 2) {
                                             {{$payment->maintenance->due_date}}
                                         </span>
                                     </td>
-                                    <td>₹{{number_format($payment->dues_amount, 2)}}</td>
+                                    <td>₹{{number_format($payment->current_dues, 2)}}</td>
+                                    <td>₹{{number_format($payment->arrears, 2)}}</td>
                                     <td>₹{{number_format($payment->late_fine, 2)}}</td>
                                     <td>₹{{number_format($payment->gst_amount, 2)}}</td>
-                                    <td><strong>₹@php echo indian_money(\App\Models\MaintenancePayment::flatOutstandingTotal($payment->flat_id));@endphp</strong></td>
+                                    <td><strong>₹{{number_format($payment->grand_total, 2)}}</strong></td>
                                     <td>
                                         <span class="badge badge-danger">Unpaid</span>
                                     </td>

@@ -140,7 +140,10 @@ class AccountController extends Controller
             return redirect('permission-denied')->with('error','Permission denied!');
         }
         $building = Auth::User()->building;
-        $transactionsQuery = Transaction::where('building_id', $building->id);
+        // Only successful transactions belong in the statement; failed/pending
+        // gateway attempts must never show up as income/expenditure.
+        $transactionsQuery = Transaction::where('building_id', $building->id)
+            ->where('status', 'Success');
 
         // Filter by model and model_id
         if ($request->filled('model') && $request->model != 'All') {
@@ -448,9 +451,15 @@ class AccountController extends Controller
         //     ->orderBy('id', 'desc')
         //     ->get();
         $transactions = Transaction::where('user_id',$user->id)->where('model','Maintenance')->with(['user','maintenance_payments.maintenance'])->orderBy('id','desc')->get();
-        if(ceil($request->amount) != ceil($grand_total)){
-            return redirect()->back()->with('error','Paying amount doesnt match to current bill');
+        // Compare against the single source of truth (flatOutstandingTotal) so this
+        // check always agrees with the amount shown on pending-bills / the pay page.
+        // Previously it compared an inline re-computation that could drift, making
+        // "Pay now" appear broken.
+        $expected_total = MaintenancePayment::flatOutstandingTotal($flat->id);
+        if(ceil($request->amount) != $expected_total){
+            return redirect()->back()->with('error','Paying amount doesnt match to current bill. The current amount due is ₹'.number_format($expected_total, 2).'. Please refresh and try again.');
         }
+          \DB::transaction(function () use ($flat, $user, $request, $gst) {
             $transaction = new Transaction();
             $transaction->building_id = Auth::User()->building_id;
             $transaction->user_id = $user->id;
@@ -501,7 +510,8 @@ class AccountController extends Controller
                 $maintenance_payment->status = 'Paid';
                 $maintenance_payment->save();
             }
-            
+          });
+
         // Check if user has a device token
                 $tanent = $flat->tanent;
                 $owner = $flat->owner;
@@ -958,36 +968,18 @@ class AccountController extends Controller
             $essential_payments = $essentialQuery->orderBy('created_at', 'desc')->get();
         }
         
-        // Calculate late fees for maintenance payments
+        // Each maintenance row is grouped to one-per-flat (latest unpaid bill).
+        // Populate the row from the full-flat outstanding breakdown so the
+        // Amount/Arrears/Late Fine/GST/Total columns reflect ALL unpaid months
+        // and agree with flatOutstandingTotal() (single source of truth).
         foreach ($maintenance_payments as $payment) {
-            $maintenance = $payment->maintenance;
-            $late_fine = 0;
-            $gst_rate = 0;
-            
-            if ($maintenance) {
-                $gst_rate = $maintenance->gst ?? 0;
-                $dueDate = Carbon::parse($maintenance->due_date);
-                if ($dueDate->lt(now()->startOfDay())) {
-                    $late_days = $dueDate->diffInDays(now());
-                    
-                    switch ($maintenance->late_fine_type) {
-                        case 'Daily':
-                            $late_fine = $late_days * $maintenance->late_fine_value;
-                            break;
-                        case 'Fixed':
-                            $late_fine = $maintenance->late_fine_value;
-                            break;
-                        case 'Percentage':
-                            $late_fine = ($payment->dues_amount * $maintenance->late_fine_value) / 100;
-                            break;
-                    }
-                }
-            }
-            
-            $payment->late_fine = $late_fine;
-            $payment->total_amount = $payment->dues_amount + $late_fine;
-            $payment->gst_amount = $payment->total_amount * $gst_rate / 100;
-            $payment->grand_total = $payment->total_amount + $payment->gst_amount;
+            $breakdown = MaintenancePayment::flatOutstandingBreakdown($payment->flat_id);
+            $payment->current_dues = $breakdown['current_dues'];
+            $payment->arrears      = $breakdown['arrears'];
+            $payment->dues_total   = $breakdown['dues_total'];
+            $payment->late_fine    = $breakdown['late_fine'];
+            $payment->gst_amount   = $breakdown['gst'];
+            $payment->grand_total  = $breakdown['total'];
         }
         
         // Calculate late fees for essential payments
@@ -1277,15 +1269,18 @@ class AccountController extends Controller
 
     $fcm = new FCMService();
     $sent_count = 0;
+    $skipped_count = 0;
     $errors = [];
+
+    // Don't re-remind the same flat for the same bill type within this window.
+    $cooldownHours = 24;
+    $cooldownSince = now()->subHours($cooldownHours);
 
     // Maintenance dues
     if ($notification_type === 'all' || $notification_type === 'maintenance') {
         $title = 'Maintenance Bill Due';
         $body = 'Your maintenance bill may be due or overdue. Please check and pay.';
         $dataPayload = ['screen' => 'MaintenancePage', 'type' => 'MAINTENANCE_DUE'];
-        $tokens = [];
-        $userIds = [];
 
         $mQuery = \App\Models\MaintenancePayment::where('building_id', $building->id)
             ->where('status', 'Unpaid')
@@ -1293,59 +1288,52 @@ class AccountController extends Controller
 
         if (!empty($flat_ids)) $mQuery->whereIn('flat_id', $flat_ids);
 
-        foreach ($mQuery->get() as $mp) {
-            if ($mp->flat && $mp->flat->tanent) {
-                $tokens = array_merge($tokens, $this->getUserTokens($mp->flat->tanent->id));
-                $userIds[] = $mp->flat->tanent->id;
-            }
-            if ($mp->flat && $mp->flat->owner) {
-                $tokens = array_merge($tokens, $this->getUserTokens($mp->flat->owner->id));
-                $userIds[] = $mp->flat->owner->id;
-            }
-        }
+        // One reminder per flat (a flat may have several unpaid months).
+        $flatsToNotify = $mQuery->get()->filter(fn($mp) => $mp->flat)->keyBy('flat_id');
 
-        // Save notifications to database for each user
-        $userIds = array_unique($userIds);
-        $flatIdMap = [];
-        
-        // Create a map of user_id to flat_id
-        $mQuery2 = \App\Models\MaintenancePayment::where('building_id', $building->id)
-            ->where('status', 'Unpaid')
-            ->with(['flat.owner', 'flat.tanent']);
-        if (!empty($flat_ids)) $mQuery2->whereIn('flat_id', $flat_ids);
-        
-        foreach ($mQuery2->get() as $mp) {
-            if ($mp->flat && $mp->flat->tanent) {
-                $flatIdMap[$mp->flat->tanent->id] = $mp->flat->id;
-            }
-            if ($mp->flat && $mp->flat->owner) {
-                $flatIdMap[$mp->flat->owner->id] = $mp->flat->id;
-            }
-        }
-        
-        foreach ($userIds as $userId) {
-            $notification = new DatabaseNotification();
-            $notification->user_id = $userId;
-            $notification->from_id = Auth::user()->id;
-            $notification->flat_id = $flatIdMap[$userId] ?? null;
-            $notification->building_id = $building->id;
-            $notification->title = $title;
-            $notification->body = $body;
-            $notification->type = 'MAINTENANCE_DUE';
-            $notification->dataPayload = $dataPayload;
-            $notification->status = 0;
-            $notification->save();
-        }
+        foreach ($flatsToNotify as $flatId => $mp) {
+            // Cooldown guard: skip flats reminded for maintenance within the window.
+            $recentlySent = \App\Models\BillReminderLog::where('building_id', $building->id)
+                ->where('flat_id', $flatId)
+                ->where('bill_type', 'maintenance')
+                ->where('created_at', '>=', $cooldownSince)
+                ->exists();
+            if ($recentlySent) { $skipped_count++; continue; }
 
-        $result = $fcm->sendToMultipleDevices(
-            $tokens,
-            $title,
-            $body,
-            $dataPayload
-        );
+            $tokens = [];
+            $recipients = 0;
+            foreach ([$mp->flat->tanent, $mp->flat->owner] as $recipient) {
+                if (!$recipient) continue;
+                $tokens = array_merge($tokens, $this->getUserTokens($recipient->id));
+                $recipients++;
 
-        $sent_count += $result['success'];
-        $errors = array_merge($errors, $result['results']);
+                $notification = new DatabaseNotification();
+                $notification->user_id = $recipient->id;
+                $notification->from_id = Auth::user()->id;
+                $notification->flat_id = $flatId;
+                $notification->building_id = $building->id;
+                $notification->title = $title;
+                $notification->body = $body;
+                $notification->type = 'MAINTENANCE_DUE';
+                $notification->dataPayload = $dataPayload;
+                $notification->status = 0;
+                $notification->save();
+            }
+
+            if (!empty($tokens)) {
+                $result = $fcm->sendToMultipleDevices($tokens, $title, $body, $dataPayload);
+                $sent_count += $result['success'];
+                $errors = array_merge($errors, $result['results']);
+            }
+
+            \App\Models\BillReminderLog::create([
+                'building_id'      => $building->id,
+                'flat_id'          => $flatId,
+                'bill_type'        => 'maintenance',
+                'sent_by'          => Auth::user()->id,
+                'recipients_count' => $recipients,
+            ]);
+        }
     }
 
     // Essential dues
@@ -1353,8 +1341,6 @@ class AccountController extends Controller
         $title = 'Essential Bill Due';
         $body = 'Your essential contribution may be due or overdue. Please check and pay.';
         $dataPayload = ['screen' => 'EssentialPage', 'type' => 'ESSENTIAL_DUE'];
-        $tokens = [];
-        $userIds = [];
 
         $eQuery = \App\Models\EssentialPayment::where('building_id', $building->id)
             ->where('status', 'Unpaid')
@@ -1362,62 +1348,57 @@ class AccountController extends Controller
 
         if (!empty($flat_ids)) $eQuery->whereIn('flat_id', $flat_ids);
 
-        foreach ($eQuery->get() as $ep) {
-            if ($ep->flat && $ep->flat->tanent) {
-                $tokens = array_merge($tokens, $this->getUserTokens($ep->flat->tanent->id));
-                $userIds[] = $ep->flat->tanent->id;
-            }
-            if ($ep->flat && $ep->flat->owner) {
-                $tokens = array_merge($tokens, $this->getUserTokens($ep->flat->owner->id));
-                $userIds[] = $ep->flat->owner->id;
-            }
-        }
+        $flatsToNotify = $eQuery->get()->filter(fn($ep) => $ep->flat)->keyBy('flat_id');
 
-        // Save notifications to database for each user
-        $userIds = array_unique($userIds);
-        $flatIdMap = [];
-        
-        // Create a map of user_id to flat_id
-        $eQuery2 = \App\Models\EssentialPayment::where('building_id', $building->id)
-            ->where('status', 'Unpaid')
-            ->with(['flat.owner', 'flat.tanent']);
-        if (!empty($flat_ids)) $eQuery2->whereIn('flat_id', $flat_ids);
-        
-        foreach ($eQuery2->get() as $ep) {
-            if ($ep->flat && $ep->flat->tanent) {
-                $flatIdMap[$ep->flat->tanent->id] = $ep->flat->id;
-            }
-            if ($ep->flat && $ep->flat->owner) {
-                $flatIdMap[$ep->flat->owner->id] = $ep->flat->id;
-            }
-        }
-        
-        foreach ($userIds as $userId) {
-            $notification = new DatabaseNotification();
-            $notification->user_id = $userId;
-            $notification->from_id = Auth::user()->id;
-            $notification->flat_id = $flatIdMap[$userId] ?? null;
-            $notification->building_id = $building->id;
-            $notification->title = $title;
-            $notification->body = $body;
-            $notification->type = 'ESSENTIAL_DUE';
-            $notification->dataPayload = $dataPayload;
-            $notification->status = 0;
-            $notification->save();
-        }
+        foreach ($flatsToNotify as $flatId => $ep) {
+            // Cooldown guard: skip flats reminded for essential within the window.
+            $recentlySent = \App\Models\BillReminderLog::where('building_id', $building->id)
+                ->where('flat_id', $flatId)
+                ->where('bill_type', 'essential')
+                ->where('created_at', '>=', $cooldownSince)
+                ->exists();
+            if ($recentlySent) { $skipped_count++; continue; }
 
-        $result = $fcm->sendToMultipleDevices(
-            $tokens,
-            $title,
-            $body,
-            $dataPayload
-        );
+            $tokens = [];
+            $recipients = 0;
+            foreach ([$ep->flat->tanent, $ep->flat->owner] as $recipient) {
+                if (!$recipient) continue;
+                $tokens = array_merge($tokens, $this->getUserTokens($recipient->id));
+                $recipients++;
 
-        $sent_count += $result['success'];
-        $errors = array_merge($errors, $result['results']);
+                $notification = new DatabaseNotification();
+                $notification->user_id = $recipient->id;
+                $notification->from_id = Auth::user()->id;
+                $notification->flat_id = $flatId;
+                $notification->building_id = $building->id;
+                $notification->title = $title;
+                $notification->body = $body;
+                $notification->type = 'ESSENTIAL_DUE';
+                $notification->dataPayload = $dataPayload;
+                $notification->status = 0;
+                $notification->save();
+            }
+
+            if (!empty($tokens)) {
+                $result = $fcm->sendToMultipleDevices($tokens, $title, $body, $dataPayload);
+                $sent_count += $result['success'];
+                $errors = array_merge($errors, $result['results']);
+            }
+
+            \App\Models\BillReminderLog::create([
+                'building_id'      => $building->id,
+                'flat_id'          => $flatId,
+                'bill_type'        => 'essential',
+                'sent_by'          => Auth::user()->id,
+                'recipients_count' => $recipients,
+            ]);
+        }
     }
 
-    $message = "Successfully sent {$sent_count} notifications.";
+    $message = "Successfully sent {$sent_count} notification(s).";
+    if ($skipped_count > 0) {
+        $message .= " Skipped {$skipped_count} flat(s) already reminded within the last {$cooldownHours}h.";
+    }
     if (count($errors) > 0) $message .= ' Some sends failed.';
 
     return redirect()->back()->with('success', $message);
@@ -1430,5 +1411,77 @@ private function getUserTokens($userId)
         ->pluck('fcm_token')
         ->toArray();
 }
+
+    /**
+     * History of pending-bill reminders sent for this building, so the admin can
+     * see who was already reminded (and when) before sending again.
+     */
+    public function reminder_history(Request $request)
+    {
+        if(Auth::User()->role == 'BA' || Auth::User()->hasRole('president') || Auth::User()->hasRole('accounts'))
+        {
+            // allowed
+        }else{
+            return redirect('permission-denied')->with('error','Permission denied!');
+        }
+
+        $building = Auth::user()->building;
+
+        $query = \App\Models\BillReminderLog::with(['flat.block', 'sender'])
+            ->where('building_id', $building->id);
+
+        if ($request->filled('flat_id') && $request->flat_id > 0) {
+            $query->where('flat_id', $request->flat_id);
+        }
+        if ($request->filled('bill_type') && in_array($request->bill_type, ['maintenance', 'essential'])) {
+            $query->where('bill_type', $request->bill_type);
+        }
+        if ($request->filled('from_date')) {
+            $query->whereDate('created_at', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        $logs   = $query->orderBy('created_at', 'desc')->get();
+        $blocks = $building->blocks;
+
+        return view('admin.account.reminder_history', compact('logs', 'blocks'));
+    }
+
+    /**
+     * History of UPI payment submissions that have been approved or rejected
+     * (the live queue lives on account/upi-pending).
+     */
+    public function upi_history(Request $request)
+    {
+        if(Auth::User()->role == 'BA' || Auth::User()->hasRole('president') || Auth::User()->hasRole('accounts'))
+        {
+            // allowed
+        }else{
+            return redirect('permission-denied')->with('error','Permission denied!');
+        }
+
+        $building = Auth::user()->building;
+
+        $query = \App\Models\MaintenancePayment::with(['flat.block', 'flat.owner', 'flat.tanent', 'user', 'maintenance'])
+            ->where('building_id', $building->id)
+            ->where('type', 'UPI')
+            ->whereIn('upi_payment_status', ['Approved', 'Rejected']);
+
+        if ($request->filled('status') && in_array($request->status, ['Approved', 'Rejected'])) {
+            $query->where('upi_payment_status', $request->status);
+        }
+        if ($request->filled('from_date')) {
+            $query->whereDate('upi_submitted_at', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('upi_submitted_at', '<=', $request->to_date);
+        }
+
+        $payments = $query->orderBy('updated_at', 'desc')->get();
+
+        return view('admin.account.upi_history', compact('payments'));
+    }
 
 }

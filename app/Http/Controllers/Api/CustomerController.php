@@ -11406,42 +11406,62 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
         $maintenancePayment->upi_submitted_at   = now();
         $maintenancePayment->save();
 
-        // ========== NOTIFY ADMIN / TREASURER ==========
+        // ========== NOTIFY ADMIN / ACCOUNTS ==========
         $building = $flat->building;
         if ($building) {
-            $baUser = $building->user;
-            if ($baUser) {
-                $title = 'UPI Payment Submitted';
-                $body  = ($user->name ?? 'A resident') . ' has submitted a UPI payment screenshot for Flat ' . ($flat->name ?? $flat->id) . '. Please review and approve.';
-                $dataPayload = [
-                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
-                    'screen'       => 'MaintenancePage',
-                    'params'       => json_encode([
-                        'maintenanceId' => $maintenancePayment->maintenance_id,
-                        'flat_id'       => $flat->id,
-                        'building_id'   => $building->id,
-                    ]),
-                    'categoryId'   => '',
-                    'channelId'    => '',
-                    'sound'        => 'bellnotificationsound.wav',
-                    'type'         => 'UPI_PAYMENT_SUBMITTED',
-                ];
+            // Recipients = building admin (BA) + everyone holding the Accounts role
+            // for this building, so whoever runs the accounts-admin app is alerted.
+            $recipientIds = collect();
+            if ($building->user) {
+                $recipientIds->push($building->user->id);
+            }
+            $accountsUserIds = \App\Models\BuildingUser::where('building_id', $building->id)
+                ->whereHas('role', function ($q) {
+                    $q->where('slug', 'accounts');
+                })
+                ->pluck('user_id');
+            $recipientIds = $recipientIds->merge($accountsUserIds)->filter()->unique();
 
-                NotificationHelper::sendNotification(
-                    $baUser->id,
-                    $title,
-                    $body,
-                    $dataPayload,
-                    [
-                        'from_id'     => $user->id,
-                        'flat_id'     => $flat->id,
-                        'building_id' => $building->id,
-                        'type'        => 'upi_payment_submitted',
-                        'apns_client' => $this->apnsClient ?? null,
-                        'ios_sound'   => $dataPayload['sound'],
-                    ],
-                    ['admin']
-                );
+            $title = 'UPI Payment Submitted';
+            $body  = ($user->name ?? 'A resident') . ' has submitted a UPI payment screenshot for Flat ' . ($flat->name ?? $flat->id) . '. Please review and approve.';
+            $dataPayload = [
+                'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                'screen'       => 'MaintenancePage',
+                'params'       => json_encode([
+                    'maintenanceId' => $maintenancePayment->maintenance_id,
+                    'flat_id'       => $flat->id,
+                    'building_id'   => $building->id,
+                ]),
+                'categoryId'   => 'Maintenance',
+                'channelId'    => 'Community',
+                'sound'        => 'bellnotificationsound.wav',
+                'type'         => 'UPI_PAYMENT_SUBMITTED',
+            ];
+
+            foreach ($recipientIds as $recipientId) {
+                try {
+                    // Use NotificationHelper2 (saves the in-app notification AND
+                    // pushes FCM/APNs). app_name is intentionally unfiltered so the
+                    // alert reaches whichever app the recipient registered with.
+                    \App\Helpers\NotificationHelper2::sendNotification(
+                        $recipientId,
+                        $title,
+                        $body,
+                        $dataPayload,
+                        [
+                            'from_id'     => $user->id,
+                            'flat_id'     => $flat->id,
+                            'building_id' => $building->id,
+                            'type'        => 'upi_payment_submitted',
+                            'ios_sound'   => $dataPayload['sound'],
+                        ]
+                    );
+                } catch (\Throwable $e) {
+                    \Log::error('UPI submit notification failed', [
+                        'recipient_id' => $recipientId,
+                        'error'        => $e->getMessage(),
+                    ]);
+                }
             }
         }
 
