@@ -621,22 +621,13 @@ class ClassifiedController extends Controller
             }
         }
 
-        if ($sendNotification) {
-            // Dispatch the SendClassifiedNotification job to handle notifications asynchronously
-            // This follows the same pattern as NoticeboardController with SendNoticeboardNotification
-            try {
-                SendClassifiedNotification::dispatch($classified, []);
-                \Log::info('SendClassifiedNotification job dispatched', [
-                    'classified_id' => $classified->id,
-                    'category' => $classified->category,
-                ]);
-            } catch (\Exception $e) {
-                \Log::error('Failed to dispatch SendClassifiedNotification job', [
-                    'classified_id' => $classified->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
+        // NOTE: We intentionally do NOT broadcast a "New Classified Posted" alert
+        // to the building audience on approval. Approval only notifies the post's
+        // owner (the "your post was approved/rejected" notification sent above to
+        // $classified->user). Blasting every resident on approval was reaching all
+        // users (especially for "All Buildings" classifieds), so it is disabled.
+        // ($sendNotification is left computed above in case audience notifications
+        // are reintroduced behind a scoped rule later.)
         
         // dd($request->id);
         // if (Auth::User()->role == 'BA'){
