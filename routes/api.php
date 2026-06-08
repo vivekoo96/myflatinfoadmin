@@ -352,6 +352,7 @@ use App\Http\Controllers\Api\MoveInOutApiController;
                 Route::post('manage-maintenance',[AccountController::class,'manage_maintenance']);
                 Route::post('pending-bills',[AccountController::class,'pending_bills']);
                 Route::post('upi-pending',[AccountController::class,'upi_pending']);
+                Route::post('upi-history',[AccountController::class,'upi_history']);
                 Route::post('approve-upi-payment',[AccountController::class,'approve_upi_payment']);
                 Route::post('reject-upi-payment',[AccountController::class,'reject_upi_payment']);
                 Route::post('pay-maintenance',[AccountController::class,'pay_maintenance']);

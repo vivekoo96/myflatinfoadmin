@@ -2149,6 +2149,36 @@ public function form_reciepts()
         return response()->json(['msg' => 'success']);
     }
 
+    /**
+     * History of UPI payment submissions that have been approved or rejected.
+     */
+    public function upi_history(Request $request)
+    {
+        $building = Auth::user()->building;
+
+        $query = MaintenancePayment::with(['flat.block', 'flat.owner', 'flat.tanent', 'user', 'maintenance'])
+            ->where('building_id', $building->id)
+            ->where('type', 'UPI')
+            ->whereIn('upi_payment_status', ['Approved', 'Rejected']);
+
+        if ($request->filled('status') && in_array($request->status, ['Approved', 'Rejected'])) {
+            $query->where('upi_payment_status', $request->status);
+        }
+        if ($request->filled('from_date')) {
+            $query->whereDate('upi_submitted_at', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('upi_submitted_at', '<=', $request->to_date);
+        }
+
+        $payments = $query->orderBy('updated_at', 'desc')->get();
+
+        return response()->json([
+            'payments' => $payments->values(),
+            'count'    => $payments->count(),
+        ], 200);
+    }
+
     public function pay_maintenance(Request $request)
     {
         $flat = Flat::where('id',$request->flat_id)->where('building_id',Auth::User()->building_id)->with([
