@@ -183,7 +183,7 @@ class ActivityAdminController extends Controller
 
         $dataPayload = [
             'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
-            'screen'       => 'CommunityActivities',
+            'screen'       => null,
             'params'       => json_encode([
                 'activity_id' => (string) $activity->id,
                 'building_id' => (string) $activity->building_id,

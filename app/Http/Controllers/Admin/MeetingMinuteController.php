@@ -97,7 +97,12 @@ class MeetingMinuteController extends Controller
                 'Apartment Meeting Update',
                 'Minutes of the meeting have been uploaded. Don\'t forget to review them.',
                 $dataPayload,
-                ['type' => 'meeting_minute', 'building_id' => $building->id],
+                [
+                    'type'        => 'meeting_minute',
+                    'building_id' => $building->id,
+                    'flat_id'     => $buildingUser->flat_id,
+                    'from_id'     => Auth::id(),
+                ],
                 ['user']
             );
         }
