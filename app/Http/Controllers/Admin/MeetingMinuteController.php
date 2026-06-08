@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\MeetingMinute;
 use App\Models\Building;
-use App\Models\BuildingUser;
+use App\Models\Flat;
 use App\Helpers\NotificationHelper2;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -72,39 +72,60 @@ class MeetingMinuteController extends Controller
             'created_by_role' => $role,
         ]);
 
-        // Send notifications to all building users
-        $buildingUsers = BuildingUser::where('building_id', $building->id)
-            ->with('user')
+        // Send notifications to all flat owners and tenants in the building
+        $flats = Flat::where('building_id', $building->id)
+            ->where(function ($query) {
+                $query->whereNotNull('owner_id')
+                      ->orWhereNotNull('tanent_id');
+            })
             ->get();
 
-        foreach ($buildingUsers as $buildingUser) {
-            $userId = $buildingUser->user_id;
-            if (!$userId) continue;
+        foreach ($flats as $flat) {
+            // Collect owner and tenant (skip nulls and duplicates)
+            $userIds = collect([$flat->owner_id, $flat->tanent_id])
+                ->filter()
+                ->unique()
+                ->values();
 
-            $dataPayload = [
-                'screen' => 'MeetingMinutes',
-                'params' => json_encode([
-                    'screenTab' => 'MeetingMinutes',
-                    'mom_id' => (string)$minute->id,
-                    'building_id' => (string)$building->id,
-                    'flat_id' => (string)($buildingUser->flat_id ?? ''),
-                    'user_id' => (string)$userId,
-                ]),
-            ];
+            foreach ($userIds as $userId) {
+                $dataPayload = [
+                    'screen'       => 'MeetingMinutes',
+                    'params'       => json_encode([
+                        'screenTab'   => 'MeetingMinutes',
+                        'mom_id'      => (string) $minute->id,
+                        'building_id' => (string) $building->id,
+                        'flat_id'     => (string) $flat->id,
+                        'user_id'     => (string) $userId,
+                    ]),
+                    'categoryId'   => 'MeetingMinutes',
+                    'channelId'    => 'default',
+                    'sound'        => 'bellnotificationsound.wav',
+                    'type'         => 'MEETING_MINUTE',
+                ];
 
-            NotificationHelper2::sendNotification(
-                $userId,
-                'Apartment Meeting Update',
-                'Minutes of the meeting have been uploaded. Don\'t forget to review them.',
-                $dataPayload,
-                [
-                    'type'        => 'meeting_minute',
-                    'building_id' => $building->id,
-                    'flat_id'     => $buildingUser->flat_id,
-                    'from_id'     => Auth::id(),
-                ],
-                ['user']
-            );
+                try {
+                    NotificationHelper2::sendNotification(
+                        $userId,
+                        'Apartment Meeting Update',
+                        'Minutes of the meeting have been uploaded. Don\'t forget to review them.',
+                        $dataPayload,
+                        [
+                            'type'        => 'meeting_minute',
+                            'building_id' => $building->id,
+                            'flat_id'     => $flat->id,
+                            'from_id'     => Auth::id(),
+                        ],
+                        ['user']
+                    );
+                } catch (\Throwable $e) {
+                    Log::error('Meeting minute notification failed', [
+                        'user_id'   => $userId,
+                        'flat_id'   => $flat->id,
+                        'minute_id' => $minute->id,
+                        'error'     => $e->getMessage(),
+                    ]);
+                }
+            }
         }
 
         return redirect()->back()->with('success', 'Meeting minutes saved successfully.');
