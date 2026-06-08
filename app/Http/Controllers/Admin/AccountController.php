@@ -1267,10 +1267,8 @@ class AccountController extends Controller
         $flat_ids = [];
     }
 
-    $fcm = new FCMService();
     $sent_count = 0;
     $skipped_count = 0;
-    $errors = [];
 
     // Don't re-remind the same flat for the same bill type within this window.
     $cooldownHours = 24;
@@ -1280,7 +1278,6 @@ class AccountController extends Controller
     if ($notification_type === 'all' || $notification_type === 'maintenance') {
         $title = 'Maintenance Bill Due';
         $body = 'Your maintenance bill may be due or overdue. Please check and pay.';
-        $dataPayload = ['screen' => 'MaintenancePage', 'type' => 'MAINTENANCE_DUE'];
 
         $mQuery = \App\Models\MaintenancePayment::where('building_id', $building->id)
             ->where('status', 'Unpaid')
@@ -1300,31 +1297,46 @@ class AccountController extends Controller
                 ->exists();
             if ($recentlySent) { $skipped_count++; continue; }
 
-            $tokens = [];
             $recipients = 0;
             foreach ([$mp->flat->tanent, $mp->flat->owner] as $recipient) {
                 if (!$recipient) continue;
-                $tokens = array_merge($tokens, $this->getUserTokens($recipient->id));
+
+                // Same delivery path as the (working) maintenance-added alerts:
+                // NotificationHelper (=> NotificationHelper2) saves the in-app
+                // notification AND pushes via FCM/APNs, so iOS receives it too.
+                $dataPayload = [
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    'screen'       => 'MaintenancePage',
+                    'params'       => json_encode([
+                        'flat_id'     => $flatId,
+                        'building_id' => $building->id,
+                        'user_id'     => $recipient->id,
+                    ]),
+                    'categoryId'   => '',
+                    'channelId'    => '',
+                    'sound'        => 'bellnotificationsound.wav',
+                    'type'         => 'MAINTENANCE_DUE',
+                ];
+
+                \App\Helpers\NotificationHelper2::sendNotification(
+                    $recipient->id,
+                    $title,
+                    $body,
+                    $dataPayload,
+                    [
+                        'from_id'     => Auth::user()->id,
+                        'flat_id'     => $flatId,
+                        'building_id' => $building->id,
+                        'type'        => 'maintenance_due',
+                        'apns_client' => $this->apnsClient ?? null,
+                        'ios_sound'   => $dataPayload['sound'],
+                    ],
+                    ['user']
+                );
                 $recipients++;
-
-                $notification = new DatabaseNotification();
-                $notification->user_id = $recipient->id;
-                $notification->from_id = Auth::user()->id;
-                $notification->flat_id = $flatId;
-                $notification->building_id = $building->id;
-                $notification->title = $title;
-                $notification->body = $body;
-                $notification->type = 'MAINTENANCE_DUE';
-                $notification->dataPayload = $dataPayload;
-                $notification->status = 0;
-                $notification->save();
             }
 
-            if (!empty($tokens)) {
-                $result = $fcm->sendToMultipleDevices($tokens, $title, $body, $dataPayload);
-                $sent_count += $result['success'];
-                $errors = array_merge($errors, $result['results']);
-            }
+            if ($recipients > 0) $sent_count += $recipients;
 
             \App\Models\BillReminderLog::create([
                 'building_id'      => $building->id,
@@ -1340,7 +1352,6 @@ class AccountController extends Controller
     if ($notification_type === 'all' || $notification_type === 'essential') {
         $title = 'Essential Bill Due';
         $body = 'Your essential contribution may be due or overdue. Please check and pay.';
-        $dataPayload = ['screen' => 'EssentialPage', 'type' => 'ESSENTIAL_DUE'];
 
         $eQuery = \App\Models\EssentialPayment::where('building_id', $building->id)
             ->where('status', 'Unpaid')
@@ -1359,31 +1370,45 @@ class AccountController extends Controller
                 ->exists();
             if ($recentlySent) { $skipped_count++; continue; }
 
-            $tokens = [];
             $recipients = 0;
             foreach ([$ep->flat->tanent, $ep->flat->owner] as $recipient) {
                 if (!$recipient) continue;
-                $tokens = array_merge($tokens, $this->getUserTokens($recipient->id));
+
+                // NotificationHelper2 saves the in-app notification (so the admin
+                // has a record of what was posted) AND pushes via FCM/APNs (iOS too).
+                $dataPayload = [
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    'screen'       => 'EssentialPage',
+                    'params'       => json_encode([
+                        'flat_id'     => $flatId,
+                        'building_id' => $building->id,
+                        'user_id'     => $recipient->id,
+                    ]),
+                    'categoryId'   => '',
+                    'channelId'    => '',
+                    'sound'        => 'bellnotificationsound.wav',
+                    'type'         => 'ESSENTIAL_DUE',
+                ];
+
+                \App\Helpers\NotificationHelper2::sendNotification(
+                    $recipient->id,
+                    $title,
+                    $body,
+                    $dataPayload,
+                    [
+                        'from_id'     => Auth::user()->id,
+                        'flat_id'     => $flatId,
+                        'building_id' => $building->id,
+                        'type'        => 'essential_due',
+                        'apns_client' => $this->apnsClient ?? null,
+                        'ios_sound'   => $dataPayload['sound'],
+                    ],
+                    ['user']
+                );
                 $recipients++;
-
-                $notification = new DatabaseNotification();
-                $notification->user_id = $recipient->id;
-                $notification->from_id = Auth::user()->id;
-                $notification->flat_id = $flatId;
-                $notification->building_id = $building->id;
-                $notification->title = $title;
-                $notification->body = $body;
-                $notification->type = 'ESSENTIAL_DUE';
-                $notification->dataPayload = $dataPayload;
-                $notification->status = 0;
-                $notification->save();
             }
 
-            if (!empty($tokens)) {
-                $result = $fcm->sendToMultipleDevices($tokens, $title, $body, $dataPayload);
-                $sent_count += $result['success'];
-                $errors = array_merge($errors, $result['results']);
-            }
+            if ($recipients > 0) $sent_count += $recipients;
 
             \App\Models\BillReminderLog::create([
                 'building_id'      => $building->id,
@@ -1399,7 +1424,6 @@ class AccountController extends Controller
     if ($skipped_count > 0) {
         $message .= " Skipped {$skipped_count} flat(s) already reminded within the last {$cooldownHours}h.";
     }
-    if (count($errors) > 0) $message .= ' Some sends failed.';
 
     return redirect()->back()->with('success', $message);
 }
