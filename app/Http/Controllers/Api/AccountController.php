@@ -1983,11 +1983,15 @@ public function form_reciepts()
             return true;
         }
 
-        $dueEnd = Carbon::parse($maintenance->due_date)->endOfDay();
-        $cutoff = Carbon::parse($maintenance->due_date)->startOfDay()->subHours(24);
+        // Mirror the app exactly: isEnable = diffInHours > 24 || diffInHours < 0,
+        // where diffInHours = (due_date - now) in hours.
+        //   > 24h before due  -> enabled
+        //   within 24h before -> disabled
+        //   due date passed    -> enabled
+        $dueDate     = Carbon::parse($maintenance->due_date);
+        $diffInHours = ($dueDate->getTimestamp() - now()->getTimestamp()) / 3600;
 
-        // Disabled only inside the pre-due cutoff window.
-        return !now()->between($cutoff, $dueEnd);
+        return $diffInHours > 24 || $diffInHours < 0;
     }
 
     /**

@@ -11374,18 +11374,21 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
         }
 
         // ========== TIME WINDOW CHECK ==========
-        // Paid option disabled 24 hours before due date and on the due date itself.
-        // It is re-enabled after the due date for late payments.
+        // Same rule as the app: isEnable = diffInHours > 24 || diffInHours < 0,
+        // where diffInHours = (due_date - now) in hours.
+        //   > 24h before due  -> enabled
+        //   within 24h before -> disabled (the window below)
+        //   due date passed    -> enabled (late payments allowed)
         $maintenance = $maintenancePayment->maintenance;
         if ($maintenance && $maintenance->due_date) {
-            $dueDate = Carbon::parse($maintenance->due_date)->endOfDay();
-            $cutoff  = Carbon::parse($maintenance->due_date)->startOfDay()->subHours(24);
-            $now     = Carbon::now();
+            $dueDate     = Carbon::parse($maintenance->due_date);
+            $diffInHours = ($dueDate->getTimestamp() - Carbon::now()->getTimestamp()) / 3600;
+            $isEnabled   = $diffInHours > 24 || $diffInHours < 0;
 
-            if ($now->between($cutoff, $dueDate)) {
+            if (!$isEnabled) {
                 return response()->json([
                     'status'  => false,
-                    'message' => 'UPI payment submission is closed 24 hours before the due date (' . $dueDate->format('d M Y') . '). Please contact your building admin.',
+                    'message' => 'UPI payment submission is closed within 24 hours before the due date (' . $dueDate->format('d M Y') . '). Please try again after the due date.',
                 ], 422);
             }
         }
