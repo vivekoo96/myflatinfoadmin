@@ -11438,24 +11438,42 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
                 'type'         => 'UPI_PAYMENT_SUBMITTED',
             ];
 
+            // Push ONLY to the Account app. The accounts app stores its FCM token on
+            // users.fcm_token (set at accounts login); the resident/user app stores its
+            // tokens in the user_devices table. Sending to users.fcm_token therefore
+            // reaches the account app and NEVER the user app — so when the flat user and
+            // the accounts user are the same person, the alert does not show on their
+            // user app.
+            $fcm = new \App\Services\FCMService();
+
             foreach ($recipientIds as $recipientId) {
                 try {
-                    // Use NotificationHelper2 (saves the in-app notification AND
-                    // pushes FCM/APNs). app_name is intentionally unfiltered so the
-                    // alert reaches whichever app the recipient registered with.
-                    \App\Helpers\NotificationHelper2::sendNotification(
-                        $recipientId,
-                        $title,
-                        $body,
-                        $dataPayload,
-                        [
-                            'from_id'     => $user->id,
-                            'flat_id'     => $flat->id,
-                            'building_id' => $building->id,
-                            'type'        => 'upi_payment_submitted',
-                            'ios_sound'   => $dataPayload['sound'],
-                        ]
-                    );
+                    $recipientUser = \App\Models\User::find($recipientId);
+                    if (!$recipientUser) {
+                        continue;
+                    }
+
+                    // In-app record for the account user — skipped when the recipient
+                    // is the submitter themselves, so nothing appears on their user
+                    // app's notification list.
+                    if ($recipientId != $user->id) {
+                        $notification = new \App\Models\Notification();
+                        $notification->user_id     = $recipientId;
+                        $notification->from_id     = $user->id;
+                        $notification->flat_id     = $flat->id;
+                        $notification->building_id = $building->id;
+                        $notification->title       = $title;
+                        $notification->body        = $body;
+                        $notification->type        = 'upi_payment_submitted';
+                        $notification->dataPayload = $dataPayload;
+                        $notification->status      = 0;
+                        $notification->save();
+                    }
+
+                    // Account-app push (users.fcm_token). Never targets the user app.
+                    if ($recipientUser->fcm_token) {
+                        $fcm->sendNotification($recipientUser->fcm_token, $title, $body, $dataPayload);
+                    }
                 } catch (\Throwable $e) {
                     \Log::error('UPI submit notification failed', [
                         'recipient_id' => $recipientId,
