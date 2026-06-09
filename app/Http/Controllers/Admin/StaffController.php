@@ -88,7 +88,10 @@ class StaffController extends Controller
         $building = Auth::user()->building;
         $blocks   = $building ? $building->blocks : collect();
 
-        $staffTypes = \App\Models\StaffType::where('building_id', Auth::user()->building_id)
+        $staffTypes = \App\Models\StaffType::where(function($query) {
+                          $query->where('building_id', Auth::user()->building_id)
+                                ->orWhereNull('building_id');
+                      })
                       ->pluck('name')
                       ->toArray();
         $types = Staff::where('building_id', Auth::user()->building_id)
@@ -96,8 +99,7 @@ class StaffController extends Controller
                       ->distinct()
                       ->pluck('type')
                       ->toArray();
-        $defaultTypes = ['Maid','Cook','Driver','Security','Gardener','Nanny'];
-        $allTypes = array_unique(array_merge($defaultTypes, $types, $staffTypes));
+        $allTypes = array_unique(array_merge($types, $staffTypes));
 
         return view('admin.staff.create', compact('blocks', 'allTypes'));
     }
@@ -153,7 +155,10 @@ class StaffController extends Controller
         $building = Auth::user()->building;
         $blocks   = $building ? $building->blocks : collect();
 
-        $staffTypes = \App\Models\StaffType::where('building_id', Auth::user()->building_id)
+        $staffTypes = \App\Models\StaffType::where(function($query) {
+                          $query->where('building_id', Auth::user()->building_id)
+                                ->orWhereNull('building_id');
+                      })
                       ->pluck('name')
                       ->toArray();
         $types = Staff::where('building_id', Auth::user()->building_id)
@@ -161,8 +166,7 @@ class StaffController extends Controller
                       ->distinct()
                       ->pluck('type')
                       ->toArray();
-        $defaultTypes = ['Maid','Cook','Driver','Security','Gardener','Nanny'];
-        $allTypes = array_unique(array_merge($defaultTypes, $types, $staffTypes));
+        $allTypes = array_unique(array_merge($types, $staffTypes));
 
         return view('admin.staff.edit', compact('staff', 'blocks', 'allTypes'));
     }

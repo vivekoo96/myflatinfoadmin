@@ -49,7 +49,7 @@
                     <label>Type <span class="text-danger">*</span></label>
                     <div class="input-group">
                       <select name="type" id="type_select" class="form-control" required>
-                        @foreach($allTypes ?? ['Maid','Cook','Driver','Security','Gardener','Nanny'] as $t)
+                        @foreach($allTypes ?? [] as $t)
                           <option value="{{ $t }}" {{ old('type') == $t ? 'selected' : '' }}>{{ $t }}</option>
                         @endforeach
                       </select>
