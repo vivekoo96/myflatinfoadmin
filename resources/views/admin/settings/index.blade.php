@@ -224,9 +224,9 @@
                                 @if($building->upi_qr_code)
                                 <div class="text-center" id="current-qr-wrapper">
                                     <p class="text-muted mb-1" style="font-size:11px;">Current QR</p>
-                                    <a href="{{ asset('upi_qr_codes/' . $building->upi_qr_code) }}" target="_blank">
-                                        <img id="qr-preview"
-                                             src="{{ asset('upi_qr_codes/' . $building->upi_qr_code) }}"
+                                    <a href="{{ asset('public/upi_qr_codes/' . $building->upi_qr_code) }}" target="_blank">
+                                        <img class="mt-2 img-thumbnail shadow-sm"
+                                             src="{{ asset('public/upi_qr_codes/' . $building->upi_qr_code) }}"
                                              alt="UPI QR Code"
                                              class="img-thumbnail"
                                              style="max-width:100px; cursor:pointer; border:2px solid #007bff;">
@@ -276,8 +276,8 @@
                         <div class="col-md-4">
                             @if($building->upi_qr_code)
                             <label><i class="fas fa-qrcode mr-1"></i> UPI QR Code</label><br>
-                            <a href="{{ asset('upi_qr_codes/' . $building->upi_qr_code) }}" target="_blank">
-                                <img src="{{ asset('upi_qr_codes/' . $building->upi_qr_code) }}"
+                            <a href="{{ asset('public/upi_qr_codes/' . $building->upi_qr_code) }}" target="_blank">
+                                <img src="{{ asset('public/upi_qr_codes/' . $building->upi_qr_code) }}"
                                      alt="UPI QR Code"
                                      class="img-thumbnail"
                                      style="max-width:120px;">
