@@ -48,6 +48,7 @@ class StaffController extends Controller
             return $staff;
         });
 
+        /* 
         // Fetch Building Workers (from BuildingUser with Building Worker role)
         $guardRole = Role::whereRaw("LOWER(TRIM(COALESCE(slug, ''))) = ?", ['guard'])->first();
         $buildingWorkers = collect();
@@ -74,6 +75,7 @@ class StaffController extends Controller
         // Merge both collections
         $allStaff = $staffs->getCollection()->merge($buildingWorkers);
         $staffs->setCollection($allStaff);
+        */
 
         return view('admin.staff.index', compact('staffs'));
     }
