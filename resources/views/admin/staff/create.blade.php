@@ -191,7 +191,7 @@ $(function () {
             let btn = $('#btn_save_type');
             btn.prop('disabled', true).text('Saving...');
             $.ajax({
-                url: '{{ route("admin.store-type") }}',
+                url: '{{ route("admin.staff.store-type") }}',
                 type: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
