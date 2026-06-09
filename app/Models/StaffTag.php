@@ -16,6 +16,7 @@ class StaffTag extends Model
         'flat_id',
         'building_id',
         'time_slot',
+        'engagement_type',
         'status',
     ];
 

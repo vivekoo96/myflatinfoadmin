@@ -367,7 +367,10 @@ Route::middleware('admin')->group(function () {
         // Staff Attendance Management
         Route::prefix('staff')->name('admin.staff.')->group(function () {
             Route::get('/', [StaffController::class, 'index'])->name('index');
+            // NOTE: /create must be declared before /{staff} so it isn't captured as a param.
+            Route::get('/create', [StaffController::class, 'create'])->name('create');
             Route::post('/', [StaffController::class, 'store'])->name('store');
+            Route::post('/{staff}/toggle-status', [StaffController::class, 'toggleStatus'])->name('toggle-status');
             Route::get('/{staff}', [StaffController::class, 'show'])->name('show');
             Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('edit');
             Route::put('/{staff}', [StaffController::class, 'update'])->name('update');

@@ -29,7 +29,7 @@
               <div class="card-header">
                 <h3 class="card-title">All Staff</h3>
                 <div class="card-tools">
-                   <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#addStaffModal">Add External Employee</button>
+                   <a href="{{ route('admin.staff.create') }}" class="btn btn-sm btn-success"><i class="fa fa-plus"></i> Register Domestic Staff</a>
                 </div>
               </div>
               <div class="card-body">
@@ -43,6 +43,8 @@
                                 <th>Phone</th>
                                 <th>Type</th>
                                 <th>Category</th>
+                                <th>Assigned Flat</th>
+                                <th>Docs</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>
@@ -76,15 +78,39 @@
                                     @endif
                                 </td>
                                 <td>
+                                    @if($staff->source === 'staff' && $staff->is_open_to_all)
+                                        <span class="badge badge-success">All flats</span>
+                                    @elseif($staff->source === 'staff' && $staff->activeTag && $staff->activeTag->flat)
+                                        {{ optional($staff->activeTag->flat->block)->name }} - {{ $staff->activeTag->flat->name }}
+                                        @if($staff->activeTag->engagement_type)
+                                            <br><small class="text-muted">{{ $staff->activeTag->engagement_type }}{{ $staff->activeTag->time_slot ? ' • '.$staff->activeTag->time_slot : '' }}</small>
+                                        @endif
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($staff->source === 'staff')
+                                        @if($staff->document_verification)<a href="{{ asset($staff->document_verification) }}" target="_blank">Doc</a>@endif
+                                        @if($staff->noc_police) <a href="{{ asset($staff->noc_police) }}" target="_blank">| NOC</a>@endif
+                                        @if($staff->document_status)<br><span class="badge badge-{{ $staff->document_status === 'Verified' ? 'success' : 'warning' }}">{{ $staff->document_status }}</span>@endif
+                                        @if(!$staff->document_verification && !$staff->noc_police && !$staff->document_status)-@endif
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td>
                                     <span class="badge badge-{{ $staff->status == 'Active' ? 'success' : 'danger' }}">
                                         {{ $staff->status }}
                                     </span>
                                 </td>
                                 <td>
                                     @if($staff->source === 'staff')
-                                        <button class="btn btn-sm btn-primary edit-staff-btn"
-                                            data-id="{{ $staff->id }}"
-                                            onclick="openEditModal({{ $staff->id }})"><i class="fa fa-edit"></i></button>
+                                        <a href="{{ route('admin.staff.edit', $staff->id) }}" class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></a>
+                                        <form action="{{ route('admin.staff.toggle-status', $staff->id) }}" method="POST" style="display:inline;">
+                                            @csrf
+                                            <button class="btn btn-sm btn-{{ $staff->status === 'Active' ? 'warning' : 'success' }}" title="Toggle Active/Inactive"><i class="fa fa-power-off"></i></button>
+                                        </form>
                                         <form action="{{ route('admin.staff.destroy', $staff->id) }}" method="POST" style="display:inline;">
                                             @csrf
                                             @method('DELETE')
@@ -97,7 +123,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="8" class="text-center">No staff found</td>
+                                <td colspan="10" class="text-center">No staff found</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -112,6 +138,9 @@
         </div>
       </div>
     </section>
+
+    {{-- Legacy add/edit modals below are no longer triggered (registration & edit
+         now use the full-page create.blade.php / edit.blade.php). Kept harmless. --}}
 
     <!-- Add Staff Modal -->
     <div class="modal fade" id="addStaffModal" tabindex="-1" role="dialog">

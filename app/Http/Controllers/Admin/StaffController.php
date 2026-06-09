@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Staff;
+use App\Models\StaffTag;
 use App\Models\Building;
 use App\Models\User;
 use App\Models\BuildingUser;
@@ -24,7 +25,8 @@ class StaffController extends Controller
         }
 
         // Fetch Staff records
-        $staffQuery = Staff::where('building_id', Auth::user()->building_id);
+        $staffQuery = Staff::where('building_id', Auth::user()->building_id)
+            ->with(['activeTag.flat.block']);
 
         if ($request->has('search')) {
             $staffQuery->where('name', 'like', '%' . $request->search . '%')
@@ -83,34 +85,45 @@ class StaffController extends Controller
 
     public function create()
     {
-        return view('admin.staff.create');
+        $building = Auth::user()->building;
+        $blocks   = $building ? $building->blocks : collect();
+        return view('admin.staff.create', compact('blocks'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'type' => 'required|string|max:50',
-            'category' => 'required|in:flat_staff,building_staff,external_staff',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        $data = $this->validateStaff($request);
 
-        $staff = new Staff($request->all());
-        $staff->staff_id = $this->generateUniqueStaffId();
-        $staff->building_id = Auth::user()->building_id;
-        $staff->creator_id = Auth::id();
-        $staff->creator_type = 'admin';
+        $staff = new Staff();
+        $staff->name                  = $data['name'];
+        $staff->phone                 = $data['phone'];
+        $staff->address               = $request->address;
+        $staff->type                  = $data['type'];
+        $staff->category              = $request->category ?: 'flat_staff';
+        $staff->is_open_to_all        = $request->boolean('is_open_to_all');
+        $staff->status                = $request->status ?: 'Active';
+        $staff->document_status       = $request->document_status;
+        $staff->staff_id              = $this->generateUniqueStaffId();
+        $staff->building_id           = Auth::user()->building_id;
+        $staff->creator_id            = Auth::id();
+        $staff->creator_type          = 'admin';
 
-        if ($request->hasFile('photo')) {
-            $imageName = time() . '.' . $request->photo->extension();
-            $request->photo->move(public_path('uploads/staff'), $imageName);
-            $staff->photo = 'uploads/staff/' . $imageName;
+        if ($path = $this->uploadStaffFile($request, 'photo', 'uploads/staff')) {
+            $staff->photo = $path;
+        }
+        if ($path = $this->uploadStaffFile($request, 'document', 'uploads/staff/documents')) {
+            $staff->document_verification = $path;
+        }
+        if ($path = $this->uploadStaffFile($request, 'noc', 'uploads/staff/noc')) {
+            $staff->noc_police = $path;
         }
 
         $staff->save();
 
-        return redirect()->route('admin.staff.index')->with('success', 'Staff created successfully. ID: ' . $staff->staff_id);
+        $this->syncFlatTag($request, $staff);
+
+        return redirect()->route('admin.staff.index')
+            ->with('success', 'Staff registered successfully. Staff ID (gate entry): ' . $staff->staff_id);
     }
 
     private function generateUniqueStaffId()
@@ -124,32 +137,123 @@ class StaffController extends Controller
 
     public function edit(Staff $staff)
     {
-        return view('admin.staff.edit', compact('staff'));
+        $staff->load('activeTag.flat.block');
+        $building = Auth::user()->building;
+        $blocks   = $building ? $building->blocks : collect();
+        return view('admin.staff.edit', compact('staff', 'blocks'));
     }
 
     public function update(Request $request, Staff $staff)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'status' => 'required|in:Active,Inactive',
-        ]);
+        $data = $this->validateStaff($request);
 
-        $staff->update($request->all());
+        $staff->name            = $data['name'];
+        $staff->phone           = $data['phone'];
+        $staff->address         = $request->address;
+        $staff->type            = $data['type'];
+        $staff->category        = $request->category ?: $staff->category;
+        $staff->is_open_to_all  = $request->boolean('is_open_to_all');
+        $staff->status          = $request->status ?: $staff->status;
+        $staff->document_status = $request->document_status;
 
-        if ($request->hasFile('photo')) {
-            $imageName = time() . '.' . $request->photo->extension();
-            $request->photo->move(public_path('uploads/staff'), $imageName);
-            $staff->photo = 'uploads/staff/' . $imageName;
-            $staff->save();
+        if ($path = $this->uploadStaffFile($request, 'photo', 'uploads/staff')) {
+            $staff->photo = $path;
+        }
+        if ($path = $this->uploadStaffFile($request, 'document', 'uploads/staff/documents')) {
+            $staff->document_verification = $path;
+        }
+        if ($path = $this->uploadStaffFile($request, 'noc', 'uploads/staff/noc')) {
+            $staff->noc_police = $path;
         }
 
+        $staff->save();
+
+        $this->syncFlatTag($request, $staff);
+
         return redirect()->route('admin.staff.index')->with('success', 'Staff updated successfully.');
+    }
+
+    public function toggleStatus(Staff $staff)
+    {
+        if ($staff->building_id != Auth::user()->building_id) {
+            return redirect()->back()->with('error', 'Not allowed.');
+        }
+        $staff->status = $staff->status === 'Active' ? 'Inactive' : 'Active';
+        $staff->save();
+        return redirect()->back()->with('success', 'Staff marked ' . $staff->status . '.');
     }
 
     public function destroy(Staff $staff)
     {
         $staff->delete();
         return redirect()->route('admin.staff.index')->with('success', 'Staff deleted successfully.');
+    }
+
+    /**
+     * Shared validation for register/update. Flat assignment is only required
+     * when the staff is NOT open to all flats.
+     */
+    private function validateStaff(Request $request): array
+    {
+        return $request->validate([
+            'name'            => 'required|string|max:255',
+            'phone'           => 'required|string|max:20',
+            'type'            => 'required|string|max:50',
+            'category'        => 'nullable|in:flat_staff,building_staff,external_staff',
+            'address'         => 'nullable|string|max:1000',
+            'status'          => 'nullable|in:Active,Inactive',
+            'photo'           => 'nullable|image|mimes:jpeg,png,jpg|max:4096',
+            'document'        => 'nullable|mimes:jpeg,png,jpg,pdf|max:8192',
+            'noc'             => 'nullable|mimes:jpeg,png,jpg,pdf|max:8192',
+            'document_status' => 'nullable|in:Pending,Verified',
+            'is_open_to_all'  => 'nullable|boolean',
+            'flat_id'         => 'nullable|exists:flats,id',
+            'engagement_type' => 'nullable|in:In-house,Timely-basis',
+            'time_slot'       => 'nullable|string|max:100',
+        ]);
+    }
+
+    /**
+     * Move an uploaded file into public/<dir> and return its relative path,
+     * or null if no file was sent. Mirrors the existing photo-upload pattern.
+     */
+    private function uploadStaffFile(Request $request, string $field, string $dir): ?string
+    {
+        if (!$request->hasFile($field)) {
+            return null;
+        }
+        $file = $request->file($field);
+        $name = $field . '_' . time() . '_' . mt_rand(1000, 9999) . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path($dir), $name);
+        return $dir . '/' . $name;
+    }
+
+    /**
+     * Create/update/remove the single-flat assignment for a staff.
+     * - Open to all flats  -> remove any tag.
+     * - A flat is selected -> upsert the tag with engagement + time slot.
+     */
+    private function syncFlatTag(Request $request, Staff $staff): void
+    {
+        if ($request->boolean('is_open_to_all') || !$request->filled('flat_id')) {
+            StaffTag::where('staff_id', $staff->id)->delete();
+            return;
+        }
+
+        $flat = \App\Models\Flat::find($request->flat_id);
+        if (!$flat || $flat->building_id != $staff->building_id) {
+            return;
+        }
+
+        StaffTag::updateOrCreate(
+            ['staff_id' => $staff->id],
+            [
+                'flat_id'         => $flat->id,
+                'building_id'     => $staff->building_id,
+                'engagement_type' => $request->engagement_type,
+                'time_slot'       => $request->engagement_type === 'Timely-basis' ? $request->time_slot : null,
+                'status'          => 'Active',
+            ]
+        );
     }
 }

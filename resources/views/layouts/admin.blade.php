@@ -1123,9 +1123,15 @@
               </a>
               <ul class="nav nav-treeview second">
                   <li class="nav-item">
+                      <a href="{{ route('admin.staff.create') }}" class="nav-link {{ request()->is('staff/create') ? 'second-active' : '' }}">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Register Domestic Staff</p>
+                      </a>
+                  </li>
+                  <li class="nav-item">
                       <a href="{{ route('admin.staff.index') }}" class="nav-link {{ request()->is('staff') ? 'second-active' : '' }}">
                           <i class="far fa-circle nav-icon"></i>
-                          <p>Manage Staff</p>
+                          <p>Manage Domestic Staff</p>
                       </a>
                   </li>
                   <li class="nav-item">
