@@ -71,7 +71,7 @@
                   </div>
                   <div class="form-group">
                     <label>Photo</label>
-                    @if($staff->photo)<div class="mb-2"><img src="{{ asset($staff->photo) }}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;"></div>@endif
+                    @if($staff->photo)<div class="mb-2"><img src="{{ asset('public/' . $staff->photo) }}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;"></div>@endif
                     <input type="file" name="photo" class="form-control-file" accept="image/*" capture="environment">
                   </div>
                   <div class="form-group">
@@ -138,7 +138,7 @@
                 <div class="card-body">
                   <div class="form-group">
                     <label>Document (ID proof — image or PDF)</label>
-                    @if($staff->document_verification)<div class="mb-1"><a href="{{ asset($staff->document_verification) }}" target="_blank">View current document</a></div>@endif
+                    @if($staff->document_verification)<div class="mb-1"><a href="{{ asset('public/' . $staff->document_verification) }}" target="_blank">View current document</a></div>@endif
                     <input type="file" name="document" class="form-control-file" accept="image/*,application/pdf">
                   </div>
                   <div class="form-group">

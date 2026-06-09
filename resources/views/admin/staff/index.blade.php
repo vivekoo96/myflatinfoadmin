@@ -55,7 +55,7 @@
                                 <td>{{ $staff->staff_id ?? 'N/A' }}</td>
                                 <td>
                                     @if($staff->photo)
-                                        <img src="{{ asset($staff->photo) }}" style="width: 40px; height: 40px; border-radius: 50%;">
+                                        <img src="{{ asset('public/' . $staff->photo) }}" style="width: 40px; height: 40px; border-radius: 50%;">
                                     @else
                                         <div style="width: 40px; height: 40px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center;">
                                             <i class="fa fa-user"></i>
@@ -91,8 +91,8 @@
                                 </td>
                                 <td>
                                     @if($staff->source === 'staff')
-                                        @if($staff->document_verification)<a href="{{ asset($staff->document_verification) }}" target="_blank">Doc</a>@endif
-                                        @if($staff->noc_police) <a href="{{ asset($staff->noc_police) }}" target="_blank">| NOC</a>@endif
+                                        @if($staff->document_verification)<a href="{{ asset('public/' . $staff->document_verification) }}" target="_blank">Doc</a>@endif
+                                        @if($staff->noc_police) <a href="{{ asset('public/' . $staff->noc_police) }}" target="_blank">| NOC</a>@endif
                                         @if($staff->document_status)<br><span class="badge badge-{{ $staff->document_status === 'Verified' ? 'success' : 'warning' }}">{{ $staff->document_status }}</span>@endif
                                         @if(!$staff->document_verification && !$staff->noc_police && !$staff->document_status)-@endif
                                     @else
@@ -262,7 +262,7 @@ function openEditModal(staffId) {
 
             // Show photo preview if exists
             if (staff.photo) {
-                $('#edit_photo_preview').html('<img src="{{ asset("") }}' + staff.photo + '" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px;">');
+                $('#edit_photo_preview').html('<img src="{{ asset("public/") }}/' + staff.photo + '" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px;">');
             } else {
                 $('#edit_photo_preview').html('<p class="text-muted">No photo</p>');
             }
