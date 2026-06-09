@@ -1491,7 +1491,11 @@ private function getUserTokens($userId)
         $query = \App\Models\MaintenancePayment::with(['flat.block', 'flat.owner', 'flat.tanent', 'user', 'maintenance'])
             ->where('building_id', $building->id)
             ->where('type', 'UPI')
-            ->whereIn('upi_payment_status', ['Approved', 'Rejected']);
+            ->whereIn('upi_payment_status', ['Approved', 'Rejected'])
+            // Only settled (Paid) rows belong in history. Rejected submissions are
+            // reset to status 'Unpaid' so the resident can resubmit, so they must
+            // not appear here.
+            ->where('status', 'Paid');
 
         if ($request->filled('status') && in_array($request->status, ['Approved', 'Rejected'])) {
             $query->where('upi_payment_status', $request->status);
