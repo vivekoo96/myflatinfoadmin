@@ -47,12 +47,16 @@
                   </div>
                   <div class="form-group">
                     <label>Type <span class="text-danger">*</span></label>
-                    <select id="type_select" class="form-control">
-                      @foreach(['Maid','Cook','Driver','Security','Gardener','Nanny','Other'] as $t)
-                        <option value="{{ $t }}">{{ $t === 'Other' ? 'Other (type below)' : $t }}</option>
-                      @endforeach
-                    </select>
-                    <input type="text" name="type" id="type_input" class="form-control mt-2" value="{{ old('type', 'Maid') }}" placeholder="Staff type" required readonly>
+                    <div class="input-group">
+                      <select name="type" id="type_select" class="form-control" required>
+                        @foreach($allTypes ?? ['Maid','Cook','Driver','Security','Gardener','Nanny'] as $t)
+                          <option value="{{ $t }}" {{ old('type') == $t ? 'selected' : '' }}>{{ $t }}</option>
+                        @endforeach
+                      </select>
+                      <div class="input-group-append">
+                        <button type="button" class="btn btn-outline-primary" id="btn_add_type" title="Add New Type"><i class="fas fa-plus"></i></button>
+                      </div>
+                    </div>
                   </div>
                   <div class="form-group">
                     <label>Address</label>
@@ -72,32 +76,7 @@
                 </div>
               </div>
 
-              <!-- Documents -->
-              <div class="card">
-                <div class="card-header"><h3 class="card-title">Verification</h3></div>
-                <div class="card-body">
-                  <div class="form-group">
-                    <label>Document (ID proof — image or PDF)</label>
-                    <input type="file" name="document" class="form-control-file" accept="image/*,application/pdf">
-                  </div>
-                  <div class="form-group">
-                    <label>Document status</label>
-                    <select name="document_status" class="form-control">
-                      <option value="">— Not set —</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Verified">Verified</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label>Police NOC (optional — image or PDF)</label>
-                    <input type="file" name="noc" class="form-control-file" accept="image/*,application/pdf">
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Assignment -->
-            <div class="col-md-6">
+              <!-- Assignment -->
               <div class="card">
                 <div class="card-header"><h3 class="card-title">Assignment</h3></div>
                 <div class="card-body">
@@ -139,6 +118,31 @@
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <!-- Documents -->
+              <div class="card">
+                <div class="card-header"><h3 class="card-title">Verification</h3></div>
+                <div class="card-body">
+                  <div class="form-group">
+                    <label>Document (ID proof — image or PDF)</label>
+                    <input type="file" name="document" class="form-control-file" accept="image/*,application/pdf">
+                  </div>
+                  <div class="form-group">
+                    <label>Document status</label>
+                    <select name="document_status" class="form-control">
+                      <option value="">— Not set —</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Verified">Verified</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Police NOC (optional — image or PDF)</label>
+                    <input type="file" name="noc" class="form-control-file" accept="image/*,application/pdf">
+                  </div>
+                </div>
                 <div class="card-footer">
                   <button type="submit" class="btn btn-success"><i class="fa fa-id-card"></i> Register &amp; Generate Staff ID</button>
                   <a href="{{ route('admin.staff.index') }}" class="btn btn-secondary">Cancel</a>
@@ -154,16 +158,18 @@
 @section('script')
 <script>
 $(function () {
-    // Type preset + free text
-    function syncType() {
-        var v = $('#type_select').val();
-        if (v === 'Other') {
-            $('#type_input').prop('readonly', false).val('').focus();
-        } else {
-            $('#type_input').prop('readonly', true).val(v);
+    $('#btn_add_type').on('click', function() {
+        let newType = prompt("Enter new staff type:");
+        if (newType) {
+            newType = newType.trim();
+            if (newType.length > 0) {
+                if ($('#type_select option[value="' + newType + '"]').length === 0) {
+                    $('#type_select').append(new Option(newType, newType));
+                }
+                $('#type_select').val(newType);
+            }
         }
-    }
-    $('#type_select').on('change', syncType);
+    });
 
     // Open to all flats toggles the assignment block
     function syncAssignment() {
@@ -198,7 +204,6 @@ $(function () {
         $('#timeSlotGroup').toggle($(this).val() === 'Timely-basis');
     });
 
-    syncType();
     syncAssignment();
 });
 </script>

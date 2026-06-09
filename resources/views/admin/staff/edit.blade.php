@@ -54,13 +54,16 @@
                   </div>
                   <div class="form-group">
                     <label>Type <span class="text-danger">*</span></label>
-                    <select id="type_select" class="form-control">
-                      @foreach($presetTypes as $t)
-                        <option value="{{ $t }}" {{ $isPreset && $staff->type === $t ? 'selected' : '' }}>{{ $t }}</option>
-                      @endforeach
-                      <option value="Other" {{ $isPreset ? '' : 'selected' }}>Other (type below)</option>
-                    </select>
-                    <input type="text" name="type" id="type_input" class="form-control mt-2" value="{{ old('type', $staff->type) }}" placeholder="Staff type" required {{ $isPreset ? 'readonly' : '' }}>
+                    <div class="input-group">
+                      <select name="type" id="type_select" class="form-control" required>
+                        @foreach($allTypes ?? ['Maid','Cook','Driver','Security','Gardener','Nanny'] as $t)
+                          <option value="{{ $t }}" {{ old('type', $staff->type) == $t ? 'selected' : '' }}>{{ $t }}</option>
+                        @endforeach
+                      </select>
+                      <div class="input-group-append">
+                        <button type="button" class="btn btn-outline-primary" id="btn_add_type" title="Add New Type"><i class="fas fa-plus"></i></button>
+                      </div>
+                    </div>
                   </div>
                   <div class="form-group">
                     <label>Address</label>
@@ -81,32 +84,6 @@
                 </div>
               </div>
 
-              <div class="card">
-                <div class="card-header"><h3 class="card-title">Verification</h3></div>
-                <div class="card-body">
-                  <div class="form-group">
-                    <label>Document (ID proof — image or PDF)</label>
-                    @if($staff->document_verification)<div class="mb-1"><a href="{{ asset($staff->document_verification) }}" target="_blank">View current document</a></div>@endif
-                    <input type="file" name="document" class="form-control-file" accept="image/*,application/pdf">
-                  </div>
-                  <div class="form-group">
-                    <label>Document status</label>
-                    <select name="document_status" class="form-control">
-                      <option value="">— Not set —</option>
-                      <option value="Pending" {{ $staff->document_status === 'Pending' ? 'selected' : '' }}>Pending</option>
-                      <option value="Verified" {{ $staff->document_status === 'Verified' ? 'selected' : '' }}>Verified</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label>Police NOC (optional — image or PDF)</label>
-                    @if($staff->noc_police)<div class="mb-1"><a href="{{ asset($staff->noc_police) }}" target="_blank">View current NOC</a></div>@endif
-                    <input type="file" name="noc" class="form-control-file" accept="image/*,application/pdf">
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-md-6">
               <div class="card">
                 <div class="card-header"><h3 class="card-title">Assignment</h3></div>
                 <div class="card-body">
@@ -148,6 +125,31 @@
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header"><h3 class="card-title">Verification</h3></div>
+                <div class="card-body">
+                  <div class="form-group">
+                    <label>Document (ID proof — image or PDF)</label>
+                    @if($staff->document_verification)<div class="mb-1"><a href="{{ asset($staff->document_verification) }}" target="_blank">View current document</a></div>@endif
+                    <input type="file" name="document" class="form-control-file" accept="image/*,application/pdf">
+                  </div>
+                  <div class="form-group">
+                    <label>Document status</label>
+                    <select name="document_status" class="form-control">
+                      <option value="">— Not set —</option>
+                      <option value="Pending" {{ $staff->document_status === 'Pending' ? 'selected' : '' }}>Pending</option>
+                      <option value="Verified" {{ $staff->document_status === 'Verified' ? 'selected' : '' }}>Verified</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Police NOC (optional — image or PDF)</label>
+                    <input type="file" name="noc" class="form-control-file" accept="image/*,application/pdf">
+                  </div>
+                </div>
                 <div class="card-footer">
                   <button type="submit" class="btn btn-primary">Update Staff</button>
                   <a href="{{ route('admin.staff.index') }}" class="btn btn-secondary">Cancel</a>
@@ -163,15 +165,18 @@
 @section('script')
 <script>
 $(function () {
-    function syncType() {
-        var v = $('#type_select').val();
-        if (v === 'Other') {
-            $('#type_input').prop('readonly', false);
-        } else {
-            $('#type_input').prop('readonly', true).val(v);
+    $('#btn_add_type').on('click', function() {
+        let newType = prompt("Enter new staff type:");
+        if (newType) {
+            newType = newType.trim();
+            if (newType.length > 0) {
+                if ($('#type_select option[value="' + newType + '"]').length === 0) {
+                    $('#type_select').append(new Option(newType, newType));
+                }
+                $('#type_select').val(newType);
+            }
         }
-    }
-    $('#type_select').on('change', syncType);
+    });
 
     function syncAssignment() {
         if ($('#openToAll').is(':checked')) {
@@ -205,7 +210,7 @@ $(function () {
     });
 
     // Prefill the current flat assignment
-    syncType();
+    // Prefill the current flat assignment
     syncAssignment();
     var initialBlock = $('#block_id').val();
     var currentFlat  = $('#flat_id').data('current');

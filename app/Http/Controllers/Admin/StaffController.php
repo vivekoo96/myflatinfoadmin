@@ -87,7 +87,16 @@ class StaffController extends Controller
     {
         $building = Auth::user()->building;
         $blocks   = $building ? $building->blocks : collect();
-        return view('admin.staff.create', compact('blocks'));
+
+        $types = Staff::where('building_id', Auth::user()->building_id)
+                      ->select('type')
+                      ->distinct()
+                      ->pluck('type')
+                      ->toArray();
+        $defaultTypes = ['Maid','Cook','Driver','Security','Gardener','Nanny'];
+        $allTypes = array_unique(array_merge($defaultTypes, $types));
+
+        return view('admin.staff.create', compact('blocks', 'allTypes'));
     }
 
     public function store(Request $request)
@@ -140,7 +149,16 @@ class StaffController extends Controller
         $staff->load('activeTag.flat.block');
         $building = Auth::user()->building;
         $blocks   = $building ? $building->blocks : collect();
-        return view('admin.staff.edit', compact('staff', 'blocks'));
+
+        $types = Staff::where('building_id', Auth::user()->building_id)
+                      ->select('type')
+                      ->distinct()
+                      ->pluck('type')
+                      ->toArray();
+        $defaultTypes = ['Maid','Cook','Driver','Security','Gardener','Nanny'];
+        $allTypes = array_unique(array_merge($defaultTypes, $types));
+
+        return view('admin.staff.edit', compact('staff', 'blocks', 'allTypes'));
     }
 
     public function update(Request $request, Staff $staff)
