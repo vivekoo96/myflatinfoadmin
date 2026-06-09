@@ -54,7 +54,7 @@
                         @endforeach
                       </select>
                       <div class="input-group-append">
-                        <button type="button" class="btn btn-outline-primary" id="btn_add_type" title="Add New Type"><i class="fas fa-plus"></i></button>
+                        <button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#addTypeModal" title="Add New Type"><i class="fas fa-plus"></i></button>
                       </div>
                     </div>
                   </div>
@@ -153,21 +153,67 @@
         </form>
       </div>
     </section>
+
+    <!-- Add Type Modal -->
+    <div class="modal fade" id="addTypeModal" tabindex="-1" role="dialog" aria-labelledby="addTypeModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <form id="addTypeForm">
+            <div class="modal-header">
+              <h5 class="modal-title" id="addTypeModalLabel">Add New Staff Type</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label>Type Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="new_type_name" required>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="btn_save_type">Save Type</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
 @endsection
 
 @section('script')
 <script>
 $(function () {
-    $('#btn_add_type').on('click', function() {
-        let newType = prompt("Enter new staff type:");
-        if (newType) {
-            newType = newType.trim();
-            if (newType.length > 0) {
-                if ($('#type_select option[value="' + newType + '"]').length === 0) {
-                    $('#type_select').append(new Option(newType, newType));
+    $('#addTypeForm').on('submit', function(e) {
+        e.preventDefault();
+        let newType = $('#new_type_name').val().trim();
+        if (newType.length > 0) {
+            let btn = $('#btn_save_type');
+            btn.prop('disabled', true).text('Saving...');
+            $.ajax({
+                url: '{{ route("admin.store-type") }}',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    name: newType
+                },
+                success: function(res) {
+                    if (res.success) {
+                        if ($('#type_select option[value="' + res.type + '"]').length === 0) {
+                            $('#type_select').append(new Option(res.type, res.type));
+                        }
+                        $('#type_select').val(res.type);
+                        $('#addTypeModal').modal('hide');
+                        $('#new_type_name').val('');
+                    }
+                },
+                error: function(err) {
+                    alert('Error saving type.');
+                },
+                complete: function() {
+                    btn.prop('disabled', false).text('Save Type');
                 }
-                $('#type_select').val(newType);
-            }
+            });
         }
     });
 

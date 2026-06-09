@@ -34,6 +34,11 @@ class Staff extends Model
         return $this->belongsTo(Building::class);
     }
 
+    public function staffType()
+    {
+        return $this->belongsTo(StaffType::class, 'type', 'name');
+    }
+
     public function tags()
     {
         return $this->hasMany(StaffTag::class, 'staff_id');

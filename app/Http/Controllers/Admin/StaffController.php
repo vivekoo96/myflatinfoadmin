@@ -88,13 +88,16 @@ class StaffController extends Controller
         $building = Auth::user()->building;
         $blocks   = $building ? $building->blocks : collect();
 
+        $staffTypes = \App\Models\StaffType::where('building_id', Auth::user()->building_id)
+                      ->pluck('name')
+                      ->toArray();
         $types = Staff::where('building_id', Auth::user()->building_id)
                       ->select('type')
                       ->distinct()
                       ->pluck('type')
                       ->toArray();
         $defaultTypes = ['Maid','Cook','Driver','Security','Gardener','Nanny'];
-        $allTypes = array_unique(array_merge($defaultTypes, $types));
+        $allTypes = array_unique(array_merge($defaultTypes, $types, $staffTypes));
 
         return view('admin.staff.create', compact('blocks', 'allTypes'));
     }
@@ -150,13 +153,16 @@ class StaffController extends Controller
         $building = Auth::user()->building;
         $blocks   = $building ? $building->blocks : collect();
 
+        $staffTypes = \App\Models\StaffType::where('building_id', Auth::user()->building_id)
+                      ->pluck('name')
+                      ->toArray();
         $types = Staff::where('building_id', Auth::user()->building_id)
                       ->select('type')
                       ->distinct()
                       ->pluck('type')
                       ->toArray();
         $defaultTypes = ['Maid','Cook','Driver','Security','Gardener','Nanny'];
-        $allTypes = array_unique(array_merge($defaultTypes, $types));
+        $allTypes = array_unique(array_merge($defaultTypes, $types, $staffTypes));
 
         return view('admin.staff.edit', compact('staff', 'blocks', 'allTypes'));
     }
@@ -273,5 +279,19 @@ class StaffController extends Controller
                 'status'          => 'Active',
             ]
         );
+    }
+
+    public function storeType(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:50'
+        ]);
+
+        $type = \App\Models\StaffType::firstOrCreate([
+            'building_id' => Auth::user()->building_id,
+            'name' => trim($request->name)
+        ]);
+
+        return response()->json(['success' => true, 'type' => $type->name]);
     }
 }

@@ -369,6 +369,7 @@ Route::middleware('admin')->group(function () {
             Route::get('/', [StaffController::class, 'index'])->name('index');
             // NOTE: /create must be declared before /{staff} so it isn't captured as a param.
             Route::get('/create', [StaffController::class, 'create'])->name('create');
+            Route::post('/store-type', [StaffController::class, 'storeType'])->name('store-type');
             Route::post('/', [StaffController::class, 'store'])->name('store');
             Route::post('/{staff}/toggle-status', [StaffController::class, 'toggleStatus'])->name('toggle-status');
             Route::get('/{staff}', [StaffController::class, 'show'])->name('show');
