@@ -150,11 +150,14 @@
                     <input type="file" name="noc" class="form-control-file" accept="image/*,application/pdf">
                   </div>
                 </div>
-                <div class="card-footer">
-                  <button type="submit" class="btn btn-primary">Update Staff</button>
-                  <a href="{{ route('admin.staff.index') }}" class="btn btn-secondary">Cancel</a>
                 </div>
               </div>
+            </div>
+          </div>
+          <div class="row mt-3 mb-4">
+            <div class="col-12 text-center">
+              <button type="submit" class="btn btn-primary">Update Staff</button>
+              <a href="{{ route('admin.staff.index') }}" class="btn btn-secondary">Cancel</a>
             </div>
           </div>
         </form>
