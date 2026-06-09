@@ -26,6 +26,7 @@ class StaffController extends Controller
 
         // Fetch Staff records
         $staffQuery = Staff::where('building_id', Auth::user()->building_id)
+            ->where('approval_status', 'Approved')
             ->with(['activeTag.flat.block']);
 
         if ($request->has('search')) {
@@ -78,6 +79,43 @@ class StaffController extends Controller
         */
 
         return view('admin.staff.index', compact('staffs'));
+    }
+
+    public function pending(Request $request)
+    {
+        if(Auth::User()->role == 'BA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President') || Auth::User()->hasPermission('custom.staff_attendance'))
+        {
+            // Access granted
+        } else {
+            return redirect('permission-denied')->with('error','Permission denied!');
+        }
+
+        $staffs = Staff::where('building_id', Auth::user()->building_id)
+            ->where('approval_status', 'Pending')
+            ->with(['activeTag.flat.block'])
+            ->latest()
+            ->paginate(10);
+            
+        $staffs->getCollection()->transform(function($staff) {
+            $staff->source = 'staff';
+            return $staff;
+        });
+
+        return view('admin.staff.pending', compact('staffs'));
+    }
+
+    public function approve(Staff $staff)
+    {
+        $staff->approval_status = 'Approved';
+        $staff->save();
+        return redirect()->back()->with('success', 'Staff member approved successfully.');
+    }
+
+    public function reject(Staff $staff)
+    {
+        $staff->approval_status = 'Rejected';
+        $staff->save();
+        return redirect()->back()->with('success', 'Staff member rejected successfully.');
     }
 
     public function show(Staff $staff)

@@ -44,14 +44,33 @@ class StaffApiController extends Controller
         return response()->json($staffs, 200);
     }
 
+    public function getStaffTypes(Request $request)
+    {
+        $flat = AuthHelper::flat();
+        if (!$flat) return response()->json(['error' => 'Flat not found'], 404);
+
+        $types = \App\Models\StaffType::where(function($query) use ($flat) {
+            $query->where('building_id', $flat->building_id)
+                  ->orWhereNull('building_id');
+        })
+        ->orderBy('name')
+        ->get(['id', 'name']);
+
+        return response()->json(['staff_types' => $types], 200);
+    }
+
     public function addFlatEmp(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
             'phone' => 'required|string',
             'type' => 'required|string',
+            'address' => 'nullable|string',
+            'engagement_type' => 'nullable|string',
             'time_slot' => 'nullable|string',
-            'photo' => 'nullable|string', // Base64 or URL
+            'photo' => 'nullable|file|mimes:jpeg,png,jpg|max:2048',
+            'document' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
+            'noc' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
         ]);
 
         if ($validator->fails()) return response()->json(['error' => $validator->errors()->first()], 422);
@@ -62,14 +81,33 @@ class StaffApiController extends Controller
         $staff->name = $request->name;
         $staff->phone = $request->phone;
         $staff->type = $request->type;
+        $staff->address = $request->address;
         $staff->category = 'flat_staff';
         $staff->building_id = $flat->building_id;
         $staff->staff_id = $this->generateUniqueStaffId();
         $staff->creator_id = Auth::id();
         $staff->creator_type = 'flat_user';
+        $staff->approval_status = 'Pending';
         
-        if ($request->photo) {
-            // Logic for photo saving if needed
+        if ($request->hasFile('photo')) {
+            $file = $request->file('photo');
+            $filename = time() . '_photo.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/staff'), $filename);
+            $staff->photo = 'uploads/staff/' . $filename;
+        }
+
+        if ($request->hasFile('document')) {
+            $file = $request->file('document');
+            $filename = time() . '_doc.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/staff/documents'), $filename);
+            $staff->document_verification = 'uploads/staff/documents/' . $filename;
+        }
+
+        if ($request->hasFile('noc')) {
+            $file = $request->file('noc');
+            $filename = time() . '_noc.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/staff/noc'), $filename);
+            $staff->noc_police = 'uploads/staff/noc/' . $filename;
         }
         
         $staff->save();
@@ -79,6 +117,7 @@ class StaffApiController extends Controller
             'staff_id' => $staff->id,
             'flat_id' => $flat->id,
             'building_id' => $flat->building_id,
+            'engagement_type' => $request->engagement_type,
             'time_slot' => $request->time_slot,
         ]);
 

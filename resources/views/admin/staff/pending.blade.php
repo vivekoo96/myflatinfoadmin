@@ -13,8 +13,8 @@
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="#">Home</a></li>
-              <li class="breadcrumb-item active">Staff List</li>
+              <li class="breadcrumb-item"><a href="{{ route('admin.staff.index') }}">Staff List</a></li>
+              <li class="breadcrumb-item active">Pending Approvals</li>
             </ol>
           </div>
         </div>
@@ -27,10 +27,9 @@
           <div class="col-12">
             <div class="card">
               <div class="card-header">
-                <h3 class="card-title">All Staff</h3>
+                <h3 class="card-title">Pending Staff Approvals</h3>
                 <div class="card-tools">
-                   <a href="{{ route('admin.staff.pending') }}" class="btn btn-sm btn-warning mr-2"><i class="fa fa-clock"></i> View Pending Approvals</a>
-                   <a href="{{ route('admin.staff.create') }}" class="btn btn-sm btn-success"><i class="fa fa-plus"></i> Register Domestic Staff</a>
+                   <a href="{{ route('admin.staff.index') }}" class="btn btn-sm btn-primary"><i class="fa fa-arrow-left"></i> Back to Staff List</a>
                 </div>
               </div>
               <div class="card-body">
@@ -107,18 +106,16 @@
                                 </td>
                                 <td>
                                     @if($staff->source === 'staff')
-                                        <a href="{{ route('admin.staff.edit', $staff->id) }}" class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></a>
-                                        <form action="{{ route('admin.staff.toggle-status', $staff->id) }}" method="POST" style="display:inline;">
+                                        <form action="{{ route('admin.staff.approve', $staff->id) }}" method="POST" style="display:inline;">
                                             @csrf
-                                            <button class="btn btn-sm btn-{{ $staff->status === 'Active' ? 'warning' : 'success' }}" title="Toggle Active/Inactive"><i class="fa fa-power-off"></i></button>
+                                            <button class="btn btn-sm btn-success" onclick="return confirm('Approve this staff member?')"><i class="fa fa-check"></i> Approve</button>
                                         </form>
-                                        <form action="{{ route('admin.staff.destroy', $staff->id) }}" method="POST" style="display:inline;">
+                                        <form action="{{ route('admin.staff.reject', $staff->id) }}" method="POST" style="display:inline;">
                                             @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')"><i class="fa fa-trash"></i></button>
+                                            <button class="btn btn-sm btn-danger" onclick="return confirm('Reject this staff member?')"><i class="fa fa-times"></i> Reject</button>
                                         </form>
                                     @else
-                                        <span class="text-muted">View in Other Users</span>
+                                        <span class="text-muted">-</span>
                                     @endif
                                 </td>
                             </tr>

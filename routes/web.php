@@ -368,6 +368,9 @@ Route::middleware('admin')->group(function () {
         Route::prefix('staff')->name('admin.staff.')->group(function () {
             Route::get('/', [StaffController::class, 'index'])->name('index');
             // NOTE: /create must be declared before /{staff} so it isn't captured as a param.
+            Route::get('/pending', [StaffController::class, 'pending'])->name('pending');
+            Route::post('/{staff}/approve', [StaffController::class, 'approve'])->name('approve');
+            Route::post('/{staff}/reject', [StaffController::class, 'reject'])->name('reject');
             Route::get('/create', [StaffController::class, 'create'])->name('create');
             Route::post('/store-type', [StaffController::class, 'storeType'])->name('store-type');
             Route::post('/', [StaffController::class, 'store'])->name('store');
