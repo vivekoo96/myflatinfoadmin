@@ -227,7 +227,7 @@ class StaffController extends Controller
     {
         return $request->validate([
             'name'            => 'required|string|max:255',
-            'phone'           => 'required|string|max:20',
+            'phone'           => ['required', 'string', 'regex:/^[6789]\d{9}$/'],
             'type'            => 'required|string|max:50',
             'category'        => 'nullable|in:flat_staff,building_staff,external_staff',
             'address'         => 'nullable|string|max:1000',

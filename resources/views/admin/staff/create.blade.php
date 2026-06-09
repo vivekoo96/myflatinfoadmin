@@ -43,7 +43,7 @@
                   </div>
                   <div class="form-group">
                     <label>Phone <span class="text-danger">*</span></label>
-                    <input type="text" name="phone" class="form-control" value="{{ old('phone') }}" required>
+                    <input type="text" name="phone" class="form-control" value="{{ old('phone') }}" pattern="^[6789]\d{9}$" maxlength="10" title="Phone number must be exactly 10 digits and start with 6, 7, 8, or 9" oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);" required>
                   </div>
                   <div class="form-group">
                     <label>Type <span class="text-danger">*</span></label>
