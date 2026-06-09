@@ -209,7 +209,13 @@ class MaintenancePayment extends Model
             foreach ($unpaid as $payment) {
                 $payment->transaction_id = $transaction->id;
                 $payment->status         = 'Paid';
-                $payment->paid_amount    = $payment->dues_amount;
+                // Store the ACTUAL amount paid for this bill = dues + late fine + GST
+                // (not just base dues), so history / receipts show the real figure.
+                // Sum across the flat's bills equals the transaction amount above.
+                $lateFine = $payment->late_fine ?? 0;
+                $gstRate  = optional($payment->maintenance)->gst ?? 0;
+                $billGst  = (($payment->dues_amount + $lateFine) * $gstRate) / 100;
+                $payment->paid_amount    = ceil($payment->dues_amount + $lateFine + $billGst);
                 $payment->dues_amount    = 0;
                 $payment->type           = 'UPI';
                 $payment->payment_type   = 'InBank';

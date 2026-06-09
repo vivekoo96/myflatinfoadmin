@@ -1488,7 +1488,7 @@ private function getUserTokens($userId)
 
         $building = Auth::user()->building;
 
-        $query = \App\Models\MaintenancePayment::with(['flat.block', 'flat.owner', 'flat.tanent', 'user', 'maintenance'])
+        $query = \App\Models\MaintenancePayment::with(['flat.block', 'flat.owner', 'flat.tanent', 'user', 'maintenance', 'transaction'])
             ->where('building_id', $building->id)
             ->where('type', 'UPI')
             ->whereIn('upi_payment_status', ['Approved', 'Rejected'])

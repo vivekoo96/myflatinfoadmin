@@ -86,7 +86,7 @@
                                             -
                                         @endif
                                     </td>
-                                    <td>₹{{ number_format($payment->paid_amount ?: $payment->dues_amount, 2) }}</td>
+                                    <td>₹{{ number_format(optional($payment->transaction)->amount ?? ($payment->paid_amount ?: $payment->dues_amount), 2) }}</td>
                                     <td>
                                         @if($payment->payment_screenshot)
                                             <a href="{{ $payment->payment_screenshot }}" target="_blank">View</a>

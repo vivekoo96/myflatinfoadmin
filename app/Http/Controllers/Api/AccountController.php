@@ -2156,7 +2156,7 @@ public function form_reciepts()
     {
         $building = Auth::user()->building;
 
-        $query = MaintenancePayment::with(['flat.block', 'flat.owner', 'flat.tanent', 'user', 'maintenance'])
+        $query = MaintenancePayment::with(['flat.block', 'flat.owner', 'flat.tanent', 'user', 'maintenance', 'transaction'])
             ->where('building_id', $building->id)
             ->where('type', 'UPI')
             ->whereIn('upi_payment_status', ['Approved', 'Rejected'])
@@ -2176,6 +2176,15 @@ public function form_reciepts()
         }
 
         $payments = $query->orderBy('updated_at', 'desc')->get();
+
+        // The real amount paid is the linked transaction amount (dues + late fine +
+        // GST), not the base `paid_amount`. Expose it as `amount_paid` and also
+        // correct `paid_amount` so existing app bindings show the right figure.
+        foreach ($payments as $payment) {
+            $amountPaid = optional($payment->transaction)->amount ?? $payment->paid_amount;
+            $payment->amount_paid = $amountPaid;
+            $payment->paid_amount = $amountPaid;
+        }
 
         return response()->json([
             'payments' => $payments->values(),
