@@ -59,6 +59,31 @@ class StaffApiController extends Controller
         return response()->json(['staff_types' => $types], 200);
     }
 
+    public function createStaffType(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:50'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 422);
+        }
+
+        $flat = AuthHelper::flat();
+        if (!$flat) return response()->json(['error' => 'Flat not found'], 404);
+
+        $type = \App\Models\StaffType::firstOrCreate([
+            'building_id' => $flat->building_id,
+            'name' => trim($request->name)
+        ]);
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Staff type created successfully',
+            'type' => $type
+        ], 200);
+    }
+
     public function addFlatEmp(Request $request)
     {
         $validator = Validator::make($request->all(), [
