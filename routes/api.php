@@ -186,6 +186,8 @@ use App\Http\Controllers\Api\MoveInOutApiController;
             Route::post('get-staff-attendance-history', [App\Http\Controllers\Api\StaffApiController::class, 'getStaffAttendanceHistory']);
             Route::post('get-staff-types', [App\Http\Controllers\Api\StaffApiController::class, 'getStaffTypes']);
             Route::post('create-staff-type', [App\Http\Controllers\Api\StaffApiController::class, 'createStaffType']);
+            Route::post('get-building-domestic-staff', [App\Http\Controllers\Api\StaffApiController::class, 'getBuildingDomesticStaff']);
+            Route::post('tag-flat-emp', [App\Http\Controllers\Api\StaffApiController::class, 'tagFlatEmp']);
 
         });
         //Route::post('create-razorpay-order', [CustomerController::class,'create_razorpay_order']);

@@ -44,6 +44,78 @@ class StaffApiController extends Controller
         return response()->json($staffs, 200);
     }
 
+    public function getBuildingDomesticStaff(Request $request)
+    {
+        $flat = AuthHelper::flat();
+        if (!$flat) return response()->json(['error' => 'Flat not found'], 404);
+
+        $query = Staff::where('building_id', $flat->building_id)
+            ->where('category', 'flat_staff')
+            ->where('approval_status', 'Approved')
+            ->where('status', 'Active')
+            ->where('type', '!=', 'Security Guard')
+            ->with(['tags']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('phone', 'LIKE', "%{$search}%")
+                  ->orWhere('type', 'LIKE', "%{$search}%")
+                  ->orWhere('staff_id', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $perPage = $request->input('per_page', 20);
+        $staffs = $query->paginate($perPage);
+
+        $staffs->getCollection()->transform(function ($staff) use ($flat) {
+            $staff->is_added = $staff->tags->contains('flat_id', $flat->id);
+            return $staff;
+        });
+
+        return response()->json($staffs, 200);
+    }
+
+    public function tagFlatEmp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'staff_id' => 'required|exists:staffs,id',
+            'engagement_type' => 'required|in:In-house,Timely-basis',
+            'time_slot' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 422);
+        }
+
+        $flat = AuthHelper::flat();
+        if (!$flat) return response()->json(['error' => 'Flat not found'], 404);
+
+        $staff = Staff::where('id', $request->staff_id)
+                      ->where('building_id', $flat->building_id)
+                      ->first();
+
+        if (!$staff) {
+            return response()->json(['error' => 'Staff member not found in this building.'], 404);
+        }
+
+        StaffTag::updateOrCreate(
+            [
+                'staff_id' => $staff->id,
+                'flat_id' => $flat->id
+            ],
+            [
+                'building_id' => $flat->building_id,
+                'engagement_type' => $request->engagement_type,
+                'time_slot' => $request->time_slot,
+                'status' => 'Active'
+            ]
+        );
+
+        return response()->json(['success' => true, 'message' => 'Staff assigned to your flat successfully.'], 200);
+    }
+
     public function getStaffTypes(Request $request)
     {
         $flat = AuthHelper::flat();
