@@ -84,11 +84,12 @@ class StaffApiController extends Controller
             ->get();
 
         $staffs->getCollection()->transform(function ($staff) use ($flat, $buildingFlats) {
+            // is_added should always be based on the current flat user's tags
+            $staff->is_added = $staff->tags->contains('flat_id', $flat->id);
+
             if ($staff->is_open_to_all) {
-                $staff->is_added = true;
                 $staff->assigned_flats = $buildingFlats;
             } else {
-                $staff->is_added = $staff->tags->contains('flat_id', $flat->id);
                 $staff->assigned_flats = $staff->tags->map(function ($tag) {
                     return $tag->flat;
                 })->filter()->values();

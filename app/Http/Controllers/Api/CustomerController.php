@@ -3972,6 +3972,55 @@ if($notify_id){
         ], 200);
     }
 
+    public function get_my_monthly_booking_summary(Request $request)
+    {
+        $request->validate([
+            'month' => 'required|integer|min:1|max:12',
+            'year' => 'required|integer',
+        ]);
+
+        $user = Auth::user();
+        $flat = AuthHelper::flat();
+        if (!$flat) {
+            return response()->json(['error' => 'Flat not found'], 404);
+        }
+
+        $bookings = Booking::where('user_id', $user->id)
+            ->where('building_id', $flat->building_id)
+            ->where('flat_id', $flat->id)
+            ->whereIn('status', ['Created', 'Success', 'Completed'])
+            ->whereMonth('date', $request->month)
+            ->whereYear('date', $request->year)
+            ->with(['facility', 'timing'])
+            ->get();
+
+        $summary = [];
+        foreach ($bookings->groupBy('date') as $date => $dailyBookings) {
+            $summary[] = [
+                'date' => \Carbon\Carbon::parse($date)->format('d-m-Y'),
+                'raw_date' => $date,
+                'total_slots_booked' => $dailyBookings->count(),
+                'facilities' => $dailyBookings->map(function($b) { return $b->facility->name ?? ''; })->unique()->values(),
+                'bookings' => $dailyBookings->map(function($b) {
+                    $timing = $b->timing;
+                    $timeStr = $timing ? \Carbon\Carbon::parse($timing->from)->format('h:i A') . ' to ' . \Carbon\Carbon::parse($timing->to)->format('h:i A') : '';
+                    return [
+                        'id' => $b->id,
+                        'facility_name' => $b->facility->name ?? '',
+                        'slot_time' => $timeStr,
+                        'members' => $b->members,
+                        'status' => $b->status
+                    ];
+                })->values()
+            ];
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'summary' => $summary,
+        ], 200);
+    }
+
    public function my_bookings(Request $request)
 {
     $user = Auth::user();

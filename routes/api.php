@@ -88,6 +88,7 @@ use App\Http\Controllers\Api\MoveInOutApiController;
             Route::post('book-facility',[CustomerController::class,'book_facility']);
             Route::post('cancel-bookings',[CustomerController::class,'cancel_bookings']);
             Route::post('delete-booked-facility',[CustomerController::class,'delete_facility']);
+            Route::post('my-monthly-booking-summary',[CustomerController::class,'get_my_monthly_booking_summary']);
             Route::post('my-bookings',[CustomerController::class,'my_bookings']);
             Route::post('get-bookings-by-reciept',[CustomerController::class,'get_bookings_by_reciept']);
             Route::post('book-offline-facility',[CustomerController::class,'book_offline_facility']);
