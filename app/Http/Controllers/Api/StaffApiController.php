@@ -62,7 +62,7 @@ class StaffApiController extends Controller
             ->where('approval_status', 'Approved')
             ->where('status', 'Active')
             ->where('type', '!=', 'Security Guard')
-            ->with(['tags']);
+            ->with(['tags.flat.block']);
 
         if ($request->filled('search')) {
             $search = $request->search;
