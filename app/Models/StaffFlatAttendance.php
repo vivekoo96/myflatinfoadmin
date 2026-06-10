@@ -16,6 +16,9 @@ class StaffFlatAttendance extends Model
         'staff_id',
         'flat_id',
         'marked_at',
+        'date',
+        'check_in_time',
+        'check_out_time',
     ];
 
     public function attendanceLog()

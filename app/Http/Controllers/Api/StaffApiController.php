@@ -385,8 +385,15 @@ class StaffApiController extends Controller
         $staffId = $request->staff_id;
 
         if ($request->action === 'check_in') {
+            // Find or create today's society entry to get attendance_log_id
+            $attendanceLog = StaffAttendance::firstOrCreate(
+                ['staff_id' => $staffId, 'date' => $today],
+                ['building_id' => $flat->building_id, 'status' => 'Present', 'marked_by' => Auth::id(), 'source' => 'flat']
+            );
+
             // Create check in record
             StaffFlatAttendance::create([
+                'attendance_log_id' => $attendanceLog->id,
                 'staff_id' => $staffId,
                 'flat_id' => $flat->id,
                 'date' => $today,
