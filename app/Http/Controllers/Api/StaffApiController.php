@@ -61,6 +61,7 @@ class StaffApiController extends Controller
             ->where('category', 'flat_staff')
             ->where('approval_status', 'Approved')
             ->where('status', 'Active')
+            ->where('is_open_to_all', 1)
             ->where('type', '!=', 'Security Guard')
             ->with(['tags.flat.block']);
 
