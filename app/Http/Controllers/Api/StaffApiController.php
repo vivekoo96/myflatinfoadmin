@@ -419,6 +419,48 @@ class StaffApiController extends Controller
         }
     }
 
+    public function getStaffData(Request $request)
+    {
+        $request->validate([
+            'staff_id' => 'required|exists:staffs,id',
+        ]);
+
+        $flat = AuthHelper::flat();
+        if (!$flat) return response()->json(['error' => 'Flat not found'], 404);
+
+        $staff = Staff::find($request->staff_id);
+
+        $today = date('Y-m-d');
+
+        // Check if currently checked in
+        $activeSession = StaffFlatAttendance::where('staff_id', $staff->id)
+            ->where('flat_id', $flat->id)
+            ->where('date', $today)
+            ->whereNull('check_out_time')
+            ->first();
+            
+        $status = $activeSession ? 'check_in' : 'check_out';
+
+        // Get all today's logs for this flat
+        $todayLogs = StaffFlatAttendance::where('staff_id', $staff->id)
+            ->where('flat_id', $flat->id)
+            ->where('date', $today)
+            ->orderBy('check_in_time', 'asc')
+            ->get()
+            ->map(function ($log) {
+                return [
+                    'check_in_time' => $log->check_in_time ? \Carbon\Carbon::parse($log->check_in_time)->format('h:i A') : null,
+                    'check_out_time' => $log->check_out_time ? \Carbon\Carbon::parse($log->check_out_time)->format('h:i A') : null,
+                ];
+            });
+
+        return response()->json([
+            'info' => $staff,
+            'status' => $status,
+            'todayLogs' => $todayLogs
+        ]);
+    }
+
     public function getFlatStaffLogs(Request $request)
     {
         $request->validate([
