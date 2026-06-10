@@ -41,6 +41,13 @@ class StaffApiController extends Controller
         $perPage = $request->input('per_page', 20);
         $staffs = $query->paginate($perPage);
 
+        $staffs->getCollection()->transform(function ($staff) {
+            if ($staff->photo && !str_starts_with($staff->photo, '/public/')) {
+                $staff->photo = '/public/' . ltrim($staff->photo, '/');
+            }
+            return $staff;
+        });
+
         return response()->json($staffs, 200);
     }
 
