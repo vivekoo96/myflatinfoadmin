@@ -23,6 +23,7 @@ class Kernel extends ConsoleKernel
         Commands\CloseExpiredPolls::class,
         Commands\SendPatrolReminders::class,
         Commands\CheckPatrolStatus::class,
+        Commands\CheckoutStaffAtMidnight::class,
     ];
 
     protected function schedule(Schedule $schedule)
@@ -44,6 +45,9 @@ class Kernel extends ConsoleKernel
 
         // Patrol Status Checker - runs every 5 minutes
         $schedule->command('patrol:check-status')->everyFiveMinutes()->evenInMaintenanceMode();
+
+        // Check out staff members at midnight
+        $schedule->command('staff:checkout-midnight')->daily();
     }
 
 //everyFiveMinutes()

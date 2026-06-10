@@ -356,6 +356,101 @@ class StaffApiController extends Controller
         return response()->json(['staff' => $staff], 200);
     }
 
+    public function flatStaffCheckInOut(Request $request)
+    {
+        $request->validate([
+            'staff_id' => 'required|exists:staffs,id',
+            'action' => 'required|in:check_in,check_out',
+        ]);
+
+        $flat = AuthHelper::flat();
+        if (!$flat) return response()->json(['error' => 'Flat not found'], 404);
+
+        $today = date('Y-m-d');
+        $staffId = $request->staff_id;
+
+        if ($request->action === 'check_in') {
+            // Create check in record
+            StaffFlatAttendance::create([
+                'staff_id' => $staffId,
+                'flat_id' => $flat->id,
+                'date' => $today,
+                'check_in_time' => now(),
+            ]);
+
+            return response()->json(['msg' => 'Checked in successfully']);
+        } else {
+            // Find latest check_in without check_out today
+            $record = StaffFlatAttendance::where('staff_id', $staffId)
+                ->where('flat_id', $flat->id)
+                ->where('date', $today)
+                ->whereNull('check_out_time')
+                ->latest('id')
+                ->first();
+
+            if ($record) {
+                $record->update(['check_out_time' => now()]);
+                return response()->json(['msg' => 'Checked out successfully']);
+            } else {
+                return response()->json(['error' => 'No active check-in found to check out'], 400);
+            }
+        }
+    }
+
+    public function getFlatStaffLogs(Request $request)
+    {
+        $request->validate([
+            'staff_id' => 'required|exists:staffs,id',
+            'month' => 'required|integer|min:1|max:12',
+            'year' => 'required|integer',
+        ]);
+
+        $flat = AuthHelper::flat();
+        if (!$flat) return response()->json(['error' => 'Flat not found'], 404);
+
+        $logs = StaffFlatAttendance::where('staff_id', $request->staff_id)
+            ->where('flat_id', $flat->id)
+            ->whereMonth('date', $request->month)
+            ->whereYear('date', $request->year)
+            ->orderBy('date', 'desc')
+            ->orderBy('check_in_time', 'desc')
+            ->get()
+            ->groupBy('date');
+
+        $formattedLogs = [];
+
+        foreach ($logs as $date => $dailyLogs) {
+            $totalMinutes = 0;
+            $sessions = [];
+
+            foreach ($dailyLogs as $log) {
+                if ($log->check_in_time && $log->check_out_time) {
+                    $in = \Carbon\Carbon::parse($log->check_in_time);
+                    $out = \Carbon\Carbon::parse($log->check_out_time);
+                    $totalMinutes += $in->diffInMinutes($out);
+                }
+
+                $sessions[] = [
+                    'check_in_time' => $log->check_in_time ? \Carbon\Carbon::parse($log->check_in_time)->format('h:i A') : null,
+                    'check_out_time' => $log->check_out_time ? \Carbon\Carbon::parse($log->check_out_time)->format('h:i A') : null,
+                ];
+            }
+
+            $hours = floor($totalMinutes / 60);
+            $minutes = $totalMinutes % 60;
+            $durationStr = $hours > 0 ? "{$hours}h {$minutes}m" : "{$minutes}m";
+
+            $formattedLogs[] = [
+                'date' => $date,
+                'total_duration' => $durationStr,
+                'total_minutes' => $totalMinutes,
+                'sessions' => $sessions,
+            ];
+        }
+
+        return response()->json(['logs' => $formattedLogs], 200);
+    }
+
     private function generateUniqueStaffId()
     {
         do {

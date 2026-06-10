@@ -183,6 +183,8 @@ use App\Http\Controllers\Api\MoveInOutApiController;
             Route::post('get-flat-emps', [App\Http\Controllers\Api\StaffApiController::class, 'getFlatEmps']);
             Route::post('add-flat-emp', [App\Http\Controllers\Api\StaffApiController::class, 'addFlatEmp']);
             Route::post('mark-staff-present', [App\Http\Controllers\Api\StaffApiController::class, 'markStaffPresent']);
+            Route::post('flat-staff-checkin-out', [App\Http\Controllers\Api\StaffApiController::class, 'flatStaffCheckInOut']);
+            Route::post('get-flat-staff-logs', [App\Http\Controllers\Api\StaffApiController::class, 'getFlatStaffLogs']);
             Route::post('get-staff-attendance-history', [App\Http\Controllers\Api\StaffApiController::class, 'getStaffAttendanceHistory']);
             Route::post('get-staff-types', [App\Http\Controllers\Api\StaffApiController::class, 'getStaffTypes']);
             Route::post('create-staff-type', [App\Http\Controllers\Api\StaffApiController::class, 'createStaffType']);
