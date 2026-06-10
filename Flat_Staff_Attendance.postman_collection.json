@@ -1,0 +1,146 @@
+{
+  "info": {
+    "name": "Flat Staff Check-in/Check-out",
+    "description": "APIs for flat staff multiple check-ins, check-outs, and logs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Flat Staff Check In",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{YOUR_TOKEN}}",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "staff_id",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "action",
+              "value": "check_in",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/api/flat-staff-checkin-out",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "flat-staff-checkin-out"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Flat Staff Check Out",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{YOUR_TOKEN}}",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "staff_id",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "action",
+              "value": "check_out",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/api/flat-staff-checkin-out",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "flat-staff-checkin-out"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Flat Staff Logs",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{YOUR_TOKEN}}",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "staff_id",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "month",
+              "value": "6",
+              "type": "text"
+            },
+            {
+              "key": "year",
+              "value": "2026",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/api/get-flat-staff-logs",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "get-flat-staff-logs"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

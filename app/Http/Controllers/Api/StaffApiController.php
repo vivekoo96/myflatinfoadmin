@@ -173,7 +173,7 @@ class StaffApiController extends Controller
             'address' => 'nullable|string',
             'engagement_type' => 'nullable|in:In-house,Timely-basis',
             'time_slot' => 'nullable|string',
-            'photo' => 'nullable|file|mimes:jpeg,png,jpg|max:2048',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'document' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
             'noc' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
         ]);
