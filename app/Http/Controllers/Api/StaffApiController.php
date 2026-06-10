@@ -42,8 +42,9 @@ class StaffApiController extends Controller
         $staffs = $query->paginate($perPage);
 
         $staffs->getCollection()->transform(function ($staff) {
-            if ($staff->photo && !str_starts_with($staff->photo, '/public/')) {
-                $staff->photo = '/public/' . ltrim($staff->photo, '/');
+            if ($staff->photo && !str_starts_with($staff->photo, 'http')) {
+                $path = preg_replace('#^/?public/#', '', $staff->photo);
+                $staff->photo = asset('public/' . ltrim($path, '/'));
             }
             return $staff;
         });
