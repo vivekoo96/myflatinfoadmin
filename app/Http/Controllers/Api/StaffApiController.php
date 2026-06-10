@@ -77,8 +77,21 @@ class StaffApiController extends Controller
         $perPage = $request->input('per_page', 20);
         $staffs = $query->paginate($perPage);
 
-        $staffs->getCollection()->transform(function ($staff) use ($flat) {
-            $staff->is_added = $staff->tags->contains('flat_id', $flat->id);
+        // Fetch all flats for the building to use when is_open_to_all is true
+        $buildingFlats = \App\Models\Flat::where('building_id', $flat->building_id)
+            ->with('block')
+            ->get();
+
+        $staffs->getCollection()->transform(function ($staff) use ($flat, $buildingFlats) {
+            if ($staff->is_open_to_all) {
+                $staff->is_added = true;
+                $staff->assigned_flats = $buildingFlats;
+            } else {
+                $staff->is_added = $staff->tags->contains('flat_id', $flat->id);
+                $staff->assigned_flats = $staff->tags->map(function ($tag) {
+                    return $tag->flat;
+                })->filter()->values();
+            }
             return $staff;
         });
 
