@@ -73,4 +73,9 @@ class Staff extends Model
     {
         return $this->hasMany(StaffAttendance::class, 'staff_id');
     }
+
+    public function flatAttendances()
+    {
+        return $this->hasMany(StaffFlatAttendance::class, 'staff_id');
+    }
 }

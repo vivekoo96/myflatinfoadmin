@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Staff;
+use App\Models\Flat;
 use App\Models\StaffTag;
 use App\Models\StaffAttendance;
 use App\Models\StaffFlatAttendance;
@@ -365,10 +366,252 @@ class StaffApiController extends Controller
 
     public function verifyStaffCode(Request $request)
     {
+        $request->validate([
+            'staff_id_code' => 'required|string',
+        ]);
+
         $staff = Staff::where('staff_id', $request->staff_id_code)->first();
         if (!$staff) return response()->json(['error' => 'Invalid Staff ID'], 404);
 
-        return response()->json(['staff' => $staff], 200);
+        $today = date('Y-m-d');
+
+        // Today's gate-level log
+        $gateLog = StaffAttendance::where('staff_id', $staff->id)
+            ->where('date', $today)
+            ->first();
+
+        $gateStatus = 'not_checked_in';
+        $gateEntryTime = null;
+        $gateExitTime = null;
+
+        if ($gateLog) {
+            $gateEntryTime = $gateLog->entry_time
+                ? Carbon::parse($gateLog->entry_time)->format('h:i A') : null;
+            $gateExitTime = $gateLog->exit_time
+                ? Carbon::parse($gateLog->exit_time)->format('h:i A') : null;
+
+            if ($gateLog->entry_time && !$gateLog->exit_time) {
+                $gateStatus = 'checked_in';
+            } elseif ($gateLog->exit_time) {
+                $gateStatus = 'checked_out';
+            }
+        }
+
+        // All active flat assignments for this staff
+        $tags = $staff->tags()->where('status', 'Active')
+            ->with('flat.block')
+            ->get();
+
+        $assignedFlats = $tags->map(function ($tag) use ($staff, $today) {
+            $flat = $tag->flat;
+            if (!$flat) return null;
+
+            // Latest flat-level session today
+            $latestSession = StaffFlatAttendance::where('staff_id', $staff->id)
+                ->where('flat_id', $flat->id)
+                ->where('date', $today)
+                ->latest('id')
+                ->first();
+
+            $flatStatus = 'not_visited';
+            $checkInTime = null;
+            $checkOutTime = null;
+
+            if ($latestSession) {
+                $checkInTime = $latestSession->check_in_time
+                    ? Carbon::parse($latestSession->check_in_time)->format('h:i A') : null;
+                $checkOutTime = $latestSession->check_out_time
+                    ? Carbon::parse($latestSession->check_out_time)->format('h:i A') : null;
+
+                if ($latestSession->check_in_time && !$latestSession->check_out_time) {
+                    $flatStatus = 'checked_in';
+                } elseif ($latestSession->check_out_time) {
+                    $flatStatus = 'checked_out';
+                }
+            }
+
+            return [
+                'id'              => $flat->id,
+                'flat_number'     => $flat->flat_number ?? $flat->name ?? $flat->id,
+                'block'           => optional($flat->block)->name,
+                'engagement_type' => $tag->engagement_type,
+                'time_slot'       => $tag->time_slot,
+                'today_check_in'  => $checkInTime,
+                'today_check_out' => $checkOutTime,
+                'today_status'    => $flatStatus,
+            ];
+        })->filter()->values();
+
+        // Build safe staff response with photo URL
+        $staffData = $staff->toArray();
+        $staffData['photo_url'] = $staff->photo_url;
+
+        return response()->json([
+            'staff'           => $staffData,
+            'gate_status'     => $gateStatus,
+            'gate_entry_time' => $gateEntryTime,
+            'gate_exit_time'  => $gateExitTime,
+            'assigned_flats'  => $assignedFlats,
+        ], 200);
+    }
+
+    /**
+     * Gate-level check-in: records staff entry at the main gate.
+     * POST /api/gate-staff-checkin
+     * Params: staff_id_code (6-digit), gate_id
+     */
+    public function gateStaffCheckin(Request $request)
+    {
+        $request->validate([
+            'staff_id_code' => 'required|string',
+            'gate_id'       => 'required',
+        ]);
+
+        $staff = Staff::where('staff_id', $request->staff_id_code)->first();
+        if (!$staff) return response()->json(['error' => 'Invalid Staff ID'], 404);
+
+        $today = date('Y-m-d');
+
+        // Find existing log or create new one
+        $log = StaffAttendance::firstOrNew(
+            ['staff_id' => $staff->id, 'date' => $today]
+        );
+
+        // Prevent double check-in if already inside
+        if ($log->exists && $log->entry_time && !$log->exit_time) {
+            return response()->json([
+                'error'      => 'Staff is already checked in at the gate.',
+                'entry_time' => Carbon::parse($log->entry_time)->format('h:i A'),
+            ], 422);
+        }
+
+        $log->building_id = $staff->building_id;
+        $log->gate_id     = $request->gate_id;
+        $log->source      = 'gate';
+        $log->marked_by   = Auth::id();
+        $log->entry_time  = now();
+        $log->exit_time   = null;  // reset exit if re-entering
+        $log->status      = 'Present';
+        $log->save();
+
+        $staffData = $staff->toArray();
+        $staffData['photo_url'] = $staff->photo_url;
+
+        return response()->json([
+            'success'    => true,
+            'message'    => 'Staff checked in at gate successfully.',
+            'entry_time' => Carbon::parse($log->entry_time)->format('h:i A'),
+            'staff'      => $staffData,
+        ], 200);
+    }
+
+    /**
+     * Gate-level check-out: records staff exit from the main gate.
+     * POST /api/gate-staff-checkout
+     * Params: staff_id_code (6-digit), gate_id
+     */
+    public function gateStaffCheckout(Request $request)
+    {
+        $request->validate([
+            'staff_id_code' => 'required|string',
+            'gate_id'       => 'nullable',
+        ]);
+
+        $staff = Staff::where('staff_id', $request->staff_id_code)->first();
+        if (!$staff) return response()->json(['error' => 'Invalid Staff ID'], 404);
+
+        $today = date('Y-m-d');
+
+        $log = StaffAttendance::where('staff_id', $staff->id)
+            ->where('date', $today)
+            ->first();
+
+        if (!$log || !$log->entry_time) {
+            return response()->json(['error' => 'No active gate check-in found for today.'], 422);
+        }
+
+        if ($log->exit_time) {
+            return response()->json([
+                'error'     => 'Staff has already checked out from the gate.',
+                'exit_time' => Carbon::parse($log->exit_time)->format('h:i A'),
+            ], 422);
+        }
+
+        $log->exit_time = now();
+        if ($request->filled('gate_id')) {
+            $log->gate_id = $request->gate_id;
+        }
+        $log->save();
+
+        return response()->json([
+            'success'   => true,
+            'message'   => 'Staff checked out from gate successfully.',
+            'exit_time' => Carbon::parse($log->exit_time)->format('h:i A'),
+        ], 200);
+    }
+
+    /**
+     * List all staff currently inside the building (gate entry, no gate exit today).
+     * GET /api/gate-staff-inside
+     */
+    public function getStaffInsideBuilding(Request $request)
+    {
+        // Resolve building_id from guard's gate context
+        $user = Auth::user();
+        $buildingId = $user->selected_building_id ?? $user->building_id ?? null;
+
+        // Alternatively, accept building_id from query param for flexibility
+        if ($request->filled('building_id')) {
+            $buildingId = $request->building_id;
+        }
+
+        $today = date('Y-m-d');
+
+        // All gate logs for today where entry exists but no exit yet
+        $insideLogs = StaffAttendance::with([
+                'staff' => function ($q) {
+                    $q->with(['tags' => function ($tq) {
+                        $tq->where('status', 'Active')->with('flat.block');
+                    }]);
+                }
+            ])
+            ->where('date', $today)
+            ->whereNotNull('entry_time')
+            ->whereNull('exit_time')
+            ->when($buildingId, fn($q) => $q->where('building_id', $buildingId))
+            ->get();
+
+        $result = $insideLogs->map(function ($log) {
+            $staff = $log->staff;
+            if (!$staff) return null;
+
+            $staffData = [
+                'id'           => $staff->id,
+                'name'         => $staff->name,
+                'staff_id'     => $staff->staff_id,
+                'type'         => $staff->type,
+                'phone'        => $staff->phone,
+                'photo_url'    => $staff->photo_url,
+                'entry_time'   => $log->entry_time
+                    ? Carbon::parse($log->entry_time)->format('h:i A') : null,
+                'assigned_flats' => $staff->tags->map(function ($tag) {
+                    $flat = $tag->flat;
+                    if (!$flat) return null;
+                    return [
+                        'id'          => $flat->id,
+                        'flat_number' => $flat->flat_number ?? $flat->name ?? $flat->id,
+                        'block'       => optional($flat->block)->name,
+                    ];
+                })->filter()->values(),
+            ];
+
+            return $staffData;
+        })->filter()->values();
+
+        return response()->json([
+            'count' => $result->count(),
+            'staff' => $result,
+        ], 200);
     }
 
     public function flatStaffCheckInOut(Request $request)

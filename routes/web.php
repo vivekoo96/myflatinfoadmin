@@ -369,6 +369,7 @@ Route::middleware('admin')->group(function () {
             Route::get('/', [StaffController::class, 'index'])->name('index');
             // NOTE: /create must be declared before /{staff} so it isn't captured as a param.
             Route::get('/pending', [StaffController::class, 'pending'])->name('pending');
+            Route::get('/attendance-logs', [StaffController::class, 'attendanceLogs'])->name('attendance-logs');
             Route::post('/{staff}/approve', [StaffController::class, 'approve'])->name('approve');
             Route::post('/{staff}/reject', [StaffController::class, 'reject'])->name('reject');
             Route::get('/create', [StaffController::class, 'create'])->name('create');
@@ -380,6 +381,7 @@ Route::middleware('admin')->group(function () {
             Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
             Route::delete('/{staff}', [StaffController::class, 'destroy'])->name('destroy');
         });
+
 
         Route::prefix('attendance')->name('admin.attendance.')->group(function () {
             Route::get('/', [AttendanceController::class, 'index'])->name('index');

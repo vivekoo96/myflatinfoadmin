@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Staff;
 use App\Models\StaffTag;
+use App\Models\StaffAttendance;
+use App\Models\StaffFlatAttendance;
 use App\Models\Building;
 use App\Models\User;
 use App\Models\BuildingUser;
@@ -12,6 +14,8 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
+
 
 class StaffController extends Controller
 {
@@ -338,4 +342,104 @@ class StaffController extends Controller
 
         return response()->json(['success' => true, 'type' => $type->name]);
     }
+
+    /**
+     * Show admin attendance log page.
+     * Step 1: Select staff (includes deleted/inactive).
+     * Step 2: Select date.
+     * Step 3: See full gate + flat check-in/out details.
+     * GET /staff/attendance-logs
+     */
+    public function attendanceLogs(Request $request)
+    {
+        if (Auth::User()->role == 'BA' || (Auth::User()->selectedRole && Auth::User()->selectedRole->name == 'President') || Auth::User()->hasPermission('custom.staff_attendance')) {
+            // Access granted
+        } else {
+            return redirect('permission-denied')->with('error', 'Permission denied!');
+        }
+
+        $buildingId = Auth::user()->building_id;
+
+        // ALL staff for this building — including inactive (no SoftDeletes on Staff model).
+        $allStaff = Staff::where('building_id', $buildingId)
+            ->orderBy('name')
+            ->get(['id', 'name', 'staff_id', 'type', 'status', 'photo']);
+
+        $selectedStaffId = $request->get('staff_id');
+        $selectedDate    = $request->get('date', date('Y-m-d'));
+
+        $gateLog      = null;
+        $flatSessions = collect();
+        $staff        = null;
+
+        if ($selectedStaffId) {
+            $staff = Staff::where('building_id', $buildingId)->find($selectedStaffId);
+
+            if ($staff) {
+                // Gate-level log for this date
+                $gateLog = StaffAttendance::where('staff_id', $staff->id)
+                    ->where('date', $selectedDate)
+                    ->first();
+
+                // All flat sessions for this date, eager-load flat + block
+                $rawSessions = StaffFlatAttendance::where('staff_id', $staff->id)
+                    ->where('date', $selectedDate)
+                    ->with('flat.block')
+                    ->orderBy('check_in_time')
+                    ->get();
+
+                // Group by flat_id, calculate durations
+                $flatSessions = $rawSessions->groupBy('flat_id')->map(function ($sessions, $flatId) {
+                    $first   = $sessions->first();
+                    $flat    = $first->flat;
+                    $block   = optional($flat?->block)->name;
+                    $flatNum = $flat?->flat_number ?? $flat?->name ?? "Flat #{$flatId}";
+
+                    $sessionDetails = $sessions->map(function ($s) {
+                        $inTime  = $s->check_in_time  ? Carbon::parse($s->check_in_time)  : null;
+                        $outTime = $s->check_out_time ? Carbon::parse($s->check_out_time) : null;
+
+                        $duration = null;
+                        if ($inTime && $outTime) {
+                            $mins     = $inTime->diffInMinutes($outTime);
+                            $h        = floor($mins / 60);
+                            $m        = $mins % 60;
+                            $duration = $h > 0 ? "{$h}h {$m}m" : "{$m}m";
+                        }
+
+                        return [
+                            'check_in_time'  => $inTime  ? $inTime->format('h:i A')  : null,
+                            'check_out_time' => $outTime ? $outTime->format('h:i A') : null,
+                            'duration'       => $duration,
+                            'is_open'        => $inTime && !$outTime,
+                        ];
+                    });
+
+                    $totalMinutes = $sessions->sum(function ($s) {
+                        if ($s->check_in_time && $s->check_out_time) {
+                            return Carbon::parse($s->check_in_time)->diffInMinutes(Carbon::parse($s->check_out_time));
+                        }
+                        return 0;
+                    });
+
+                    $th = floor($totalMinutes / 60);
+                    $tm = $totalMinutes % 60;
+
+                    return [
+                        'flat_id'        => $flatId,
+                        'flat_number'    => $flatNum,
+                        'block'          => $block,
+                        'sessions'       => $sessionDetails,
+                        'total_duration' => $th > 0 ? "{$th}h {$tm}m" : "{$tm}m",
+                        'total_minutes'  => $totalMinutes,
+                    ];
+                })->values();
+            }
+        }
+
+        return view('admin.staff.attendance_logs', compact(
+            'allStaff', 'selectedStaffId', 'selectedDate', 'staff', 'gateLog', 'flatSessions'
+        ));
+    }
 }
+

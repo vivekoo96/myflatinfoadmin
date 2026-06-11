@@ -268,6 +268,13 @@ use App\Http\Controllers\Api\MoveInOutApiController;
             Route::post('gate-staff-punch', [App\Http\Controllers\Api\StaffApiController::class, 'gateStaffPunch']);
             Route::post('verify-staff-code', [App\Http\Controllers\Api\StaffApiController::class, 'verifyStaffCode']);
 
+            // Gate Staff Check-In / Check-Out (by security — gate level only)
+            Route::post('gate-staff-checkin', [App\Http\Controllers\Api\StaffApiController::class, 'gateStaffCheckin']);
+            Route::post('gate-staff-checkout', [App\Http\Controllers\Api\StaffApiController::class, 'gateStaffCheckout']);
+            Route::get('gate-staff-inside', [App\Http\Controllers\Api\StaffApiController::class, 'getStaffInsideBuilding']);
+
+
+
         });
 
         // Guard Patrol Check-in API (accessible to any authenticated user with building_id)

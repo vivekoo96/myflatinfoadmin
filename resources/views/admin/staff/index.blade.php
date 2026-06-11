@@ -29,6 +29,7 @@
               <div class="card-header">
                 <h3 class="card-title">All Staff</h3>
                 <div class="card-tools">
+                   <a href="{{ route('admin.staff.attendance-logs') }}" class="btn btn-sm btn-info mr-2"><i class="fas fa-clipboard-list"></i> Attendance Logs</a>
                    <a href="{{ route('admin.staff.pending') }}" class="btn btn-sm btn-warning mr-2"><i class="fa fa-clock"></i> View Pending Approvals</a>
                    <a href="{{ route('admin.staff.create') }}" class="btn btn-sm btn-success"><i class="fa fa-plus"></i> Register Domestic Staff</a>
                 </div>
