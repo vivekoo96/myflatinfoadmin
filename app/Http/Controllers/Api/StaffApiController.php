@@ -370,33 +370,9 @@ class StaffApiController extends Controller
             ->with('flat.block')
             ->get();
 
-        $assignedFlats = $tags->map(function ($tag) use ($staff, $today) {
+        $assignedFlats = $tags->map(function ($tag) {
             $flat = $tag->flat;
             if (!$flat) return null;
-
-            // Latest flat-level session today
-            $latestSession = StaffFlatAttendance::where('staff_id', $staff->id)
-                ->where('flat_id', $flat->id)
-                ->where('date', $today)
-                ->latest('id')
-                ->first();
-
-            $flatStatus = 'not_visited';
-            $checkInTime = null;
-            $checkOutTime = null;
-
-            if ($latestSession) {
-                $checkInTime = $latestSession->check_in_time
-                    ? Carbon::parse($latestSession->check_in_time)->format('h:i A') : null;
-                $checkOutTime = $latestSession->check_out_time
-                    ? Carbon::parse($latestSession->check_out_time)->format('h:i A') : null;
-
-                if ($latestSession->check_in_time && !$latestSession->check_out_time) {
-                    $flatStatus = 'checked_in';
-                } elseif ($latestSession->check_out_time) {
-                    $flatStatus = 'checked_out';
-                }
-            }
 
             return [
                 'id'              => $flat->id,
@@ -404,11 +380,9 @@ class StaffApiController extends Controller
                 'block'           => optional($flat->block)->name,
                 'engagement_type' => $tag->engagement_type,
                 'time_slot'       => $tag->time_slot,
-                'today_check_in'  => $checkInTime,
-                'today_check_out' => $checkOutTime,
-                'today_status'    => $flatStatus,
             ];
         })->filter()->values();
+
 
         // Build safe staff response with photo URL
         $staffData = $staff->toArray();
