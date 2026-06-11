@@ -139,8 +139,8 @@ class StaffController extends Controller
         if (!$staff->creator_id) return;
 
         $title = $decision === 'approved'
-            ? '✅ Staff Request Approved'
-            : '❌ Staff Request Rejected';
+            ? 'Staff Request Approved'
+            : 'Staff Request Rejected';
 
         $body = $decision === 'approved'
             ? "Your request to add {$staff->name} ({$staff->type}) has been approved by the building admin."
