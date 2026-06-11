@@ -11,6 +11,7 @@ use App\Models\Building;
 use App\Models\User;
 use App\Models\BuildingUser;
 use App\Models\Role;
+use App\Helpers\NotificationHelper2;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -112,6 +113,10 @@ class StaffController extends Controller
     {
         $staff->approval_status = 'Approved';
         $staff->save();
+
+        // Notify the user who registered this staff
+        $this->notifyStaffRequestor($staff, 'approved');
+
         return redirect()->back()->with('success', 'Staff member approved successfully.');
     }
 
@@ -119,7 +124,40 @@ class StaffController extends Controller
     {
         $staff->approval_status = 'Rejected';
         $staff->save();
+
+        // Notify the user who registered this staff
+        $this->notifyStaffRequestor($staff, 'rejected');
+
         return redirect()->back()->with('success', 'Staff member rejected successfully.');
+    }
+
+    /**
+     * Send a push notification to the user who registered the staff member.
+     */
+    private function notifyStaffRequestor(Staff $staff, string $decision): void
+    {
+        if (!$staff->creator_id) return;
+
+        $title = $decision === 'approved'
+            ? '✅ Staff Request Approved'
+            : '❌ Staff Request Rejected';
+
+        $body = $decision === 'approved'
+            ? "Your request to add {$staff->name} ({$staff->type}) has been approved by the building admin."
+            : "Your request to add {$staff->name} ({$staff->type}) has been rejected by the building admin.";
+
+        NotificationHelper2::sendNotification(
+            (int) $staff->creator_id,
+            $title,
+            $body,
+            ['type' => 'staff_approval', 'staff_id' => (string) $staff->id],
+            [
+                'type'        => 'staff_approval',
+                'building_id' => $staff->building_id,
+                'save_to_db'  => true,
+            ],
+            ['user']   // target the resident/user app
+        );
     }
 
     public function show(Staff $staff)
