@@ -264,13 +264,9 @@ use App\Http\Controllers\Api\MoveInOutApiController;
             Route::post('move-in-out-submit', [MoveInOutApiController::class, 'submit_entry']);
             Route::post('get-security-requests', [MoveInOutApiController::class, 'get_security_requests']);
 
-            // Gate Staff Attendance
+            // Gate Staff Attendance — single smart punch endpoint
             Route::post('gate-staff-punch', [App\Http\Controllers\Api\StaffApiController::class, 'gateStaffPunch']);
             Route::post('verify-staff-code', [App\Http\Controllers\Api\StaffApiController::class, 'verifyStaffCode']);
-
-            // Gate Staff Check-In / Check-Out (by security — gate level only)
-            Route::post('gate-staff-checkin', [App\Http\Controllers\Api\StaffApiController::class, 'gateStaffCheckin']);
-            Route::post('gate-staff-checkout', [App\Http\Controllers\Api\StaffApiController::class, 'gateStaffCheckout']);
             Route::get('gate-staff-inside', [App\Http\Controllers\Api\StaffApiController::class, 'getStaffInsideBuilding']);
 
 

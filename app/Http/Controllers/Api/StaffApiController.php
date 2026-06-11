@@ -331,38 +331,6 @@ class StaffApiController extends Controller
         return response()->json(['history' => $history], 200);
     }
 
-    // --- Security Gate Endpoints ---
-
-    public function gateStaffPunch(Request $request)
-    {
-        $request->validate([
-            'staff_id_code' => 'required|string', // 6-digit code
-            'gate_id' => 'required',
-            'action' => 'required|in:entry,exit',
-        ]);
-
-        $staff = Staff::where('staff_id', $request->staff_id_code)->first();
-        if (!$staff) return response()->json(['error' => 'Invalid Staff ID'], 404);
-
-        $today = date('Y-m-d');
-        
-        $log = StaffAttendance::firstOrNew(['staff_id' => $staff->id, 'date' => $today]);
-        $log->building_id = $staff->building_id;
-        $log->gate_id = $request->gate_id;
-        $log->source = 'gate';
-        $log->marked_by = Auth::id();
-        
-        if ($request->action == 'entry') {
-            $log->entry_time = now();
-            $log->status = 'Present';
-        } else {
-            $log->exit_time = now();
-        }
-        
-        $log->save();
-
-        return response()->json(['msg' => 'Punch recorded successfully', 'staff' => $staff], 200);
-    }
 
     public function verifyStaffCode(Request $request)
     {
@@ -456,11 +424,17 @@ class StaffApiController extends Controller
     }
 
     /**
-     * Gate-level check-in: records staff entry at the main gate.
-     * POST /api/gate-staff-checkin
-     * Params: staff_id_code (6-digit), gate_id
+     * Smart gate punch — single endpoint for check-in AND check-out.
+     * POST /api/gate-staff-punch
+     *
+     * Auto-detects what to do based on today's log:
+     *   - No log today              → CHECK IN  (first entry)
+     *   - Checked in, not out yet   → CHECK OUT (exit)
+     *   - Checked out already       → CHECK IN  (re-entry, clears exit)
+     *
+     * Params: staff_id_code (6-digit required), gate_id (optional)
      */
-    public function gateStaffCheckin(Request $request)
+    public function gateStaffPunch(Request $request)
     {
         $request->validate([
             'staff_id_code' => 'required|string',
@@ -472,83 +446,66 @@ class StaffApiController extends Controller
 
         $today = date('Y-m-d');
 
-        // Find existing log or create new one
         $log = StaffAttendance::firstOrNew(
             ['staff_id' => $staff->id, 'date' => $today]
         );
 
-        // Prevent double check-in if already inside
-        if ($log->exists && $log->entry_time && !$log->exit_time) {
-            return response()->json([
-                'error'      => 'Staff is already checked in at the gate.',
-                'entry_time' => Carbon::parse($log->entry_time)->format('h:i A'),
-            ], 422);
+        // Determine action automatically
+        if (!$log->exists || !$log->entry_time) {
+            // No entry today → Check In
+            $action = 'checked_in';
+            $log->building_id = $staff->building_id;
+            $log->source      = 'gate';
+            $log->marked_by   = Auth::id();
+            $log->entry_time  = now();
+            $log->exit_time   = null;
+            $log->status      = 'Present';
+            if ($request->filled('gate_id')) {
+                $log->gate_id = $request->gate_id;
+            }
+            $message = 'Staff checked in at gate successfully.';
+            $timeKey = 'entry_time';
+            $timeVal = Carbon::parse($log->entry_time)->format('h:i A');
+
+        } elseif ($log->entry_time && !$log->exit_time) {
+            // Inside → Check Out
+            $action = 'checked_out';
+            $log->exit_time = now();
+            if ($request->filled('gate_id')) {
+                $log->gate_id = $request->gate_id;
+            }
+            $message = 'Staff checked out from gate successfully.';
+            $timeKey = 'exit_time';
+            $timeVal = Carbon::parse($log->exit_time)->format('h:i A');
+
+        } else {
+            // Already checked out → Re-entry (new visit)
+            $action = 'checked_in';
+            $log->building_id = $staff->building_id;
+            $log->source      = 'gate';
+            $log->marked_by   = Auth::id();
+            $log->entry_time  = now();
+            $log->exit_time   = null;
+            $log->status      = 'Present';
+            if ($request->filled('gate_id')) {
+                $log->gate_id = $request->gate_id;
+            }
+            $message = 'Staff re-entered gate (new visit recorded).';
+            $timeKey = 'entry_time';
+            $timeVal = Carbon::parse($log->entry_time)->format('h:i A');
         }
 
-        $log->building_id = $staff->building_id;
-        if ($request->filled('gate_id')) {
-            $log->gate_id = $request->gate_id;
-        }
-        $log->source      = 'gate';
-        $log->marked_by   = Auth::id();
-        $log->entry_time  = now();
-        $log->exit_time   = null;
-        $log->status      = 'Present';
         $log->save();
 
         $staffData = $staff->toArray();
         $staffData['photo_url'] = $staff->photo_url;
 
         return response()->json([
-            'success'    => true,
-            'message'    => 'Staff checked in at gate successfully.',
-            'entry_time' => Carbon::parse($log->entry_time)->format('h:i A'),
-            'staff'      => $staffData,
-        ], 200);
-    }
-
-    /**
-     * Gate-level check-out: records staff exit from the main gate.
-     * POST /api/gate-staff-checkout
-     * Params: staff_id_code (6-digit), gate_id
-     */
-    public function gateStaffCheckout(Request $request)
-    {
-        $request->validate([
-            'staff_id_code' => 'required|string',
-            'gate_id'       => 'nullable',
-        ]);
-
-        $staff = Staff::where('staff_id', $request->staff_id_code)->first();
-        if (!$staff) return response()->json(['error' => 'Invalid Staff ID'], 404);
-
-        $today = date('Y-m-d');
-
-        $log = StaffAttendance::where('staff_id', $staff->id)
-            ->where('date', $today)
-            ->first();
-
-        if (!$log || !$log->entry_time) {
-            return response()->json(['error' => 'No active gate check-in found for today.'], 422);
-        }
-
-        if ($log->exit_time) {
-            return response()->json([
-                'error'     => 'Staff has already checked out from the gate.',
-                'exit_time' => Carbon::parse($log->exit_time)->format('h:i A'),
-            ], 422);
-        }
-
-        $log->exit_time = now();
-        if ($request->filled('gate_id')) {
-            $log->gate_id = $request->gate_id;
-        }
-        $log->save();
-
-        return response()->json([
-            'success'   => true,
-            'message'   => 'Staff checked out from gate successfully.',
-            'exit_time' => Carbon::parse($log->exit_time)->format('h:i A'),
+            'success'     => true,
+            'action'      => $action,         // 'checked_in' | 'checked_out'
+            'message'     => $message,
+            $timeKey      => $timeVal,
+            'staff'       => $staffData,
         ], 200);
     }
 
