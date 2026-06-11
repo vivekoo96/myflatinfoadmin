@@ -464,7 +464,7 @@ class StaffApiController extends Controller
     {
         $request->validate([
             'staff_id_code' => 'required|string',
-            'gate_id'       => 'required',
+            'gate_id'       => 'nullable',
         ]);
 
         $staff = Staff::where('staff_id', $request->staff_id_code)->first();
@@ -486,11 +486,13 @@ class StaffApiController extends Controller
         }
 
         $log->building_id = $staff->building_id;
-        $log->gate_id     = $request->gate_id;
+        if ($request->filled('gate_id')) {
+            $log->gate_id = $request->gate_id;
+        }
         $log->source      = 'gate';
         $log->marked_by   = Auth::id();
         $log->entry_time  = now();
-        $log->exit_time   = null;  // reset exit if re-entering
+        $log->exit_time   = null;
         $log->status      = 'Present';
         $log->save();
 

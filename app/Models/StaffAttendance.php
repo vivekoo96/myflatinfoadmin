@@ -19,6 +19,8 @@ class StaffAttendance extends Model
         'entry_time',
         'exit_time',
         'status',
+        'marked_by',
+        'source',
     ];
 
     public function staff()
