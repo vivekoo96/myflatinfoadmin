@@ -23,7 +23,7 @@ class AttendanceController extends Controller
         $date = $request->get('date', date('Y-m-d'));
         $query = Staff::where('building_id', Auth::user()->building_id)
             ->with(['attendanceLogs' => function($q) use ($date) {
-                $q->where('date', $date);
+                $q->where('date', $date)->with('flatAttendances');
             }]);
 
         if ($request->has('category')) {

@@ -61,7 +61,17 @@
                                 <td>{{ $log && $log->exit_time ? \Carbon\Carbon::parse($log->exit_time)->format('h:i A') : '-' }}</td>
                                 <td>
                                     @if($log)
-                                        <span class="badge badge-info">{{ $log->flatAttendances->count() }} flats</span>
+                                        @php
+                                            $distinctFlats = $log->flatAttendances->unique('flat_id');
+                                            $flatCount = $distinctFlats->count();
+                                        @endphp
+                                        @if($flatCount > 0)
+                                            <span class="badge badge-info" title="{{ $distinctFlats->pluck('flat_id')->implode(', ') }}">
+                                                {{ $flatCount }} {{ $flatCount == 1 ? 'flat' : 'flats' }}
+                                            </span>
+                                        @else
+                                            -
+                                        @endif
                                     @else
                                         -
                                     @endif
