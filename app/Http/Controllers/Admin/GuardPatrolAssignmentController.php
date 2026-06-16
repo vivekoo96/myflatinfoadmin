@@ -34,23 +34,21 @@ class GuardPatrolAssignmentController extends Controller
             $guards = $buildingUsers->pluck('user', 'user_id');
         }
 
-        // Get active locations and shifts
-        $locations = PatrolLocation::where('building_id', $building->id)
-            ->where('status', 'Active')
-            ->get();
+        // Get gates for this building
+        $gates = \App\Models\Gate::where('building_id', $building->id)->get();
 
+        // Get active shifts
         $shifts = BuildingShift::where('building_id', $building->id)
-            ->where('status', 'Active')
             ->orderBy('start_time')
             ->get();
 
         // Get all assignments
         $assignments = GuardPatrolAssignment::where('building_id', $building->id)
-            ->with(['guardUser', 'patrolLocation', 'buildingShift'])
+            ->with(['guardUser', 'buildingShift', 'gate'])
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->get();
 
-        return view('admin.patrol_assignments.index', compact('assignments', 'guards', 'locations', 'shifts', 'building'));
+        return view('admin.patrol_assignments.index', compact('assignments', 'guards', 'gates', 'shifts', 'building'));
     }
 
     public function store(Request $request)

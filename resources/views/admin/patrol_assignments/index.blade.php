@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('title')
-    Patrol Assignments
+    Guard Assignments
 @endsection
 
 @section('content')
@@ -10,12 +10,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>🔐 Patrol Assignment Management</h1>
+            <h1>👮 Guard Assignments</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="#">Home</a></li>
-              <li class="breadcrumb-item active">Assignments</li>
+              <li class="breadcrumb-item active">Guard Assignments</li>
             </ol>
           </div>
         </div>
@@ -43,7 +43,7 @@
           <div class="col-md-6">
             <div class="card card-primary">
               <div class="card-header with-border">
-                <h3 class="card-title"><i class="fas fa-user-plus"></i> Assign / Reassign Guard</h3>
+                <h3 class="card-title"><i class="fas fa-user-plus"></i> Assign Guard to Gate & Shift</h3>
               </div>
               <form action="{{ route('patrol-assignment.store') }}" method="post">
                 @csrf
@@ -61,13 +61,13 @@
                   </div>
 
                   <div class="form-group">
-                    <label>Patrol Location <span class="text-danger">*</span></label>
-                    <select name="patrol_location_id" id="patrol_location_id" class="form-control" required>
-                      <option value="">-- Select Location --</option>
-                      @forelse($locations as $location)
-                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                    <label>Gate <span class="text-danger">*</span></label>
+                    <select name="gate_id" id="gate_id" class="form-control" required>
+                      <option value="">-- Select Gate --</option>
+                      @forelse($gates as $gate)
+                        <option value="{{ $gate->id }}">{{ $gate->name }}</option>
                       @empty
-                        <option disabled>No locations available</option>
+                        <option disabled>No gates available</option>
                       @endforelse
                     </select>
                   </div>
@@ -86,7 +86,7 @@
 
                   <div class="form-group">
                     <label>Notes</label>
-                    <textarea name="notes" id="notes" class="form-control" maxlength="255" placeholder="Optional notes (e.g., Special instructions, checkpoint details)"></textarea>
+                    <textarea name="notes" id="notes" class="form-control" maxlength="255" placeholder="Optional notes"></textarea>
                   </div>
 
                   <div class="form-group">
@@ -107,7 +107,7 @@
             </div>
           </div>
 
-          <!-- Current Assignments Card -->
+          <!-- Active Assignments Card -->
           <div class="col-md-6">
             <div class="card card-info">
               <div class="card-header with-border">
@@ -120,7 +120,7 @@
                     <div>
                       <strong>{{ $assignment->guardUser->name ?? $assignment->guardUser->first_name }}</strong><br>
                       <small style="color: #666;">
-                        📍 {{ $assignment->patrolLocation->name ?? '-' }}<br>
+                        🚪 {{ $assignment->gate->name ?? '-' }}<br>
                         🕐 {{ $assignment->buildingShift->name ?? '-' }} ({{ $assignment->buildingShift->start_time ?? '' }} - {{ $assignment->buildingShift->end_time ?? '' }})<br>
                         @if($assignment->notes)
                           📝 {{ $assignment->notes }}
@@ -131,14 +131,14 @@
                       <button type="button" class="btn btn-xs btn-warning edit-assignment"
                         data-id="{{ $assignment->id }}"
                         data-guard_user_id="{{ $assignment->guard_user_id }}"
-                        data-patrol_location_id="{{ $assignment->patrol_location_id }}"
+                        data-gate_id="{{ $assignment->gate_id }}"
                         data-building_shift_id="{{ $assignment->building_shift_id }}"
                         data-notes="{{ $assignment->notes }}"
                         data-status="{{ $assignment->status }}">
-                        ✏️ Edit
+                        ✏️
                       </button>
                       <button type="button" class="btn btn-xs btn-danger delete-assignment" data-id="{{ $assignment->id }}">
-                        🗑️ Delete
+                        🗑️
                       </button>
                     </div>
                   </div>
@@ -151,7 +151,7 @@
           </div>
         </div>
 
-        <!-- Analysis Section -->
+        <!-- Assignment Summary -->
         <div class="row mt-4">
           <div class="col-md-12">
             <div class="card card-success">
@@ -164,10 +164,10 @@
                     $summary = [];
                     foreach($assignments as $a) {
                       $shift = $a->buildingShift->name ?? 'Unknown';
-                      $location = $a->patrolLocation->name ?? 'Unknown';
+                      $gate = $a->gate->name ?? 'Unknown';
                       if(!isset($summary[$shift])) $summary[$shift] = [];
-                      if(!isset($summary[$shift][$location])) $summary[$shift][$location] = 0;
-                      $summary[$shift][$location]++;
+                      if(!isset($summary[$shift][$gate])) $summary[$shift][$gate] = 0;
+                      $summary[$shift][$gate]++;
                     }
                   @endphp
 
@@ -176,16 +176,16 @@
                       <p style="color: #999; text-align: center;">No assignment data to display</p>
                     </div>
                   @else
-                    @foreach($summary as $shift => $locations)
+                    @foreach($summary as $shift => $gates)
                     <div class="col-md-6 mb-4">
                       <div style="border-left: 4px solid #007bff; padding: 15px; background: #f8f9fa; border-radius: 4px;">
                         <h5 style="margin: 0 0 10px 0;">
                           <i class="fas fa-clock"></i> {{ $shift }}
                         </h5>
                         <ul style="margin: 0; padding-left: 20px;">
-                          @foreach($locations as $location => $count)
+                          @foreach($gates as $gate => $count)
                             <li>
-                              <strong>{{ $count }}</strong> guard{{ $count > 1 ? 's' : '' }} at <strong>{{ $location }}</strong>
+                              <strong>{{ $count }}</strong> guard{{ $count > 1 ? 's' : '' }} at <strong>{{ $gate }}</strong>
                             </li>
                           @endforeach
                         </ul>
@@ -213,7 +213,7 @@
                       <tr>
                         <th>S No</th>
                         <th>Guard</th>
-                        <th>Location</th>
+                        <th>Gate</th>
                         <th>Shift</th>
                         <th>Notes</th>
                         <th>Status</th>
@@ -225,7 +225,7 @@
                       <tr>
                         <td>{{ $i + 1 }}</td>
                         <td>{{ $assignment->guardUser->name ?? ($assignment->guardUser->first_name ?? '-') }}</td>
-                        <td>{{ $assignment->patrolLocation->name ?? '-' }}</td>
+                        <td>{{ $assignment->gate->name ?? '-' }}</td>
                         <td>
                           {{ $assignment->buildingShift->name ?? '-' }}<br>
                           <small style="color: #999;">{{ $assignment->buildingShift->start_time ?? '' }} - {{ $assignment->buildingShift->end_time ?? '' }}</small>
@@ -240,7 +240,7 @@
                           <button class="btn btn-sm btn-warning edit-assignment"
                             data-id="{{ $assignment->id }}"
                             data-guard_user_id="{{ $assignment->guard_user_id }}"
-                            data-patrol_location_id="{{ $assignment->patrol_location_id }}"
+                            data-gate_id="{{ $assignment->gate_id }}"
                             data-building_shift_id="{{ $assignment->building_shift_id }}"
                             data-notes="{{ $assignment->notes }}"
                             data-status="{{ $assignment->status }}">
@@ -275,15 +275,13 @@
     // Edit Assignment
     $(document).on('click', '.edit-assignment', function(){
         $('html, body').animate({ scrollTop: 0 }, 500);
-
         var id = $(this).data('id');
         $('#assignment_id').val(id);
         $('#guard_user_id').val($(this).data('guard_user_id'));
-        $('#patrol_location_id').val($(this).data('patrol_location_id'));
+        $('#gate_id').val($(this).data('gate_id'));
         $('#building_shift_id').val($(this).data('building_shift_id'));
         $('#notes').val($(this).data('notes'));
         $('#status').val($(this).data('status') || 'Active');
-
         $('#submit-btn').text('Update Assignment');
         $('#cancel-btn').show();
     });
@@ -299,8 +297,7 @@
     // Delete Assignment
     $(document).on('click', '.delete-assignment', function(){
         var id = $(this).data('id');
-        if (!confirm('Are you sure you want to remove this assignment? Guard will be notified.')) return;
-
+        if (!confirm('Are you sure you want to remove this assignment?')) return;
         $.ajax({
             url: '{{ route("patrol-assignment.destroy", "") }}/' + id,
             type: 'DELETE',
