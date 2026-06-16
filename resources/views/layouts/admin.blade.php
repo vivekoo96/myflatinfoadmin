@@ -1006,6 +1006,12 @@
               <p>Shifts</p>
             </a>
           </li>
+           <li class="nav-item">
+            <a href="{{ route('patrol-assignment.index') }}" class="nav-link {{ request()->is('patrol-assignment*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-user-shield"></i>
+              <p>Guard Assignments</p>
+            </a>
+          </li>
                    <li class="nav-item">
             <a href="{{url('guard')}}" class="nav-link {{ request()->is('guard*') ? 'active' : '' }} {{ getAccessControl($hasSecurityGuardAccess && $hasStaffFeature) }}">
               <i class="nav-icon fa fa-shield"></i>
@@ -1026,12 +1032,7 @@
             </a>
           </li>
          
-          <li class="nav-item">
-            <a href="{{ route('patrol-assignment.index') }}" class="nav-link {{ request()->is('patrol-assignment*') ? 'active' : '' }}">
-              <i class="nav-icon fas fa-user-shield"></i>
-              <p>Guard Assignments</p>
-            </a>
-          </li>
+         
           @endif
           <li class="nav-item">
             <a href="{{ route('guard-patrol.index') }}" class="nav-link {{ request()->is('guard-patrol') ? 'active' : '' }}">
