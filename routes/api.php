@@ -294,6 +294,13 @@ use App\Http\Controllers\Api\MoveInOutApiController;
         Route::get('duty-checkin-status',[App\Http\Controllers\Api\DutyCheckinController::class,'status']);
         Route::post('duty-checkin',[App\Http\Controllers\Api\DutyCheckinController::class,'checkin']);
 
+        // Guard Shift Lifecycle API
+        Route::get('guard/my-shift',                  [App\Http\Controllers\Api\GuardShiftController::class, 'myShift']);
+        Route::post('guard/shift-checkin',            [App\Http\Controllers\Api\GuardShiftController::class, 'shiftCheckin']);
+        Route::post('guard/handover/initiate',        [App\Http\Controllers\Api\GuardShiftController::class, 'initiateHandover']);
+        Route::post('guard/handover/incoming-confirm',[App\Http\Controllers\Api\GuardShiftController::class, 'incomingConfirm']);
+        Route::post('guard/handover/outgoing-confirm',[App\Http\Controllers\Api\GuardShiftController::class, 'outgoingConfirm']);
+
         // role route  //20nov2025 11:48
         Route::post('my-departments',[CustomerController::class,'my_departments']);
         Route::post('select-department',[CustomerController::class,'select_department']);

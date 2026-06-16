@@ -35,6 +35,27 @@
       <div class="container-fluid">
         <div class="row">
           <div class="col-12">
+
+            <!-- Tabs -->
+            <div class="card card-primary card-outline card-outline-tabs">
+              <div class="card-header p-0 border-bottom-0">
+                <ul class="nav nav-tabs" role="tablist">
+                  <li class="nav-item">
+                    <a class="nav-link active" href="{{ route('duty-checkin.index') }}">Duty Patrol Logs</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="{{ route('duty-checkin.shift-logs') }}">Shift Logs</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="{{ route('duty-checkin.handovers') }}">Handovers</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="{{ route('duty-checkin.attendance-report') }}">Attendance Report</a>
+                  </li>
+                </ul>
+              </div>
+              <div class="card-body">
+
             <!-- Settings Card -->
             @if(Auth::user()->role == 'BA')
             <div class="card card-primary card-outline">
@@ -175,7 +196,8 @@
                   {{ $checkins->links() }}
                 </div>
               </div>
-            </div>
+              </div> <!-- /.card-body (tabs) -->
+            </div> <!-- /.card (tabs) -->
           </div>
         </div>
       </div>

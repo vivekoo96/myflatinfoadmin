@@ -352,6 +352,10 @@ Route::middleware('admin')->group(function () {
         Route::get('/duty-checkins', [\App\Http\Controllers\Admin\DutyCheckinController::class, 'index'])->name('duty-checkin.index');
         Route::post('/duty-checkins/interval', [\App\Http\Controllers\Admin\DutyCheckinController::class, 'updateInterval'])->name('duty-checkin.interval');
         Route::delete('/patrol-assignment/{id}', [GuardPatrolAssignmentController::class, 'destroy'])->name('patrol-assignment.destroy');
+        // Guard Shift Lifecycle (admin views)
+        Route::get('/duty-checkins/shift-logs',        [\App\Http\Controllers\Admin\DutyCheckinController::class, 'shiftLogs'])->name('duty-checkin.shift-logs');
+        Route::get('/duty-checkins/handovers',         [\App\Http\Controllers\Admin\DutyCheckinController::class, 'handovers'])->name('duty-checkin.handovers');
+        Route::get('/duty-checkins/attendance-report', [\App\Http\Controllers\Admin\DutyCheckinController::class, 'attendanceReport'])->name('duty-checkin.attendance-report');
 
     // Delivery Entry Restriction
         Route::get('/delivery-restriction', [DeliveryRestrictionController::class, 'index'])->name('delivery-restriction.index');
