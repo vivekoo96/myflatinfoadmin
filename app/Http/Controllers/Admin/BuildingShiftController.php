@@ -81,6 +81,12 @@ class BuildingShiftController extends Controller
 
         $building = $user->building;
 
+        // Normalize times: strip seconds if the DB returned H:i:s format
+        $request->merge([
+            'start_time' => substr($request->start_time, 0, 5),
+            'end_time'   => substr($request->end_time, 0, 5),
+        ]);
+
         $rules = [
             'name' => 'required|string|max:100',
             'start_time' => 'required|date_format:H:i',

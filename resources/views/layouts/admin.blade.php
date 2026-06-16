@@ -1027,7 +1027,7 @@
           </li>
          
           <li class="nav-item">
-            <a href="{{ route('building-shift.index') }}" class="nav-link {{ request()->is('building-shift*') ? 'active' : '' }}">
+            <a href="{{ route('patrol-assignment.index') }}" class="nav-link {{ request()->is('patrol-assignment*') ? 'active' : '' }}">
               <i class="nav-icon fas fa-user-shield"></i>
               <p>Guard Assignments</p>
             </a>

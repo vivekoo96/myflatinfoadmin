@@ -353,7 +353,7 @@ Route::middleware('admin')->group(function () {
         Route::post('/duty-checkins/interval', [\App\Http\Controllers\Admin\DutyCheckinController::class, 'updateInterval'])->name('duty-checkin.interval');
         Route::delete('/patrol-assignment/{id}', [GuardPatrolAssignmentController::class, 'destroy'])->name('patrol-assignment.destroy');
 
-        // Delivery Entry Restriction
+    // Delivery Entry Restriction
         Route::get('/delivery-restriction', [DeliveryRestrictionController::class, 'index'])->name('delivery-restriction.index');
         Route::put('/delivery-restriction', [DeliveryRestrictionController::class, 'update'])->name('delivery-restriction.update');
 
