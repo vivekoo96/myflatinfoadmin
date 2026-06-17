@@ -422,18 +422,21 @@ class GuardShiftController extends Controller
 
     // ──────────────────────────────────────────────────────────────────────────
     // POST /api/guard/gate-shift-guards
-    // Returns the guards assigned to a specific gate and shift today
-    // Body: { gate_id, building_shift_id }
+    // Returns the guards assigned to the guard's current gate and shift today
     // ──────────────────────────────────────────────────────────────────────────
     public function gateShiftGuards(Request $request)
     {
-        $request->validate([
-            'gate_id'           => 'required|exists:gates,id',
-            'building_shift_id' => 'required|exists:building_shifts,id',
-        ]);
+        $user = Auth::user();
+        $currentAssignment = GuardPatrolAssignment::where('guard_user_id', $user->id)
+            ->where('status', 'Active')
+            ->first();
 
-        $assignments = GuardPatrolAssignment::where('gate_id', $request->gate_id)
-            ->where('building_shift_id', $request->building_shift_id)
+        if (!$currentAssignment) {
+            return response()->json(['success' => false, 'message' => 'No active assignment found for the current guard.'], 404);
+        }
+
+        $assignments = GuardPatrolAssignment::where('gate_id', $currentAssignment->gate_id)
+            ->where('building_shift_id', $currentAssignment->building_shift_id)
             ->where('status', 'Active')
             ->with(['guardUser'])
             ->get();
@@ -449,16 +452,20 @@ class GuardShiftController extends Controller
 
     // ──────────────────────────────────────────────────────────────────────────
     // POST /api/guard/gate-guards
-    // Returns the guards assigned to a specific gate today
-    // Body: { gate_id }
+    // Returns the guards assigned to the guard's current gate today
     // ──────────────────────────────────────────────────────────────────────────
     public function gateGuards(Request $request)
     {
-        $request->validate([
-            'gate_id' => 'required|exists:gates,id',
-        ]);
+        $user = Auth::user();
+        $currentAssignment = GuardPatrolAssignment::where('guard_user_id', $user->id)
+            ->where('status', 'Active')
+            ->first();
 
-        $assignments = GuardPatrolAssignment::where('gate_id', $request->gate_id)
+        if (!$currentAssignment) {
+            return response()->json(['success' => false, 'message' => 'No active assignment found for the current guard.'], 404);
+        }
+
+        $assignments = GuardPatrolAssignment::where('gate_id', $currentAssignment->gate_id)
             ->where('status', 'Active')
             ->with(['guardUser'])
             ->get();
@@ -474,16 +481,20 @@ class GuardShiftController extends Controller
 
     // ──────────────────────────────────────────────────────────────────────────
     // POST /api/guard/shift-guards
-    // Returns the guards assigned to a specific shift today
-    // Body: { building_shift_id }
+    // Returns the guards assigned to the guard's current shift today
     // ──────────────────────────────────────────────────────────────────────────
     public function shiftGuards(Request $request)
     {
-        $request->validate([
-            'building_shift_id' => 'required|exists:building_shifts,id',
-        ]);
+        $user = Auth::user();
+        $currentAssignment = GuardPatrolAssignment::where('guard_user_id', $user->id)
+            ->where('status', 'Active')
+            ->first();
 
-        $assignments = GuardPatrolAssignment::where('building_shift_id', $request->building_shift_id)
+        if (!$currentAssignment) {
+            return response()->json(['success' => false, 'message' => 'No active assignment found for the current guard.'], 404);
+        }
+
+        $assignments = GuardPatrolAssignment::where('building_shift_id', $currentAssignment->building_shift_id)
             ->where('status', 'Active')
             ->with(['guardUser'])
             ->get();
