@@ -10,27 +10,13 @@
       "request": {
         "method": "GET",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}",
-            "type": "text"
-          },
-          {
-            "key": "Accept",
-            "value": "application/json",
-            "type": "text"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Accept", "value": "application/json", "type": "text" }
         ],
         "url": {
           "raw": "{{base_url}}/api/guard/my-shift",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "guard",
-            "my-shift"
-          ]
+          "host": ["{{base_url}}"],
+          "path": ["api", "guard", "my-shift"]
         },
         "description": "Returns the guard's active assignment, their current shift log status (active, late, completed), and any pending handovers."
       },
@@ -41,36 +27,14 @@
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}",
-            "type": "text"
-          },
-          {
-            "key": "Accept",
-            "value": "application/json",
-            "type": "text"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Accept", "value": "application/json", "type": "text" }
         ],
-        "body": {
-          "mode": "raw",
-          "raw": "{}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
+        "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
         "url": {
           "raw": "{{base_url}}/api/guard/shift-checkin",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "guard",
-            "shift-checkin"
-          ]
+          "host": ["{{base_url}}"],
+          "path": ["api", "guard", "shift-checkin"]
         },
         "description": "Guard confirms shift start. Attendance begins. Automatically calculates if the guard is late based on the shift schedule."
       },
@@ -81,42 +45,19 @@
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}",
-            "type": "text"
-          },
-          {
-            "key": "Accept",
-            "value": "application/json",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Accept", "value": "application/json", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
         ],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"building_shift_id\": 1,\n  \"gate_id\": 1\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
+          "options": { "raw": { "language": "json" } }
         },
         "url": {
           "raw": "{{base_url}}/api/guard/handover/initiate",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "guard",
-            "handover",
-            "initiate"
-          ]
+          "host": ["{{base_url}}"],
+          "path": ["api", "guard", "handover", "initiate"]
         },
         "description": "Incoming guard arrives at the gate (allowed up to X minutes before shift start). Creates a pending handover record awaiting the outgoing guard."
       },
@@ -127,42 +68,19 @@
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}",
-            "type": "text"
-          },
-          {
-            "key": "Accept",
-            "value": "application/json",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Accept", "value": "application/json", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
         ],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"handover_id\": 1\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
+          "options": { "raw": { "language": "json" } }
         },
         "url": {
           "raw": "{{base_url}}/api/guard/handover/incoming-confirm",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "guard",
-            "handover",
-            "incoming-confirm"
-          ]
+          "host": ["{{base_url}}"],
+          "path": ["api", "guard", "handover", "incoming-confirm"]
         },
         "description": "Incoming guard confirms taking over the shift. Their attendance starts officially."
       },
@@ -173,44 +91,101 @@
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}",
-            "type": "text"
-          },
-          {
-            "key": "Accept",
-            "value": "application/json",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Accept", "value": "application/json", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
         ],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"handover_id\": 1\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
+          "options": { "raw": { "language": "json" } }
         },
         "url": {
           "raw": "{{base_url}}/api/guard/handover/outgoing-confirm",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "guard",
-            "handover",
-            "outgoing-confirm"
-          ]
+          "host": ["{{base_url}}"],
+          "path": ["api", "guard", "handover", "outgoing-confirm"]
         },
         "description": "Outgoing guard confirms handing over the shift. Their attendance ends, and their shift log is marked as completed."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Gate & Shift-Wise Guards",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Accept", "value": "application/json", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+        "url": {
+          "raw": "{{base_url}}/api/guard/gate-shift-guards",
+          "host": ["{{base_url}}"],
+          "path": ["api", "guard", "gate-shift-guards"]
+        },
+        "description": "Returns the guards assigned to the guard's current gate and shift today."
+      },
+      "response": []
+    },
+    {
+      "name": "7. Gate-Wise Guards",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Accept", "value": "application/json", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+        "url": {
+          "raw": "{{base_url}}/api/guard/gate-guards",
+          "host": ["{{base_url}}"],
+          "path": ["api", "guard", "gate-guards"]
+        },
+        "description": "Returns the guards assigned to the guard's current gate today."
+      },
+      "response": []
+    },
+    {
+      "name": "8. Shift-Wise Guards",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Accept", "value": "application/json", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+        "url": {
+          "raw": "{{base_url}}/api/guard/shift-guards",
+          "host": ["{{base_url}}"],
+          "path": ["api", "guard", "shift-guards"]
+        },
+        "description": "Returns the guards assigned to the guard's current shift today."
+      },
+      "response": []
+    },
+    {
+      "name": "9. Bulk Submit Takeover",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Accept", "value": "application/json", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"assignment_ids\": [1, 2]\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/guard/submit-takeover",
+          "host": ["{{base_url}}"],
+          "path": ["api", "guard", "submit-takeover"]
+        },
+        "description": "Bulk confirm shift start for selected assignments from the Shift Takeover UI."
       },
       "response": []
     }
@@ -218,27 +193,17 @@
   "event": [
     {
       "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          ""
-        ]
-      }
+      "script": { "type": "text/javascript", "exec": [""] }
     },
     {
       "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          ""
-        ]
-      }
+      "script": { "type": "text/javascript", "exec": [""] }
     }
   ],
   "variable": [
     {
       "key": "base_url",
-      "value": "http://myflatinfoadmin.test",
+      "value": "https://dev.buildingadmin.myflatinfo.com",
       "type": "string"
     },
     {

@@ -152,6 +152,73 @@ class GuardShiftController extends Controller
             'late_minutes' => $lateMinutes,
             'log_id'       => $log->id,
             'checked_in_at'=> $now->toDateTimeString(),
+            'shift_time'   => $shift->start_time,
+        ]);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // POST /api/guard/submit-takeover
+    // Bulk confirm shift start for selected assignments from the Shift Takeover UI
+    // Body: { assignment_ids: [1, 2] }
+    // ──────────────────────────────────────────────────────────────────────────
+    public function submitTakeover(Request $request)
+    {
+        $request->validate([
+            'assignment_ids'   => 'required|array',
+            'assignment_ids.*' => 'exists:guard_patrol_assignments,id',
+        ]);
+
+        $now = Carbon::now();
+        $today = Carbon::today()->toDateString();
+
+        $timelineAdditions = [];
+
+        foreach ($request->assignment_ids as $assignmentId) {
+            $assignment = GuardPatrolAssignment::with(['buildingShift', 'guardUser'])->find($assignmentId);
+            if (!$assignment || !$assignment->guardUser) continue;
+
+            $existing = GuardShiftLog::where('guard_user_id', $assignment->guard_user_id)
+                ->where('shift_date', $today)
+                ->where('assignment_id', $assignment->id)
+                ->first();
+
+            if ($existing) continue;
+
+            $shift = $assignment->buildingShift;
+            $shiftStart = $shift ? Carbon::parse($today . ' ' . $shift->start_time) : clone $now;
+            
+            $lateMinutes = max(0, (int) $shiftStart->diffInMinutes($now, false));
+            $status = $lateMinutes > 0 ? 'late' : 'active';
+
+            $log = GuardShiftLog::create([
+                'building_id'       => $assignment->building_id,
+                'guard_user_id'     => $assignment->guard_user_id,
+                'gate_id'           => $assignment->gate_id,
+                'building_shift_id' => $assignment->building_shift_id,
+                'assignment_id'     => $assignment->id,
+                'shift_date'        => $today,
+                'status'            => $status,
+                'checked_in_at'     => $now,
+                'late_minutes'      => $lateMinutes,
+            ]);
+
+            $guardUser = $assignment->guardUser;
+            $guardName = $guardUser->name ?? trim($guardUser->first_name . ' ' . $guardUser->last_name);
+
+            $timelineAdditions[] = [
+                'guard_name'    => $guardName,
+                'action'        => $lateMinutes > 0 ? "Shift Started ({$lateMinutes}m late)" : 'Shift Started',
+                'time'          => $now->format('d M Y  h:i a'),
+                'timestamp'     => $now->toDateTimeString(),
+                'late_minutes'  => $lateMinutes,
+                'shift_time'    => $shift ? Carbon::parse($shift->start_time)->format('h:i a') : null
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Duty start confirmed successfully.',
+            'timeline_additions' => $timelineAdditions
         ]);
     }
 
