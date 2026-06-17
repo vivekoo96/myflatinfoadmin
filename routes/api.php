@@ -300,6 +300,9 @@ use App\Http\Controllers\Api\MoveInOutApiController;
         Route::post('guard/handover/initiate',        [App\Http\Controllers\Api\GuardShiftController::class, 'initiateHandover']);
         Route::post('guard/handover/incoming-confirm',[App\Http\Controllers\Api\GuardShiftController::class, 'incomingConfirm']);
         Route::post('guard/handover/outgoing-confirm',[App\Http\Controllers\Api\GuardShiftController::class, 'outgoingConfirm']);
+        Route::post('guard/gate-shift-guards',        [App\Http\Controllers\Api\GuardShiftController::class, 'gateShiftGuards']);
+        Route::post('guard/gate-guards',              [App\Http\Controllers\Api\GuardShiftController::class, 'gateGuards']);
+        Route::post('guard/shift-guards',             [App\Http\Controllers\Api\GuardShiftController::class, 'shiftGuards']);
 
         // role route  //20nov2025 11:48
         Route::post('my-departments',[CustomerController::class,'my_departments']);

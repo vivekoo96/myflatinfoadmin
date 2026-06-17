@@ -1,0 +1,250 @@
+{
+  "info": {
+    "name": "Guard Shift Lifecycle API",
+    "description": "API endpoints for the Security Guard Shift and Handover flow.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Get My Shift Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/guard/my-shift",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "guard",
+            "my-shift"
+          ]
+        },
+        "description": "Returns the guard's active assignment, their current shift log status (active, late, completed), and any pending handovers."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Shift Check-In",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/guard/shift-checkin",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "guard",
+            "shift-checkin"
+          ]
+        },
+        "description": "Guard confirms shift start. Attendance begins. Automatically calculates if the guard is late based on the shift schedule."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Handover - Initiate (Arrive at Gate)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"building_shift_id\": 1,\n  \"gate_id\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/guard/handover/initiate",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "guard",
+            "handover",
+            "initiate"
+          ]
+        },
+        "description": "Incoming guard arrives at the gate (allowed up to X minutes before shift start). Creates a pending handover record awaiting the outgoing guard."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Handover - Incoming Confirm",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"handover_id\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/guard/handover/incoming-confirm",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "guard",
+            "handover",
+            "incoming-confirm"
+          ]
+        },
+        "description": "Incoming guard confirms taking over the shift. Their attendance starts officially."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Handover - Outgoing Confirm",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"handover_id\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/guard/handover/outgoing-confirm",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "guard",
+            "handover",
+            "outgoing-confirm"
+          ]
+        },
+        "description": "Outgoing guard confirms handing over the shift. Their attendance ends, and their shift log is marked as completed."
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://myflatinfoadmin.test",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "YOUR_BEARER_TOKEN_HERE",
+      "type": "string"
+    }
+  ]
+}

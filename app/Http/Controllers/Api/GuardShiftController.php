@@ -373,4 +373,127 @@ class GuardShiftController extends Controller
             'checked_out_at' => $now->toDateTimeString(),
         ]);
     }
+    private function formatGuards($assignments)
+    {
+        $today = Carbon::today()->toDateString();
+        $guards = [];
+        $timeline = [];
+
+        foreach ($assignments as $assignment) {
+            $guardUser = $assignment->guardUser;
+            if (!$guardUser) continue;
+
+            $log = GuardShiftLog::where('guard_user_id', $guardUser->id)
+                ->where('assignment_id', $assignment->id)
+                ->where('shift_date', $today)
+                ->latest()
+                ->first();
+
+            $isStarted = $log && in_array($log->status, ['active', 'late', 'completed', 'handover_pending']);
+            $guardName = $guardUser->name ?? trim($guardUser->first_name . ' ' . $guardUser->last_name);
+
+            $guards[] = [
+                'assignment_id' => $assignment->id,
+                'guard_id'      => $guardUser->id,
+                'name'          => $guardName,
+                'is_started'    => $isStarted,
+                'notes'         => $assignment->notes ?? 'Security Guard',
+            ];
+
+            if ($isStarted) {
+                $timeline[] = [
+                    'guard_name'    => $guardName,
+                    'action'        => 'Shift Started',
+                    'time'          => Carbon::parse($log->checked_in_at)->format('d M Y  h:i a'),
+                    'timestamp'     => $log->checked_in_at,
+                ];
+            }
+        }
+
+        usort($timeline, function($a, $b) {
+            return strtotime($a['timestamp']) - strtotime($b['timestamp']);
+        });
+
+        return [
+            'guards'   => $guards,
+            'timeline' => $timeline,
+        ];
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // POST /api/guard/gate-shift-guards
+    // Returns the guards assigned to a specific gate and shift today
+    // Body: { gate_id, building_shift_id }
+    // ──────────────────────────────────────────────────────────────────────────
+    public function gateShiftGuards(Request $request)
+    {
+        $request->validate([
+            'gate_id'           => 'required|exists:gates,id',
+            'building_shift_id' => 'required|exists:building_shifts,id',
+        ]);
+
+        $assignments = GuardPatrolAssignment::where('gate_id', $request->gate_id)
+            ->where('building_shift_id', $request->building_shift_id)
+            ->where('status', 'Active')
+            ->with(['guardUser'])
+            ->get();
+
+        $data = $this->formatGuards($assignments);
+
+        return response()->json([
+            'success'  => true,
+            'guards'   => $data['guards'],
+            'timeline' => $data['timeline'],
+        ]);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // POST /api/guard/gate-guards
+    // Returns the guards assigned to a specific gate today
+    // Body: { gate_id }
+    // ──────────────────────────────────────────────────────────────────────────
+    public function gateGuards(Request $request)
+    {
+        $request->validate([
+            'gate_id' => 'required|exists:gates,id',
+        ]);
+
+        $assignments = GuardPatrolAssignment::where('gate_id', $request->gate_id)
+            ->where('status', 'Active')
+            ->with(['guardUser'])
+            ->get();
+
+        $data = $this->formatGuards($assignments);
+
+        return response()->json([
+            'success'  => true,
+            'guards'   => $data['guards'],
+            'timeline' => $data['timeline'],
+        ]);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // POST /api/guard/shift-guards
+    // Returns the guards assigned to a specific shift today
+    // Body: { building_shift_id }
+    // ──────────────────────────────────────────────────────────────────────────
+    public function shiftGuards(Request $request)
+    {
+        $request->validate([
+            'building_shift_id' => 'required|exists:building_shifts,id',
+        ]);
+
+        $assignments = GuardPatrolAssignment::where('building_shift_id', $request->building_shift_id)
+            ->where('status', 'Active')
+            ->with(['guardUser'])
+            ->get();
+
+        $data = $this->formatGuards($assignments);
+
+        return response()->json([
+            'success'  => true,
+            'guards'   => $data['guards'],
+            'timeline' => $data['timeline'],
+        ]);
+    }
 }
