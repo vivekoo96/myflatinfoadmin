@@ -458,6 +458,7 @@ class GuardShiftController extends Controller
 
             $isStarted = $log && in_array($log->status, ['active', 'late', 'completed', 'handover_pending']);
             $guardName = $guardUser->name ?? trim($guardUser->first_name . ' ' . $guardUser->last_name);
+            $shift = $assignment->buildingShift;
 
             $guards[] = [
                 'assignment_id' => $assignment->id,
@@ -465,6 +466,16 @@ class GuardShiftController extends Controller
                 'name'          => $guardName,
                 'is_started'    => $isStarted,
                 'notes'         => $assignment->notes ?? 'Security Guard',
+                'shiftTimmings' => [
+                    'gate'        => $assignment->gate?->name,
+                    'shift_name'  => $shift?->name,
+                    'shift_start' => $shift?->start_time ? substr($shift->start_time, 0, 5) : null,
+                    'shift_end'   => $shift?->end_time   ? substr($shift->end_time,   0, 5) : null,
+                ],
+                'status'         => $log?->status ?? null,
+                'checked_in_at'  => $log?->checked_in_at ? $log->checked_in_at->setTimezone('UTC')->format('Y-m-d\TH:i:s.u\Z') : null,
+                'checked_out_at' => $log?->checked_out_at ? $log->checked_out_at->setTimezone('UTC')->format('Y-m-d\TH:i:s.u\Z') : null,
+                'late_minutes'   => ($log && !is_null($log->late_minutes)) ? (string)$log->late_minutes : null,
             ];
 
             if ($isStarted) {
@@ -505,7 +516,7 @@ class GuardShiftController extends Controller
         $assignments = GuardPatrolAssignment::where('gate_id', $currentAssignment->gate_id)
             ->where('building_shift_id', $currentAssignment->building_shift_id)
             ->where('status', 'Active')
-            ->with(['guardUser'])
+            ->with(['guardUser', 'gate', 'buildingShift'])
             ->get();
 
         $data = $this->formatGuards($assignments);
@@ -534,7 +545,7 @@ class GuardShiftController extends Controller
 
         $assignments = GuardPatrolAssignment::where('gate_id', $currentAssignment->gate_id)
             ->where('status', 'Active')
-            ->with(['guardUser'])
+            ->with(['guardUser', 'gate', 'buildingShift'])
             ->get();
 
         $data = $this->formatGuards($assignments);
@@ -563,7 +574,7 @@ class GuardShiftController extends Controller
 
         $assignments = GuardPatrolAssignment::where('building_shift_id', $currentAssignment->building_shift_id)
             ->where('status', 'Active')
-            ->with(['guardUser'])
+            ->with(['guardUser', 'gate', 'buildingShift'])
             ->get();
 
         $data = $this->formatGuards($assignments);
