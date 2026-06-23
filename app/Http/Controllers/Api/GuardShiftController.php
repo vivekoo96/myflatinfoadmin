@@ -481,12 +481,23 @@ class GuardShiftController extends Controller
             ];
 
             if ($isStarted) {
-                $timeline[] = [
-                    'guard_name'    => $guardName,
-                    'action'        => 'Shift Started',
-                    'time'          => Carbon::parse($log->checked_in_at)->format('d M Y  h:i a'),
-                    'timestamp'     => $log->checked_in_at,
-                ];
+                if ($log->checked_in_at) {
+                    $timeline[] = [
+                        'guard_name'    => $guardName,
+                        'action'        => 'Shift Started',
+                        'time'          => Carbon::parse($log->checked_in_at)->format('d M Y  h:i a'),
+                        'timestamp'     => $log->checked_in_at,
+                    ];
+                }
+
+                if ($log->checked_out_at) {
+                    $timeline[] = [
+                        'guard_name'    => $guardName,
+                        'action'        => 'Shift Ended',
+                        'time'          => Carbon::parse($log->checked_out_at)->format('d M Y  h:i a'),
+                        'timestamp'     => $log->checked_out_at,
+                    ];
+                }
             }
         }
 
