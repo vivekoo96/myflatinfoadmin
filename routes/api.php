@@ -304,6 +304,7 @@ use App\Http\Controllers\Api\MoveInOutApiController;
         Route::post('guard/gate-shift-guards',        [App\Http\Controllers\Api\GuardShiftController::class, 'gateShiftGuards']);
         Route::post('guard/gate-guards',              [App\Http\Controllers\Api\GuardShiftController::class, 'gateGuards']);
         Route::post('guard/shift-guards',             [App\Http\Controllers\Api\GuardShiftController::class, 'shiftGuards']);
+        Route::post('guard/gate-check-in-check-out',  [App\Http\Controllers\Api\GuardShiftController::class, 'gateCheckInOut']);
 
         // role route  //20nov2025 11:48
         Route::post('my-departments',[CustomerController::class,'my_departments']);

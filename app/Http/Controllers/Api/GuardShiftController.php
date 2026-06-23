@@ -593,4 +593,93 @@ class GuardShiftController extends Controller
             'timeline' => $data['timeline'],
         ]);
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // POST /api/guard/gate-check-in-check-out
+    // Single endpoint for gate guard to check in or check out
+    // Body: { assignment_id: 64 }
+    // ──────────────────────────────────────────────────────────────────────────
+    public function gateCheckInOut(Request $request)
+    {
+        $request->validate([
+            'assignment_id' => 'required|exists:guard_patrol_assignments,id',
+        ]);
+
+        $assignment = GuardPatrolAssignment::with(['buildingShift'])->find($request->assignment_id);
+
+        if (!$assignment || !$assignment->buildingShift) {
+            return response()->json(['success' => false, 'message' => 'Assignment or Shift not found'], 404);
+        }
+
+        $today = Carbon::today()->toDateString();
+        $now = Carbon::now();
+        $shift = $assignment->buildingShift;
+        $shiftStart = Carbon::parse($today . ' ' . $shift->start_time);
+
+        $log = GuardShiftLog::where('guard_user_id', $assignment->guard_user_id)
+            ->where('shift_date', $today)
+            ->where('assignment_id', $assignment->id)
+            ->first();
+
+        if ($log) {
+            if (!$log->checked_out_at) {
+                $log->update([
+                    'checked_out_at' => $now,
+                    'status' => 'completed'
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Checked out successfully.',
+                    'log' => $log
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Already checked out for today.'
+                ], 400);
+            }
+        } else {
+            $allowedStart = clone $shiftStart;
+            $allowedStart->subMinutes(10);
+
+            if ($now->lt($allowedStart)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You can only check in 10 minutes before your shift starts.'
+                ], 400);
+            }
+
+            $lateMinutes = max(0, (int) $shiftStart->diffInMinutes($now, false));
+            $status = 'active'; 
+
+            if ($lateMinutes > 0) {
+                $status = 'late';
+            }
+
+            // after 11:00 PM (or 1 hour late) mark him as absent
+            if ($lateMinutes >= 60 || $now->format('H:i') >= '23:00') {
+                $status = 'absent';
+            }
+
+            $newLog = GuardShiftLog::create([
+                'building_id'       => $assignment->building_id,
+                'guard_user_id'     => $assignment->guard_user_id,
+                'gate_id'           => $assignment->gate_id,
+                'building_shift_id' => $assignment->building_shift_id,
+                'assignment_id'     => $assignment->id,
+                'shift_date'        => $today,
+                'status'            => $status,
+                'checked_in_at'     => $now,
+                'late_minutes'      => $lateMinutes,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Checked in successfully.',
+                'status'  => $status,
+                'log'     => $newLog
+            ]);
+        }
+    }
 }
