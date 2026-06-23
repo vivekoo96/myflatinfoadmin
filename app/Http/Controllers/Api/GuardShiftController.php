@@ -443,6 +443,7 @@ class GuardShiftController extends Controller
     private function formatGuards($assignments)
     {
         $today = Carbon::today()->toDateString();
+        $authUserId = Auth::id();
         $guards = [];
         $timeline = [];
 
@@ -463,6 +464,7 @@ class GuardShiftController extends Controller
             $guards[] = [
                 'assignment_id' => $assignment->id,
                 'guard_id'      => $guardUser->id,
+                'is_login'      => $guardUser->id === $authUserId,
                 'name'          => $guardName,
                 'is_started'    => $isStarted,
                 'notes'         => $assignment->notes ?? 'Security Guard',
