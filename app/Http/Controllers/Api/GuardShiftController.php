@@ -494,6 +494,12 @@ class GuardShiftController extends Controller
             return strtotime($a['timestamp']) - strtotime($b['timestamp']);
         });
 
+        usort($guards, function($a, $b) {
+            $timeA = $a['shiftTimmings']['shift_start'] ?? '23:59';
+            $timeB = $b['shiftTimmings']['shift_start'] ?? '23:59';
+            return strcmp($timeA, $timeB);
+        });
+
         return [
             'guards'   => $guards,
             'timeline' => $timeline,
