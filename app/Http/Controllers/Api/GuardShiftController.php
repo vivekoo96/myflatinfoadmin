@@ -634,6 +634,68 @@ class GuardShiftController extends Controller
 
         if ($log) {
             if (!$log->checked_out_at) {
+
+                // Check if next guard exists and has checked in
+                $allShifts = BuildingShift::where('building_id', $assignment->building_id)
+                    ->orderBy('start_time', 'asc')
+                    ->get();
+
+                $nextShift = null;
+                $foundCurrent = false;
+                foreach ($allShifts as $s) {
+                    if ($foundCurrent) {
+                        $nextShift = $s;
+                        break;
+                    }
+                    if ($s->id == $shift->id) {
+                        $foundCurrent = true;
+                    }
+                }
+                // If current was the last shift of the day, next is the first shift
+                if ($foundCurrent && !$nextShift && $allShifts->count() > 1) {
+                    $nextShift = $allShifts->first();
+                }
+
+                if ($nextShift) {
+                    // Check if the next shift is contiguous (starts when current ends, or within a couple of hours)
+                    // This prevents blocking checkout if the building closes at night and next shift is tomorrow.
+                    $currentEndTimeStr = $shift->end_time;
+                    $nextStartTimeStr = $nextShift->start_time;
+
+                    // Parse them arbitrarily on a fixed date to compare differences
+                    $dtEnd = Carbon::parse('2000-01-01 ' . $currentEndTimeStr);
+                    $dtStart = Carbon::parse('2000-01-01 ' . $nextStartTimeStr);
+
+                    // If next start time is smaller than current end time, it probably means it crossed midnight.
+                    if ($dtStart->lt($dtEnd) && $nextShift->id == $allShifts->first()->id) {
+                        $dtStart->addDay();
+                    }
+
+                    // Only enforce if the next shift starts within 2 hours of current shift ending
+                    $diffHours = $dtEnd->diffInHours($dtStart);
+                    
+                    if ($diffHours <= 2) {
+                        $nextAssignment = GuardPatrolAssignment::where('gate_id', $assignment->gate_id)
+                            ->where('building_shift_id', $nextShift->id)
+                            ->where('status', 'Active')
+                            ->first();
+
+                        if ($nextAssignment) {
+                            $nextLog = GuardShiftLog::where('assignment_id', $nextAssignment->id)
+                                ->whereNotNull('checked_in_at')
+                                ->whereNull('checked_out_at')
+                                ->first();
+
+                            if (!$nextLog) {
+                                return response()->json([
+                                    'success' => false,
+                                    'message' => 'Next guard has not checked in yet. You cannot check out.'
+                                ], 400);
+                            }
+                        }
+                    }
+                }
+
                 $log->update([
                     'checked_out_at' => $now,
                     'status' => 'completed'
