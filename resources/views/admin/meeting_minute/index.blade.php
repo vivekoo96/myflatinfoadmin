@@ -85,18 +85,19 @@
             <span class="badge badge-secondary ml-2">{{ $minutes->count() }} records</span>
           </div>
           <div class="card-body p-3 border-bottom bg-light">
-            <form method="GET" action="{{ route('meeting-minute.index') }}" class="form-row">
-              <div class="col-md-5 mb-2">
+            <form method="GET" action="{{ route('meeting-minute.index') }}" class="form-row" id="filterForm">
+              <div class="col-md-4 mb-2">
                 <input type="text" name="search" class="form-control" placeholder="Search title or description..." value="{{ request('search') }}">
               </div>
               <div class="col-md-3 mb-2">
-                <input type="date" name="from_date" class="form-control" placeholder="From Date" value="{{ request('from_date') }}">
+                <input type="date" name="from_date" id="filterFromDate" class="form-control" placeholder="From Date" value="{{ request('from_date') }}">
               </div>
               <div class="col-md-3 mb-2">
-                <input type="date" name="to_date" class="form-control" placeholder="To Date" value="{{ request('to_date') }}">
+                <input type="date" name="to_date" id="filterToDate" class="form-control" placeholder="To Date" value="{{ request('to_date') }}">
               </div>
-              <div class="col-md-1 mb-2">
-                <button type="submit" class="btn btn-primary btn-block"><i class="fa fa-search"></i></button>
+              <div class="col-md-2 mb-2 d-flex">
+                <button type="submit" class="btn btn-primary mr-1 flex-grow-1"><i class="fa fa-search mr-1"></i> Filter</button>
+                <a href="{{ route('meeting-minute.index') }}" class="btn btn-default" title="Clear Filters"><i class="fa fa-times"></i></a>
               </div>
             </form>
           </div>
@@ -210,6 +211,22 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Please select a date and time in the past or present.');
         dateTimeInput.focus();
         return false;
+      }
+    });
+  }
+  // Restrict To Date to be on or after From Date
+  const filterFromDate = document.getElementById('filterFromDate');
+  const filterToDate = document.getElementById('filterToDate');
+
+  if (filterFromDate && filterToDate) {
+    if (filterFromDate.value) {
+      filterToDate.min = filterFromDate.value;
+    }
+
+    filterFromDate.addEventListener('change', function() {
+      filterToDate.min = this.value;
+      if (filterToDate.value && filterToDate.value < this.value) {
+        filterToDate.value = '';
       }
     });
   }
