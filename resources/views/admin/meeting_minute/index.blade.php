@@ -96,8 +96,8 @@
                 <input type="date" name="to_date" id="filterToDate" class="form-control" placeholder="To Date" value="{{ request('to_date') }}">
               </div>
               <div class="col-md-2 mb-2 d-flex">
-                <button type="submit" class="btn btn-primary mr-1 flex-grow-1"><i class="fa fa-search mr-1"></i> Filter</button>
-                <a href="{{ route('meeting-minute.index') }}" class="btn btn-default" title="Clear Filters"><i class="fa fa-times"></i></a>
+                <button type="submit" class="btn btn-primary mr-1 flex-grow-1" title="Filter"><i class="fa fa-search"></i></button>
+                <a href="{{ route('meeting-minute.index') }}" class="btn btn-default flex-grow-1" title="Clear Filters"><i class="fa fa-times"></i></a>
               </div>
             </form>
           </div>
@@ -177,26 +177,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Form submission validation
   if (form) {
     form.addEventListener('submit', function(e) {
-      // 1. Check title for words without spaces (continuous words longer than 50 chars)
-      const titleVal = titleInput.value.trim();
-      const titleWords = titleVal.split(/\s+/);
-      if (titleWords.some(word => word.length > 50)) {
-        e.preventDefault();
-        alert('Title contains a word that is too long (maximum 50 characters per word without space). Please use spaces between words.');
-        titleInput.focus();
-        return false;
-      }
-
-      // 2. Check description for words without spaces
-      const descVal = descriptionInput.value.trim();
-      const descWords = descVal.split(/\s+/);
-      if (descWords.some(word => word.length > 50)) {
-        e.preventDefault();
-        alert('Description contains a word that is too long (maximum 50 characters per word without space). Please use spaces between words.');
-        descriptionInput.focus();
-        return false;
-      }
-
       // 3. Time validation using actual current time at submission
       const selectedDateTime = dateTimeInput.value;
       if (!selectedDateTime) {
