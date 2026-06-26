@@ -62,6 +62,8 @@ class MoveInOutController extends Controller
             'email' => 'required|email',
             'phone' => 'required',
             'date_of_entry_exit' => 'required|date',
+            'first_name' => 'nullable|string|max:50',
+            'last_name' => 'nullable|string|max:50',
         ]);
 
         if ($validator->fails()) {
@@ -76,8 +78,11 @@ class MoveInOutController extends Controller
         $moveRequest = new MoveInOutRequest($request->all());
         $moveRequest->type = $request->type ?? 'Move-In'; // Default to Move-In
         if ($user) {
-            $moveRequest->first_name = $user->name ?? $user->first_name;
+            $moveRequest->first_name = $user->first_name ?? $user->name;
             $moveRequest->last_name = $user->last_name ?? '';
+        } else {
+            $moveRequest->first_name = $request->first_name ?? 'Guest';
+            $moveRequest->last_name = $request->last_name ?? '';
         }
         $moveRequest->building_id = Auth::User()->building_id;
         $moveRequest->user_id = $user ? $user->id : null;
@@ -101,8 +106,29 @@ class MoveInOutController extends Controller
 
         $moveRequest = MoveInOutRequest::where('id', $id)->where('building_id', Auth::User()->building_id)->firstOrFail();
         
+        // Accounts verification
+        if ($moveRequest->status == 'Pending Accounts' && $user->hasRole('accounts')) {
+            // Validate pending dues
+            $flat = $moveRequest->flat;
+            if ($flat && method_exists($flat, 'pendingDues') && $flat->pendingDues() > 0) {
+                return redirect()->back()->with('error', 'Cannot approve: Flat has pending dues of ' . number_format($flat->pendingDues(), 2));
+            }
+
+            $moveRequest->status = 'Pending'; // Send back to BA
+            $moveRequest->save();
+            return redirect()->back()->with('success', 'Verified by Accounts. Now pending with BA for final approval.');
+        }
+
         // Final Approval by BA
         if ($moveRequest->status == 'Pending' && ($user->role == 'BA' || $user->hasRole('president'))) {
+            // Check dues on move-out requests at BA final approval step too
+            if ($moveRequest->type == 'Move-Out') {
+                $flat = $moveRequest->flat;
+                if ($flat && method_exists($flat, 'pendingDues') && $flat->pendingDues() > 0) {
+                    return redirect()->back()->with('error', 'Cannot approve: Flat has pending dues of ' . number_format($flat->pendingDues(), 2));
+                }
+            }
+
             $moveRequest->status = 'Approved';
             $moveRequest->approved_by = Auth::id();
             $moveRequest->passcode = MoveInOutRequest::generatePasscode();
@@ -110,13 +136,6 @@ class MoveInOutController extends Controller
             $this->sendNotification($moveRequest);
             return redirect()->back()->with('success', 'Request approved and passcode generated.');
         } 
-        
-        // Accounts verification
-        if ($moveRequest->status == 'Pending Accounts' && $user->hasRole('accounts')) {
-            $moveRequest->status = 'Pending'; // Send back to BA
-            $moveRequest->save();
-            return redirect()->back()->with('success', 'Verified by Accounts. Now pending with BA for final approval.');
-        }
 
         return redirect()->back()->with('error', 'Invalid action for current status or role.');
     }
@@ -135,6 +154,65 @@ class MoveInOutController extends Controller
         $moveRequest->save();
 
         return redirect()->back()->with('success', 'Request rejected.');
+    }
+
+    public function fetchByContact(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'contact' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $contact = $request->contact;
+        $user = User::where('email', $contact)->orWhere('phone', $contact)->first();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not found in system.'], 404);
+        }
+
+        // Find the flat owned or rented by this user in the current building
+        $flat = Flat::where('building_id', Auth::User()->building_id)
+            ->where(function($q) use ($user) {
+                $q->where('owner_id', $user->id)
+                  ->orWhere('tanent_id', $user->id);
+            })
+            ->with('block')
+            ->first();
+
+        if (!$flat) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'User found, but no active flat assigned in this building.',
+                'user' => [
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'email' => $user->email,
+                    'phone' => $user->phone
+                ]
+            ], 404);
+        }
+
+        $personType = ($flat->owner_id == $user->id) ? 'Owner' : 'Tanent';
+
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'email' => $user->email,
+                'phone' => $user->phone
+            ],
+            'flat' => [
+                'id' => $flat->id,
+                'name' => $flat->name,
+                'block_name' => $flat->block ? $flat->block->name : 'N/A'
+            ],
+            'person_type' => $personType
+        ], 200);
     }
 
     private function sendNotification($moveRequest)
@@ -162,6 +240,38 @@ class MoveInOutController extends Controller
                 'passcode' => $moveRequest->passcode,
                 'request_id' => $moveRequest->id
             ]);
+        }
+
+        // Notify flat owner if passcode is generated for a Tenant
+        $flat = $moveRequest->flat;
+        if ($moveRequest->person_type == 'Tanent' && $flat && $flat->owner_id) {
+            $owner = $flat->owner;
+            if ($owner) {
+                $ownerEmail = $owner->email;
+                $ownerName = $owner->name;
+                
+                if ($ownerEmail) {
+                    try {
+                        Mail::send('emails.move_pass_owner_notification', [
+                            'request' => $moveRequest,
+                            'owner' => $owner,
+                            'tenant_name' => $name
+                        ], function ($m) use ($ownerEmail, $ownerName) {
+                            $m->to($ownerEmail, $ownerName)->subject('Tenant Move-In/Out Pass Generated');
+                        });
+                    } catch (\Exception $e) {
+                        \Log::error('Email failed to owner for move pass: ' . $e->getMessage());
+                    }
+                }
+                
+                $ownerTitle = 'Tenant Move-In/Out Pass generated';
+                $ownerBody = "A {$moveRequest->type} pass for your flat {$flat->name} has been generated for tenant {$name}. Passcode: {$moveRequest->passcode}";
+                NotificationHelper::sendNotification($owner->id, $ownerTitle, $ownerBody, [
+                    'type' => 'MOVE_PASS',
+                    'passcode' => $moveRequest->passcode,
+                    'request_id' => $moveRequest->id
+                ]);
+            }
         }
     }
 }

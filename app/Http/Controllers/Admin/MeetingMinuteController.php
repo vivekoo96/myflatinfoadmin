@@ -14,7 +14,7 @@ use Carbon\Carbon;
 
 class MeetingMinuteController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         if (! $this->isAllowed()) {
             return redirect('permission-denied')->with('error', 'Permission denied!');
@@ -24,10 +24,26 @@ class MeetingMinuteController extends Controller
         $minutes  = collect();
 
         if ($building) {
-            $minutes = MeetingMinute::where('building_id', $building->id)
-                ->with('creator')
-                ->orderBy('datetime', 'desc')
-                ->get();
+            $query = MeetingMinute::where('building_id', $building->id)
+                ->with('creator');
+
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+                });
+            }
+
+            if ($request->filled('from_date')) {
+                $query->whereDate('datetime', '>=', $request->from_date);
+            }
+
+            if ($request->filled('to_date')) {
+                $query->whereDate('datetime', '<=', $request->to_date);
+            }
+
+            $minutes = $query->orderBy('datetime', 'desc')->get();
         }
 
         return view('admin.meeting_minute.index', compact('building', 'minutes'));

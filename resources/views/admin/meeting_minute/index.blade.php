@@ -50,8 +50,9 @@
               @endif
               <div class="form-group">
                 <label>Title <span class="text-danger">*</span></label>
-                <input type="text" name="title" class="form-control"
+                <input type="text" name="title" id="minuteTitle" class="form-control"
                   placeholder="e.g. AGM Meeting – March 2026"
+                  maxlength="150"
                   value="{{ old('title') }}" required>
               </div>
               <div class="form-group">
@@ -83,6 +84,22 @@
             <h3 class="card-title">All Meeting Minutes</h3>
             <span class="badge badge-secondary ml-2">{{ $minutes->count() }} records</span>
           </div>
+          <div class="card-body p-3 border-bottom bg-light">
+            <form method="GET" action="{{ route('meeting-minute.index') }}" class="form-row">
+              <div class="col-md-5 mb-2">
+                <input type="text" name="search" class="form-control" placeholder="Search title or description..." value="{{ request('search') }}">
+              </div>
+              <div class="col-md-3 mb-2">
+                <input type="date" name="from_date" class="form-control" placeholder="From Date" value="{{ request('from_date') }}">
+              </div>
+              <div class="col-md-3 mb-2">
+                <input type="date" name="to_date" class="form-control" placeholder="To Date" value="{{ request('to_date') }}">
+              </div>
+              <div class="col-md-1 mb-2">
+                <button type="submit" class="btn btn-primary btn-block"><i class="fa fa-search"></i></button>
+              </div>
+            </form>
+          </div>
           <div class="card-body p-0">
             @if($minutes->isEmpty())
               <div class="text-center text-muted py-5">
@@ -95,7 +112,7 @@
                   <div class="list-group-item" id="minute-{{ $minute->id }}">
                     <div class="d-flex justify-content-between align-items-start">
                       <div class="flex-grow-1">
-                        <h6 class="mb-1 font-weight-bold">{{ $minute->title }}</h6>
+                        <h6 class="mb-1 font-weight-bold" style="word-break: break-word; overflow-wrap: break-word;">{{ $minute->title }}</h6>
                         <div class="text-muted small mb-2">
                           <i class="fa fa-calendar mr-1"></i>
                           <strong>Meeting:</strong> {{ \Carbon\Carbon::parse($minute->datetime)->format('d M Y, h:i A') }}
@@ -107,7 +124,7 @@
                         {{-- Collapsed description --}}
                         <div class="minute-body {{ strlen($minute->description) > 200 ? 'collapsed-text' : '' }}"
                           id="body-{{ $minute->id }}"
-                          style="{{ strlen($minute->description) > 200 ? 'max-height:80px;overflow:hidden;' : '' }}">
+                          style="word-break: break-word; overflow-wrap: break-word; {{ strlen($minute->description) > 200 ? 'max-height:80px;overflow:hidden;' : '' }}">
                           {!! nl2br(e($minute->description)) !!}
                         </div>
                         @if(strlen($minute->description) > 200)
@@ -138,44 +155,60 @@
 document.addEventListener('DOMContentLoaded', function() {
   const dateTimeInput = document.getElementById('minuteDateTime');
   const form = dateTimeInput.closest('form');
+  const titleInput = document.getElementById('minuteTitle');
+  const descriptionInput = document.querySelector('textarea[name="description"]');
 
-  // Get current date and time
-  const now = new Date();
+  function updateMaxDateTime() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    dateTimeInput.max = `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
 
-  // Format current datetime to ISO 8601 format (YYYY-MM-DDTHH:MM) for comparison
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const nowISO = `${year}-${month}-${day}T${hours}:${minutes}`;
+  // Update max dynamically on page load and on input focus/click
+  updateMaxDateTime();
+  dateTimeInput.addEventListener('focus', updateMaxDateTime);
+  dateTimeInput.addEventListener('click', updateMaxDateTime);
 
-  // Set maximum datetime to now (prevent future dates)
-  dateTimeInput.max = nowISO;
-
-  // Listen for input changes and ensure value is properly stored
-  dateTimeInput.addEventListener('change', function(e) {
-    const selectedDateTime = this.value;
-    if (selectedDateTime) {
-      console.log('Selected datetime:', selectedDateTime);
-    }
-  });
-
-  // Form submission validation - ensure datetime is not in the future
+  // Form submission validation
   if (form) {
     form.addEventListener('submit', function(e) {
-      const selectedDateTime = dateTimeInput.value;
-
-      if (!selectedDateTime) {
-        return; // Browser validation will handle this
+      // 1. Check title for words without spaces (continuous words longer than 50 chars)
+      const titleVal = titleInput.value.trim();
+      const titleWords = titleVal.split(/\s+/);
+      if (titleWords.some(word => word.length > 50)) {
+        e.preventDefault();
+        alert('Title contains a word that is too long (maximum 50 characters per word without space). Please use spaces between words.');
+        titleInput.focus();
+        return false;
       }
 
-      // Parse the selected datetime (format: YYYY-MM-DDTHH:MM)
-      const selectedDate = new Date(selectedDateTime);
+      // 2. Check description for words without spaces
+      const descVal = descriptionInput.value.trim();
+      const descWords = descVal.split(/\s+/);
+      if (descWords.some(word => word.length > 50)) {
+        e.preventDefault();
+        alert('Description contains a word that is too long (maximum 50 characters per word without space). Please use spaces between words.');
+        descriptionInput.focus();
+        return false;
+      }
 
-      if (selectedDate > now) {
+      // 3. Time validation using actual current time at submission
+      const selectedDateTime = dateTimeInput.value;
+      if (!selectedDateTime) {
+        return;
+      }
+
+      const selectedDate = new Date(selectedDateTime);
+      const currentNow = new Date();
+
+      if (selectedDate > currentNow) {
         e.preventDefault();
         alert('Please select a date and time in the past or present.');
+        dateTimeInput.focus();
         return false;
       }
     });

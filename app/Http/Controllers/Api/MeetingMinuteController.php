@@ -18,14 +18,18 @@ class MeetingMinuteController extends Controller
     public function getMeetingMinutes(Request $request)
     {
         $request->validate([
-            'count' => 'nullable|integer|min:1',
-            'page'  => 'nullable|integer|min:1',
+            'count'      => 'nullable|integer|min:1',
+            'page'       => 'nullable|integer|min:1',
+            'sort_order' => 'nullable|in:asc,desc',
         ]);
 
         $flat = AuthHelper::flat();
 
+        // Default to DESC if not provided
+        $sortOrder = $request->input('sort_order', 'desc');
+
         $query = MeetingMinute::where('building_id', $flat->building_id)
-            ->orderBy('created_at', 'desc');
+            ->orderBy('created_at', $sortOrder);
 
         $count = $request->input('count');
         $page  = $request->input('page', 1);

@@ -118,7 +118,8 @@ class MoveInOutApiController extends Controller
                 'block' => $block->name,
                 'from_date' => $request->from_date,
                 'to_date' => $request->to_date,
-                'preferred_move_in_date' => $request->preferred_move_in_date
+                'preferred_move_in_date' => $request->preferred_move_in_date,
+                'id_proof' => $id_proof
             ]
         ], 201);
     }
@@ -177,6 +178,17 @@ class MoveInOutApiController extends Controller
         $moveRequest->date_of_entry_exit = $request->preferred_move_in_date;
         $moveRequest->comment = $request->additional_notes;
         $moveRequest->status = 'Pending';
+
+        // Handle ID proof passed from Step 1 or uploaded directly
+        if ($request->hasFile('id_proof')) {
+            $file = $request->file('id_proof');
+            $filename = 'id_proofs/' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('images/move_in_out/'), $filename);
+            $moveRequest->id_proof = $filename;
+        } elseif ($request->filled('id_proof')) {
+            $moveRequest->id_proof = $request->id_proof;
+        }
+
         $moveRequest->save();
 
         return response()->json([
@@ -345,6 +357,7 @@ class MoveInOutApiController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'type' => 'required|in:Move-In,Move-Out',
+            'sort_order' => 'nullable|in:asc,desc',
         ]);
 
         if ($validator->fails()) {
@@ -353,12 +366,14 @@ class MoveInOutApiController extends Controller
 
         $user = Auth::user();
         $buildingId = $request->building_id; // Security should pass their building_id
+        $sortOrder = $request->input('sort_order', 'desc');
 
         $requests = MoveInOutRequest::where('building_id', $buildingId)
             ->where('type', $request->type)
             ->where('status', 'Approved')
             ->whereNull('visited_at')
             ->with(['flat', 'user'])
+            ->orderBy('created_at', $sortOrder)
             ->get();
 
         return response()->json(['success' => true, 'requests' => $requests], 200);
@@ -409,6 +424,13 @@ class MoveInOutApiController extends Controller
 
         if (!$pass) {
             return response()->json(['error' => 'Invalid or expired passcode.'], 404);
+        }
+
+        // Validate type if optional type filter is passed
+        if ($request->filled('type') && in_array($request->type, ['Move-In', 'Move-Out'])) {
+            if ($pass->type !== $request->type) {
+                return response()->json(['error' => "This passcode is for a {$pass->type} request, but you are verifying a {$request->type}."], 422);
+            }
         }
 
         return response()->json([
@@ -476,12 +498,22 @@ class MoveInOutApiController extends Controller
     }
 
     // User: Get all move requests for themselves
-    public function get_my_move_requests()
+    public function get_my_move_requests(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'sort_order' => 'nullable|in:asc,desc',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 422);
+        }
+
         $user = Auth::user();
+        $sortOrder = $request->input('sort_order', 'desc');
+
         $requests = MoveInOutRequest::where('user_id', $user->id)
             ->with(['flat.block'])
-            ->orderByDesc('created_at')
+            ->orderBy('created_at', $sortOrder)
             ->get()
             ->map(function ($r) {
                 return [
@@ -507,17 +539,20 @@ class MoveInOutApiController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'building_id' => 'required|exists:buildings,id',
+            'sort_order' => 'nullable|in:asc,desc',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()->first()], 422);
         }
 
+        $sortOrder = $request->input('sort_order', 'desc');
+
         $requests = MoveInOutRequest::where('building_id', $request->building_id)
             ->where('type', 'Move-Out')
             ->where('status', 'Pending Accounts')
             ->with(['flat.block', 'user'])
-            ->orderByDesc('created_at')
+            ->orderBy('created_at', $sortOrder)
             ->get();
 
         return response()->json(['success' => true, 'requests' => $requests], 200);
@@ -542,6 +577,11 @@ class MoveInOutApiController extends Controller
         }
 
         if ($request->action === 'Approve') {
+            // Validate pending dues
+            $flat = $moveRequest->flat;
+            if ($flat && method_exists($flat, 'pendingDues') && $flat->pendingDues() > 0) {
+                return response()->json(['error' => 'Cannot approve: flat has pending dues of ' . number_format($flat->pendingDues(), 2)], 422);
+            }
             $moveRequest->status = 'Pending';
             $msg = 'Verified by Accounts. Forwarded to BA for final approval.';
         } else {

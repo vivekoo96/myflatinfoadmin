@@ -238,6 +238,7 @@ Route::middleware('admin')->group(function () {
         Route::post('/move-in-out', [MoveInOutController::class, 'store'])->name('move-in-out.store');
         Route::post('/move-in-out/approve/{id}', [MoveInOutController::class, 'approve'])->name('move-in-out.approve');
         Route::post('/move-in-out/reject/{id}', [MoveInOutController::class, 'reject'])->name('move-in-out.reject');
+        Route::post('/move-in-out/fetch-by-contact', [MoveInOutController::class, 'fetchByContact'])->name('move-in-out.fetch-by-contact');
         
         Route::get('/visitor/user-history/{phone}', [VisitorController::class, 'userHistory'])->name('visitor.user.history');
         Route::get('/visitor/{id}/timeline', [VisitorController::class, 'getTimeline'])->name('visitor.timeline');
