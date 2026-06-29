@@ -40,6 +40,11 @@ class MoveInOutApiController extends Controller
             return response()->json(['error' => 'No building assigned to your account.'], 403);
         }
 
+        $flat = AuthHelper::flat();
+        if (!$flat) {
+            return response()->json(['error' => 'No active flat associated with this token.'], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string',
             'last_name' => 'required|string',
@@ -47,8 +52,6 @@ class MoveInOutApiController extends Controller
             'phone' => 'required|string|unique:users,phone',
             'from_date' => 'required|date',
             'to_date' => 'required|date|after:from_date',
-            'flat_id' => 'required|exists:flats,id',
-            'block_id' => 'required|exists:blocks,id',
             'preferred_move_in_date' => 'required|date',
             'additional_notes' => 'nullable|string|max:500',
         ]);
@@ -58,17 +61,12 @@ class MoveInOutApiController extends Controller
         }
 
         // Verify flat belongs to this building and owner
-        $flat = Flat::where('id', $request->flat_id)
-            ->where('building_id', $building->id)
-            ->where('owner_id', $user->id)
-            ->first();
-
-        if (!$flat) {
-            return response()->json(['error' => 'Flat not found or you do not own this flat.'], 403);
+        if ($flat->building_id != $building->id || $flat->owner_id != $user->id) {
+            return response()->json(['error' => 'You do not own this flat or it does not belong to this building.'], 403);
         }
 
         // Verify block belongs to building
-        $block = Block::where('id', $request->block_id)
+        $block = \App\Models\Block::where('id', $flat->block_id)
             ->where('building_id', $building->id)
             ->first();
 
