@@ -390,7 +390,9 @@ class MoveInOutApiController extends Controller
             ->first();
 
         if ($pass) {
-            return response()->json([
+            $name = $pass->user ? $pass->user->name : trim($pass->first_name . ' ' . $pass->last_name);
+
+            $responseData = [
                 'success' => true,
                 'id' => $pass->id,
                 'passcode' => $pass->passcode,
@@ -401,7 +403,16 @@ class MoveInOutApiController extends Controller
                     'name' => $pass->flat->name,
                     'block' => $pass->flat->block ? $pass->flat->block->name : null,
                 ] : null,
-            ], 200);
+            ];
+
+            if ($pass->person_type === 'Owner') {
+                $responseData['owner_name'] = $name;
+            } else {
+                $responseData['tenant_name'] = $name;
+                $responseData['tanent_name'] = $name;
+            }
+
+            return response()->json($responseData, 200);
         }
         return response()->json(['success' => false, 'message' => 'No active passcode found.'], 404);
     }
