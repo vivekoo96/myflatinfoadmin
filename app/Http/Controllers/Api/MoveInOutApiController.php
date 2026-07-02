@@ -780,10 +780,11 @@ class MoveInOutApiController extends Controller
     public function get_my_tenant_and_user_list(Request $request)
     {
         $owner    = Auth::user();
-        $building = $owner->building;
+        $flat     = AuthHelper::flat();
+        $building = $flat ? $flat->building : $owner->building;
 
         if (!$building) {
-            return response()->json(['error' => 'No building assigned to your account.'], 403);
+            return response()->json(['error' => 'No building selected or assigned to your account.'], 403);
         }
 
         // 1. Get all flats owned by this user
@@ -840,12 +841,27 @@ class MoveInOutApiController extends Controller
         $users = $buildingUsers->map(function ($bu) use ($myFlats) {
             if (!$bu->user) return null;
 
-            // Find which flat owned by this owner has this user as its tenant
+            // Find which flat owned by this owner is associated with this user (either as main tenant or via user's flat_id)
             $linkedFlat = $myFlats->first(function ($flat) use ($bu) {
-                return $flat->tanent_id == $bu->user_id;
+                return $flat->tanent_id == $bu->user_id || $bu->user->flat_id == $flat->id;
             });
 
             if (!$linkedFlat) return null;
+
+            // Fetch details of the tenant/user who created this user
+            $creator = null;
+            if ($bu->user && $bu->user->created_by) {
+                $creatorUser = \App\Models\User::find($bu->user->created_by);
+                if ($creatorUser) {
+                    $creator = [
+                        'id'         => $creatorUser->id,
+                        'first_name' => $creatorUser->first_name,
+                        'last_name'  => $creatorUser->last_name,
+                        'email'      => $creatorUser->email,
+                        'phone'      => $creatorUser->phone,
+                    ];
+                }
+            }
 
             return [
                 'building_user_id' => $bu->id,
@@ -870,6 +886,7 @@ class MoveInOutApiController extends Controller
                     'email'      => $linkedFlat->tanent->email,
                     'phone'      => $linkedFlat->tanent->phone,
                 ] : null,
+                'created_by_tenant' => $creator,
             ];
         })->filter()->values();
 
