@@ -30,6 +30,43 @@ class MoveInOutApiController extends Controller
         return response()->json(['success' => false, 'message' => 'User not found'], 404);
     }
 
+    // Fetch user by email — for pre-filling tenant profile form
+    public function fetch_user_by_email(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if ($user) {
+            return response()->json([
+                'success'     => true,
+                'is_existing' => true,
+                'msg'         => 'User found.',
+                'user'        => [
+                    'id'         => $user->id,
+                    'first_name' => $user->first_name,
+                    'last_name'  => $user->last_name,
+                    'gender'     => $user->gender,
+                    'email'      => $user->email,
+                    'phone'      => $user->phone,
+                ],
+            ], 200);
+        }
+
+        return response()->json([
+            'success'     => true,
+            'is_existing' => false,
+            'msg'         => 'No user found with this email. You can create a new profile.',
+            'user'        => null,
+        ], 200);
+    }
+
     // Step 1: Owner creates tenant profile (with all form fields)
     public function create_tenant_profile(Request $request)
     {
@@ -46,10 +83,10 @@ class MoveInOutApiController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|unique:users,phone',
+            'email' => 'required|email',
+            'first_name' => 'required_without:email|string',
+            'last_name' => 'required_without:email|string',
+            'phone' => 'nullable|string',
             'gender' => 'nullable|in:Male,Female,Other',
         ]);
 
@@ -71,21 +108,45 @@ class MoveInOutApiController extends Controller
             return response()->json(['error' => 'Block not found in this building.'], 403);
         }
 
-        // Create Tenant User Account
-        $tenant = new User();
-        $tenant->first_name = $request->first_name;
-        $tenant->last_name = $request->last_name;
-        $tenant->email = $request->email;
-        $tenant->phone = $request->phone;
-        $tenant->gender = $request->gender;
-        $tenant->password = Hash::make('MFI@' . rand(1000, 9999));
-        $tenant->role = 'user';
-        $tenant->status = 'Active';
-        $tenant->save();
+        $isExisting = false;
 
-        // Assign 'User' role to this building
+        // Check if user already exists by email
+        $tenant = User::where('email', $request->email)->first();
+
+        if ($tenant) {
+            // User already exists — reuse their account
+            $isExisting = true;
+        } else {
+            // Validate required fields for new user creation
+            if (!$request->filled('first_name') || !$request->filled('last_name') || !$request->filled('phone')) {
+                return response()->json(['error' => 'first_name, last_name and phone are required for new users.'], 422);
+            }
+
+            // Check phone uniqueness only for new users
+            if (User::where('phone', $request->phone)->exists()) {
+                return response()->json(['error' => 'The phone number is already taken.'], 422);
+            }
+
+            // Create new Tenant User Account
+            $tenant = new User();
+            $tenant->first_name = $request->first_name;
+            $tenant->last_name = $request->last_name;
+            $tenant->email = $request->email;
+            $tenant->phone = $request->phone;
+            $tenant->gender = $request->gender;
+            $tenant->password = Hash::make('MFI@' . rand(1000, 9999));
+            $tenant->role = 'user';
+            $tenant->status = 'Active';
+            $tenant->save();
+        }
+
+        // Assign 'User' role to this building (only if not already assigned)
         $userRole = Role::where('name', 'User')->first();
-        if ($userRole) {
+        $alreadyAssigned = BuildingUser::where('user_id', $tenant->id)
+            ->where('building_id', $building->id)
+            ->exists();
+
+        if ($userRole && !$alreadyAssigned) {
             BuildingUser::create([
                 'user_id' => $tenant->id,
                 'building_id' => $building->id,
@@ -104,7 +165,8 @@ class MoveInOutApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'msg' => 'Tenant profile created successfully.',
+            'is_existing' => $isExisting,
+            'msg' => $isExisting ? 'Existing user assigned to building successfully.' : 'Tenant profile created successfully.',
             'tenant' => [
                 'id' => $tenant->id,
                 'first_name' => $tenant->first_name,

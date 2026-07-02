@@ -103,7 +103,9 @@ use App\Http\Controllers\Api\MoveInOutApiController;
             Route::post('update-checkin-checkout-status',[CustomerController::class,'update_checkin_checkout_status']);
             Route::post('create-gate-pass',[CustomerController::class,'create_gate_pass']);
             Route::post('get-gate-passes',[CustomerController::class,'get_gate_passes']);
+            Route::post('fetch-user-by-email', [MoveInOutApiController::class, 'fetch_user_by_email']);
             Route::post('create-tenant-profile', [MoveInOutApiController::class, 'create_tenant_profile']);
+
             Route::post('create-move-in-for-tenant', [MoveInOutApiController::class, 'create_move_in_for_tenant']);
             Route::post('create-tanent-move-in', [MoveInOutApiController::class, 'create_tanent_move_in']);
             Route::post('create-move-out-request', [MoveInOutApiController::class, 'create_move_out_request']);
