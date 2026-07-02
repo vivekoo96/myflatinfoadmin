@@ -661,4 +661,118 @@ class MoveInOutApiController extends Controller
         $moveRequest->save();
         return response()->json(['msg' => $msg], 200);
     }
+
+    // Get building user limit — to check if "Add User" button should be disabled
+    public function get_building_user_limit(Request $request)
+    {
+        $user = Auth::user();
+        $building = $user->building;
+
+        if (!$building) {
+            return response()->json(['error' => 'No building assigned to your account.'], 403);
+        }
+
+        // Get 'User' role for this building
+        $userRole = Role::where('building_id', $building->id)->where('slug', 'user')->first();
+
+        // Count active users with 'User' role in this building
+        $activeCount = BuildingUser::where('building_id', $building->id)
+            ->where('role_id', $userRole ? $userRole->id : null)
+            ->where('status', 'Active')
+            ->whereHas('user', function ($q) {
+                $q->whereNull('deleted_at');
+            })
+            ->count();
+
+        $limit = (int) $building->no_of_logins;
+        $limitReached = $activeCount >= $limit;
+
+        return response()->json([
+            'success'       => true,
+            'active_count'  => $activeCount,
+            'limit'         => $limit,
+            'limit_reached' => $limitReached,
+            'can_add_user'  => !$limitReached,
+        ], 200);
+    }
+
+    // Add existing user to building (by user_id)
+    public function add_user_to_building(Request $request)
+    {
+        $authUser = Auth::user();
+        $building = $authUser->building;
+
+        if (!$building) {
+            return response()->json(['error' => 'No building assigned to your account.'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 422);
+        }
+
+        $tenant = User::find($request->user_id);
+
+        // Get 'User' role for this building
+        $userRole = Role::where('building_id', $building->id)->where('slug', 'user')->first();
+
+        if (!$userRole) {
+            return response()->json(['error' => 'User role not configured for this building.'], 500);
+        }
+
+        // Check if already assigned with User role
+        $alreadyExists = BuildingUser::where('building_id', $building->id)
+            ->where('user_id', $tenant->id)
+            ->where('role_id', $userRole->id)
+            ->whereNull('deleted_at')
+            ->exists();
+
+        if ($alreadyExists) {
+            return response()->json(['error' => 'User is already assigned to this building.'], 422);
+        }
+
+        // Check login limit
+        $activeCount = BuildingUser::where('building_id', $building->id)
+            ->where('role_id', $userRole->id)
+            ->where('status', 'Active')
+            ->whereHas('user', function ($q) {
+                $q->whereNull('deleted_at');
+            })
+            ->count();
+
+        $limit = (int) $building->no_of_logins;
+
+        if ($activeCount >= $limit) {
+            return response()->json([
+                'error'        => 'User limit reached. Cannot add more users.',
+                'active_count' => $activeCount,
+                'limit'        => $limit,
+            ], 422);
+        }
+
+        // Add user to building
+        $buildingUser = new BuildingUser();
+        $buildingUser->building_id = $building->id;
+        $buildingUser->user_id     = $tenant->id;
+        $buildingUser->role_id     = $userRole->id;
+        $buildingUser->status      = 'Active';
+        $buildingUser->save();
+
+        return response()->json([
+            'success' => true,
+            'msg'     => 'User added to building successfully.',
+            'user'    => [
+                'id'         => $tenant->id,
+                'first_name' => $tenant->first_name,
+                'last_name'  => $tenant->last_name,
+                'email'      => $tenant->email,
+                'phone'      => $tenant->phone,
+            ],
+            'active_count' => $activeCount + 1,
+            'limit'        => $limit,
+        ], 201);
+    }
 }

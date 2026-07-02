@@ -106,6 +106,8 @@ use App\Http\Controllers\Api\MoveInOutApiController;
             Route::post('fetch-user-by-email', [MoveInOutApiController::class, 'fetch_user_by_email']);
             Route::post('create-tenant-profile', [MoveInOutApiController::class, 'create_tenant_profile']);
 
+            Route::get('get-building-user-limit', [MoveInOutApiController::class, 'get_building_user_limit']);
+            Route::post('add-user-to-building', [MoveInOutApiController::class, 'add_user_to_building']);
             Route::post('create-move-in-for-tenant', [MoveInOutApiController::class, 'create_move_in_for_tenant']);
             Route::post('create-tanent-move-in', [MoveInOutApiController::class, 'create_tanent_move_in']);
             Route::post('create-move-out-request', [MoveInOutApiController::class, 'create_move_out_request']);
