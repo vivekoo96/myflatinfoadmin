@@ -775,4 +775,111 @@ class MoveInOutApiController extends Controller
             'limit'        => $limit,
         ], 201);
     }
+
+    // Owner: Get tenants and users associated with my flats in a single API
+    public function get_my_tenant_and_user_list(Request $request)
+    {
+        $owner    = Auth::user();
+        $building = $owner->building;
+
+        if (!$building) {
+            return response()->json(['error' => 'No building assigned to your account.'], 403);
+        }
+
+        // 1. Get all flats owned by this user
+        $myFlats = Flat::where('building_id', $building->id)
+            ->where('owner_id', $owner->id)
+            ->with(['tanent', 'block'])
+            ->get();
+
+        // 2. Fetch Tenants
+        $tenants = $myFlats->map(function ($flat) use ($owner) {
+            if (!$flat->tanent) return null;
+
+            return [
+                'tenant' => [
+                    'id'         => $flat->tanent->id,
+                    'first_name' => $flat->tanent->first_name,
+                    'last_name'  => $flat->tanent->last_name,
+                    'gender'     => $flat->tanent->gender,
+                    'email'      => $flat->tanent->email,
+                    'phone'      => $flat->tanent->phone,
+                    'status'     => $flat->tanent->status,
+                ],
+                'flat' => [
+                    'id'    => $flat->id,
+                    'name'  => $flat->name,
+                    'block' => $flat->block ? $flat->block->name : null,
+                ],
+                'added_by' => [
+                    'id'         => $owner->id,
+                    'first_name' => $owner->first_name,
+                    'last_name'  => $owner->last_name,
+                ],
+            ];
+        })->filter()->values();
+
+        // 3. Fetch Building Users associated with my flats
+        $ownerFlatIds = $myFlats->pluck('id');
+
+        $userRole = Role::where('building_id', $building->id)
+            ->where('slug', 'user')
+            ->first();
+
+        $limit       = (int) $building->no_of_logins;
+        $activeCount = BuildingUser::where('building_id', $building->id)
+            ->where('role_id', $userRole ? $userRole->id : null)
+            ->where('status', 'Active')
+            ->count();
+
+        $buildingUsers = BuildingUser::where('building_id', $building->id)
+            ->where('role_id', $userRole ? $userRole->id : null)
+            ->with('user')
+            ->get();
+
+        $users = $buildingUsers->map(function ($bu) use ($myFlats) {
+            if (!$bu->user) return null;
+
+            // Find which flat owned by this owner has this user as its tenant
+            $linkedFlat = $myFlats->first(function ($flat) use ($bu) {
+                return $flat->tanent_id == $bu->user_id;
+            });
+
+            if (!$linkedFlat) return null;
+
+            return [
+                'building_user_id' => $bu->id,
+                'status'           => $bu->status,
+                'user' => [
+                    'id'         => $bu->user->id,
+                    'first_name' => $bu->user->first_name,
+                    'last_name'  => $bu->user->last_name,
+                    'gender'     => $bu->user->gender,
+                    'email'      => $bu->user->email,
+                    'phone'      => $bu->user->phone,
+                ],
+                'flat' => [
+                    'id'    => $linkedFlat->id,
+                    'name'  => $linkedFlat->name,
+                    'block' => $linkedFlat->block ? $linkedFlat->block->name : null,
+                ],
+                'tenant' => $linkedFlat->tanent ? [
+                    'id'         => $linkedFlat->tanent->id,
+                    'first_name' => $linkedFlat->tanent->first_name,
+                    'last_name'  => $linkedFlat->tanent->last_name,
+                    'email'      => $linkedFlat->tanent->email,
+                    'phone'      => $linkedFlat->tanent->phone,
+                ] : null,
+            ];
+        })->filter()->values();
+
+        return response()->json([
+            'success'       => true,
+            'active_count'  => $activeCount,
+            'limit'         => $limit,
+            'limit_reached' => $activeCount >= $limit,
+            'tenants'       => $tenants,
+            'users'         => $users,
+        ], 200);
+    }
 }

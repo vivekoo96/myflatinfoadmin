@@ -108,6 +108,7 @@ use App\Http\Controllers\Api\MoveInOutApiController;
 
             Route::get('get-building-user-limit', [MoveInOutApiController::class, 'get_building_user_limit']);
             Route::post('add-user-to-building', [MoveInOutApiController::class, 'add_user_to_building']);
+            Route::get('get-my-tenants-and-users', [MoveInOutApiController::class, 'get_my_tenant_and_user_list']);
             Route::post('create-move-in-for-tenant', [MoveInOutApiController::class, 'create_move_in_for_tenant']);
             Route::post('create-tanent-move-in', [MoveInOutApiController::class, 'create_tanent_move_in']);
             Route::post('create-move-out-request', [MoveInOutApiController::class, 'create_move_out_request']);
