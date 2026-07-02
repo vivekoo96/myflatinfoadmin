@@ -167,7 +167,7 @@ class MoveInOutApiController extends Controller
             'success' => true,
             'is_existing' => $isExisting,
             'msg' => $isExisting ? 'Existing user assigned to building successfully.' : 'Tenant profile created successfully.',
-            'tenant' => [
+            'user' => [
                 'id' => $tenant->id,
                 'first_name' => $tenant->first_name,
                 'last_name' => $tenant->last_name,
