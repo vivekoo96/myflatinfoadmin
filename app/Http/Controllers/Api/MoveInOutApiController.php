@@ -50,10 +50,6 @@ class MoveInOutApiController extends Controller
             'last_name' => 'required|string',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|unique:users,phone',
-            'from_date' => 'required|date',
-            'to_date' => 'required|date|after:from_date',
-            'preferred_move_in_date' => 'required|date',
-            'additional_notes' => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -114,9 +110,6 @@ class MoveInOutApiController extends Controller
                 'phone' => $tenant->phone,
                 'flat_number' => $flat->name,
                 'block' => $block->name,
-                'from_date' => $request->from_date,
-                'to_date' => $request->to_date,
-                'preferred_move_in_date' => $request->preferred_move_in_date,
                 'id_proof' => $id_proof
             ]
         ], 201);
