@@ -50,6 +50,7 @@ class MoveInOutApiController extends Controller
             'last_name' => 'required|string',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|unique:users,phone',
+            'gender' => 'nullable|in:Male,Female,Other',
         ]);
 
         if ($validator->fails()) {
@@ -76,6 +77,7 @@ class MoveInOutApiController extends Controller
         $tenant->last_name = $request->last_name;
         $tenant->email = $request->email;
         $tenant->phone = $request->phone;
+        $tenant->gender = $request->gender;
         $tenant->password = Hash::make('MFI@' . rand(1000, 9999));
         $tenant->role = 'user';
         $tenant->status = 'Active';
@@ -105,7 +107,9 @@ class MoveInOutApiController extends Controller
             'msg' => 'Tenant profile created successfully.',
             'tenant' => [
                 'id' => $tenant->id,
-                'name' => $tenant->first_name . ' ' . $tenant->last_name,
+                'first_name' => $tenant->first_name,
+                'last_name' => $tenant->last_name,
+                'gender' => $tenant->gender,
                 'email' => $tenant->email,
                 'phone' => $tenant->phone,
                 'flat_number' => $flat->name,
