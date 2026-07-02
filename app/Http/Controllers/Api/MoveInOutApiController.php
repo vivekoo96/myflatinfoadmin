@@ -192,7 +192,7 @@ class MoveInOutApiController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'tenant_id' => 'required|exists:users,id',
+            'user_id' => 'required|exists:users,id',
             'flat_id' => 'required|exists:flats,id',
             'preferred_move_in_date' => 'required|date',
             'additional_notes' => 'nullable|string|max:500',
@@ -202,7 +202,7 @@ class MoveInOutApiController extends Controller
             return response()->json(['error' => $validator->errors()->first()], 422);
         }
 
-        $tenant = User::find($request->tenant_id);
+        $tenant = User::find($request->user_id);
         $flat = Flat::where('id', $request->flat_id)
             ->where('building_id', $building->id)
             ->where('owner_id', $user->id)
