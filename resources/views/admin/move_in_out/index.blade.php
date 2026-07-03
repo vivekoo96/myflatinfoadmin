@@ -66,6 +66,7 @@
                     <th>Name</th>
                     <th>Contact</th>
                     <th>Date</th>
+                    <th>ID Proof</th>
                     <th>Passcode</th>
                     <th>Dues</th>
                     <th>Status</th>
@@ -88,6 +89,15 @@
                     <td>{{ $req->user ? $req->user->name : ($req->first_name ?: '-') }}</td>
                     <td>{{ $req->user ? $req->user->phone : ($req->phone ?: '-') }}</td>
                     <td>{{ date('d-m-Y', strtotime($req->date_of_entry_exit)) }}</td>
+                    <td>
+                      @if($req->id_proof)
+                        <a href="{{ asset('public/images/move_in_out/' . $req->id_proof) }}" target="_blank" class="btn btn-sm btn-info" title="View ID Proof">
+                          <i class="fa fa-image"></i> View
+                        </a>
+                      @else
+                        <span class="text-muted">No Image</span>
+                      @endif
+                    </td>
                     <td>
                       @if($req->passcode)
                         <code class="bg-light p-1">{{ $req->passcode }}</code>
