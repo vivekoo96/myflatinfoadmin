@@ -205,7 +205,7 @@ class MoveInOutApiController extends Controller
         $id_proof = null;
         if ($request->hasFile('id_proof')) {
             $file = $request->file('id_proof');
-            $filename = 'id_proofs/' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('images/move_in_out/'), $filename);
             $id_proof = $filename;
         }
@@ -286,7 +286,7 @@ class MoveInOutApiController extends Controller
         // Handle ID proof passed from Step 1 or uploaded directly
         if ($request->hasFile('id_proof')) {
             $file = $request->file('id_proof');
-            $filename = 'id_proofs/' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('images/move_in_out/'), $filename);
             $moveRequest->id_proof = $filename;
         } elseif ($request->filled('id_proof')) {
