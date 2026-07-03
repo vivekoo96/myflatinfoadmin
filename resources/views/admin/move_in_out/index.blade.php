@@ -91,7 +91,7 @@
                     <td>{{ date('d-m-Y', strtotime($req->date_of_entry_exit)) }}</td>
                     <td>
                       @if($req->id_proof)
-                        <a href="{{ asset('public/images/move_in_out/' . $req->id_proof) }}" target="_blank" class="btn btn-sm btn-info" title="View ID Proof">
+                        <a href="{{ asset('images/move_in_out/' . $req->id_proof) }}" target="_blank" class="btn btn-sm btn-info" title="View ID Proof">
                           <i class="fa fa-image"></i> View
                         </a>
                       @else
