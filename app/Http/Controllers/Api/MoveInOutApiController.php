@@ -134,13 +134,31 @@ class MoveInOutApiController extends Controller
             $tenant->email = $request->email;
             $tenant->phone = $request->phone;
             $tenant->gender = $request->gender;
-            $tenant->password = Hash::make('MFI@' . rand(1000, 9999));
+            $rawPassword = 'MFI@' . rand(1000, 9999);
+            $tenant->password = Hash::make($rawPassword);
             $tenant->role = 'user';
             $tenant->status = 'Active';
             $tenant->building_id = $building->id;
             $tenant->created_by = $user->id; // The owner ID
             $tenant->created_type = 'direct';
             $tenant->save();
+
+            // Send Email with password
+            try {
+                $setting = \App\Models\Setting::first();
+                $logo = $setting ? $setting->logo : null;
+                $info = array(
+                    'user' => $tenant,
+                    'password' => $rawPassword,
+                    'logo' => $logo,
+                );
+                \Illuminate\Support\Facades\Mail::send('email.password', $info, function ($message) use ($tenant) {
+                    $message->to($tenant->email, $tenant->first_name . ' ' . $tenant->last_name)
+                            ->subject('Your MyFlatInfo Account Has Been Created');
+                });
+            } catch (\Exception $e) {
+                \Log::error('Failed to send password email: ' . $e->getMessage());
+            }
         }
 
         // Get or create building-specific 'user' role
@@ -773,7 +791,8 @@ class MoveInOutApiController extends Controller
                 $tenant->email = $request->email;
                 $tenant->phone = $request->phone;
                 $tenant->gender = $request->gender;
-                $tenant->password = Hash::make('MFI@' . rand(1000, 9999));
+                $rawPassword = 'MFI@' . rand(1000, 9999);
+                $tenant->password = Hash::make($rawPassword);
                 $tenant->role = 'user';
                 $tenant->status = 'Active';
                 $tenant->building_id = $building->id;
@@ -786,6 +805,23 @@ class MoveInOutApiController extends Controller
                 }
                 
                 $tenant->save();
+
+                // Send Email with password
+                try {
+                    $setting = \App\Models\Setting::first();
+                    $logo = $setting ? $setting->logo : null;
+                    $info = array(
+                        'user' => $tenant,
+                        'password' => $rawPassword,
+                        'logo' => $logo,
+                    );
+                    \Illuminate\Support\Facades\Mail::send('email.password', $info, function ($message) use ($tenant) {
+                        $message->to($tenant->email, $tenant->first_name . ' ' . $tenant->last_name)
+                                ->subject('Your MyFlatInfo Account Has Been Created');
+                    });
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send password email: ' . $e->getMessage());
+                }
             }
         }
 
@@ -928,7 +964,7 @@ class MoveInOutApiController extends Controller
             ->with('user')
             ->get();
 
-        $users = $buildingUsers->map(function ($bu) use ($myFlats) {
+        $users = $buildingUsers->map(function ($bu) use ($myFlats, $owner) {
             if (!$bu->user) return null;
 
             // Find which flat owned by this owner is associated with this user (either as main tenant or via user's flat_id)
@@ -936,7 +972,11 @@ class MoveInOutApiController extends Controller
                 return $flat->tanent_id == $bu->user_id || $bu->user->flat_id == $flat->id;
             });
 
-            if (!$linkedFlat) return null;
+            // If not linked to any flat, but created by this owner, we still want to show them
+            // so the active_count matches the items in the list.
+            if (!$linkedFlat && $bu->user->created_by != $owner->id) {
+                return null;
+            }
 
             // Fetch details of the tenant/user who created this user
             $creator = null;
@@ -964,12 +1004,12 @@ class MoveInOutApiController extends Controller
                     'email'      => $bu->user->email,
                     'phone'      => $bu->user->phone,
                 ],
-                'flat' => [
+                'flat' => $linkedFlat ? [
                     'id'    => $linkedFlat->id,
                     'name'  => $linkedFlat->name,
                     'block' => $linkedFlat->block ? $linkedFlat->block->name : null,
-                ],
-                'tenant' => $linkedFlat->tanent ? [
+                ] : null,
+                'tenant' => ($linkedFlat && $linkedFlat->tanent) ? [
                     'id'         => $linkedFlat->tanent->id,
                     'first_name' => $linkedFlat->tanent->first_name,
                     'last_name'  => $linkedFlat->tanent->last_name,
