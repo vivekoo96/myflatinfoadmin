@@ -137,21 +137,50 @@ class MoveInOutApiController extends Controller
             $tenant->password = Hash::make('MFI@' . rand(1000, 9999));
             $tenant->role = 'user';
             $tenant->status = 'Active';
+            $tenant->building_id = $building->id;
+            $tenant->created_by = $user->id; // The owner ID
+            $tenant->created_type = 'direct';
             $tenant->save();
         }
 
-        // Assign 'User' role to this building (only if not already assigned)
-        $userRole = Role::where('name', 'User')->first();
+        // Get or create building-specific 'user' role
+        $userRole = Role::where('building_id', $building->id)
+            ->where('slug', 'user')
+            ->first();
+        
+        if (!$userRole) {
+            $userRole = new Role();
+            $userRole->building_id = $building->id;
+            $userRole->name = 'User';
+            $userRole->slug = 'user';
+            $userRole->type = 'user';
+            $userRole->save();
+        }
+
         $alreadyAssigned = BuildingUser::where('user_id', $tenant->id)
             ->where('building_id', $building->id)
+            ->where('role_id', $userRole->id)
             ->exists();
 
-        if ($userRole && !$alreadyAssigned) {
-            BuildingUser::create([
-                'user_id' => $tenant->id,
-                'building_id' => $building->id,
-                'role_id' => $userRole->id
-            ]);
+        if (!$alreadyAssigned) {
+            // Check building limit
+            $limit = (int) $building->no_of_logins;
+            $activeCount = BuildingUser::where('building_id', $building->id)
+                ->where('role_id', $userRole->id)
+                ->where('status', 'Active')
+                ->count();
+
+            if ($activeCount >= $limit) {
+                return response()->json(['error' => 'No of login limit is exceeded'], 422);
+            }
+
+            // Create building user relationship with Active status (just like admin code)
+            $buildingUser = new BuildingUser();
+            $buildingUser->building_id = $building->id;
+            $buildingUser->user_id = $tenant->id;
+            $buildingUser->role_id = $userRole->id;
+            $buildingUser->status = 'Active';
+            $buildingUser->save();
         }
 
         // Handle ID Proof file upload
@@ -696,42 +725,80 @@ class MoveInOutApiController extends Controller
         ], 200);
     }
 
-    // Add existing user to building (by user_id)
+    // Add existing user or create a new user and add to building
     public function add_user_to_building(Request $request)
     {
         $authUser = Auth::user();
-        $building = $authUser->building;
+        $flat     = AuthHelper::flat();
+        $building = $flat ? $flat->building : $authUser->building;
 
         if (!$building) {
             return response()->json(['error' => 'No building assigned to your account.'], 403);
         }
 
         $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
+            'user_id'    => 'nullable|exists:users,id',
+            'email'      => 'required_without:user_id|email',
+            'first_name' => 'required_without:user_id|string',
+            'last_name'  => 'required_without:user_id|string',
+            'phone'      => 'nullable|string',
+            'gender'     => 'nullable|in:Male,Female,Other',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()->first()], 422);
         }
 
-        $tenant = User::find($request->user_id);
+        $isExisting = false;
+        $tenant = null;
 
-        // Get 'User' role for this building
+        if ($request->filled('user_id')) {
+            $tenant = User::find($request->user_id);
+            $isExisting = true;
+        } else {
+            // Check if user already exists by email
+            $tenant = User::where('email', $request->email)->first();
+            if ($tenant) {
+                $isExisting = true;
+            } else {
+                // Check phone uniqueness for new users
+                if ($request->filled('phone') && User::where('phone', $request->phone)->exists()) {
+                    return response()->json(['error' => 'The phone number is already taken.'], 422);
+                }
+
+                // Create new User Account
+                $tenant = new User();
+                $tenant->first_name = $request->first_name;
+                $tenant->last_name = $request->last_name;
+                $tenant->email = $request->email;
+                $tenant->phone = $request->phone;
+                $tenant->gender = $request->gender;
+                $tenant->password = Hash::make('MFI@' . rand(1000, 9999));
+                $tenant->role = 'user';
+                $tenant->status = 'Active';
+                $tenant->building_id = $building->id;
+                $tenant->created_by = $authUser->id; // The owner ID
+                $tenant->created_type = 'direct';
+                
+                // If a flat is selected, assign it
+                if ($flat) {
+                    $tenant->flat_id = $flat->id;
+                }
+                
+                $tenant->save();
+            }
+        }
+
+        // Get or create building-specific 'user' role
         $userRole = Role::where('building_id', $building->id)->where('slug', 'user')->first();
 
         if (!$userRole) {
-            return response()->json(['error' => 'User role not configured for this building.'], 500);
-        }
-
-        // Check if already assigned with User role
-        $alreadyExists = BuildingUser::where('building_id', $building->id)
-            ->where('user_id', $tenant->id)
-            ->where('role_id', $userRole->id)
-            ->whereNull('deleted_at')
-            ->exists();
-
-        if ($alreadyExists) {
-            return response()->json(['error' => 'User is already assigned to this building.'], 422);
+            $userRole = new Role();
+            $userRole->building_id = $building->id;
+            $userRole->name = 'User';
+            $userRole->slug = 'user';
+            $userRole->type = 'user';
+            $userRole->save();
         }
 
         // Check login limit
@@ -744,6 +811,22 @@ class MoveInOutApiController extends Controller
             ->count();
 
         $limit = (int) $building->no_of_logins;
+
+        // Check if already assigned with User role
+        $alreadyExists = BuildingUser::where('building_id', $building->id)
+            ->where('user_id', $tenant->id)
+            ->where('role_id', $userRole->id)
+            ->whereNull('deleted_at')
+            ->exists();
+
+        if ($alreadyExists) {
+            // Update flat_id if flat is selected and they don't have one
+            if ($flat && !$tenant->flat_id) {
+                $tenant->flat_id = $flat->id;
+                $tenant->save();
+            }
+            return response()->json(['error' => 'User is already assigned to this building.'], 422);
+        }
 
         if ($activeCount >= $limit) {
             return response()->json([
@@ -760,19 +843,26 @@ class MoveInOutApiController extends Controller
         $buildingUser->role_id     = $userRole->id;
         $buildingUser->status      = 'Active';
         $buildingUser->save();
+        
+        // Ensure flat_id is set for existing user if not already set
+        if ($isExisting && $flat && !$tenant->flat_id) {
+            $tenant->flat_id = $flat->id;
+            $tenant->save();
+        }
 
         return response()->json([
-            'success' => true,
-            'msg'     => 'User added to building successfully.',
-            'user'    => [
+            'success'      => true,
+            'is_existing'  => $isExisting,
+            'msg'          => $isExisting ? 'Existing user added to building successfully.' : 'User created and added successfully.',
+            'active_count' => $activeCount + 1,
+            'limit'        => $limit,
+            'user'         => [
                 'id'         => $tenant->id,
                 'first_name' => $tenant->first_name,
                 'last_name'  => $tenant->last_name,
                 'email'      => $tenant->email,
                 'phone'      => $tenant->phone,
-            ],
-            'active_count' => $activeCount + 1,
-            'limit'        => $limit,
+            ]
         ], 201);
     }
 
