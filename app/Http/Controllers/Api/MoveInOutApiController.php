@@ -730,15 +730,34 @@ class MoveInOutApiController extends Controller
         }
 
         $sortOrder = $request->input('sort_order', 'desc');
+        $limit = (int) ($request->query('limit', $request->input('count', 0)));
+        $page = (int) ($request->query('page', 1));
 
-        $requests = MoveInOutRequest::where('building_id', $request->building_id)
+        $query = MoveInOutRequest::where('building_id', $request->building_id)
             ->where('type', 'Move-Out')
             ->where('status', 'Pending Accounts')
             ->with(['flat.block', 'user'])
-            ->orderBy('created_at', $sortOrder)
-            ->get();
+            ->orderBy('created_at', $sortOrder);
 
-        return response()->json(['success' => true, 'requests' => $requests], 200);
+        if ($limit > 0) {
+            $paginator = $query->paginate($limit, ['*'], 'page', $page);
+            return response()->json([
+                'success' => true, 
+                'requests' => $paginator->items(),
+                'total' => $paginator->total(),
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+            ], 200);
+        } else {
+            $requests = $query->get();
+            return response()->json([
+                'success' => true, 
+                'requests' => $requests,
+                'total' => $requests->count(),
+                'current_page' => 1,
+                'last_page' => 1,
+            ], 200);
+        }
     }
 
     // Accounts: Approve or reject move-out request
