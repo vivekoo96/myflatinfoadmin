@@ -471,16 +471,35 @@ class MoveInOutApiController extends Controller
         $user = Auth::user();
         $buildingId = $request->building_id; // Security should pass their building_id
         $sortOrder = $request->input('sort_order', 'desc');
+        $limit = (int) ($request->query('limit', $request->input('count', 0)));
+        $page = (int) ($request->query('page', 1));
 
-        $requests = MoveInOutRequest::where('building_id', $buildingId)
+        $query = MoveInOutRequest::where('building_id', $buildingId)
             ->where('type', $request->type)
             ->where('status', 'Approved')
             ->whereNull('visited_at')
             ->with(['flat', 'user'])
-            ->orderBy('created_at', $sortOrder)
-            ->get();
+            ->orderBy('created_at', $sortOrder);
 
-        return response()->json(['success' => true, 'requests' => $requests], 200);
+        if ($limit > 0) {
+            $paginator = $query->paginate($limit, ['*'], 'page', $page);
+            return response()->json([
+                'success' => true, 
+                'requests' => $paginator->items(),
+                'total' => $paginator->total(),
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+            ], 200);
+        } else {
+            $requests = $query->get();
+            return response()->json([
+                'success' => true, 
+                'requests' => $requests,
+                'total' => $requests->count(),
+                'current_page' => 1,
+                'last_page' => 1,
+            ], 200);
+        }
     }
 
     // Fetch active passcode for user
