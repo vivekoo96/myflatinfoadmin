@@ -470,16 +470,57 @@ class MoveInOutApiController extends Controller
 
         $user = Auth::user();
         $buildingId = $request->building_id; // Security should pass their building_id
-        $sortOrder = $request->input('sort_order', 'desc');
+        
         $limit = (int) ($request->query('limit', $request->input('count', 0)));
         $page = (int) ($request->query('page', 1));
+        
+        $search = $request->query('search');
+        $fromDate = $request->query('fromDate');
+        $toDate = $request->query('toDate');
+        $sortField = $request->query('sortField', 'created_at');
+        $sortOrder = strtolower($request->query('sortOrder', $request->input('sort_order', 'desc'))) === 'asc' ? 'asc' : 'desc';
+        
+        $columnMap = [
+            'created_at' => 'created_at',
+            'date' => 'date_of_entry_exit',
+            'type' => 'type',
+            'status' => 'status'
+        ];
+        $sortColumn = $columnMap[$sortField] ?? 'created_at';
 
         $query = MoveInOutRequest::where('building_id', $buildingId)
             ->where('type', $request->type)
-            ->where('status', 'Approved')
-            ->whereNull('visited_at')
-            ->with(['flat', 'user'])
-            ->orderBy('created_at', $sortOrder);
+            ->with(['flat', 'user']);
+            
+        if ($request->filled('status')) {
+            $status = $request->input('status');
+            if (is_array($status)) {
+                $query->whereIn('status', $status);
+            } else {
+                $query->where('status', $status);
+            }
+        } else {
+            $query->where('status', 'Approved')->whereNull('visited_at');
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('passcode', 'like', "%{$search}%");
+            });
+        }
+
+        if ($fromDate) {
+            $query->whereDate('created_at', '>=', \Carbon\Carbon::parse($fromDate)->startOfDay());
+        }
+        if ($toDate) {
+            $query->whereDate('created_at', '<=', \Carbon\Carbon::parse($toDate)->endOfDay());
+        }
+
+        $query->orderBy($sortColumn, $sortOrder);
 
         if ($limit > 0) {
             $paginator = $query->paginate($limit, ['*'], 'page', $page);
@@ -643,13 +684,54 @@ class MoveInOutApiController extends Controller
         }
 
         $user = Auth::user();
-        $sortOrder = $request->input('sort_order', 'desc');
+        
         $limit = (int) ($request->query('limit', $request->input('count', 0)));
         $page = (int) ($request->query('page', 1));
+        
+        $search = $request->query('search');
+        $fromDate = $request->query('fromDate');
+        $toDate = $request->query('toDate');
+        $sortField = $request->query('sortField', 'created_at');
+        $sortOrder = strtolower($request->query('sortOrder', $request->input('sort_order', 'desc'))) === 'asc' ? 'asc' : 'desc';
+        $status = $request->input('status');
+        
+        $columnMap = [
+            'created_at' => 'created_at',
+            'date' => 'date_of_entry_exit',
+            'type' => 'type',
+            'status' => 'status'
+        ];
+        $sortColumn = $columnMap[$sortField] ?? 'created_at';
 
         $query = MoveInOutRequest::where('user_id', $user->id)
-            ->with(['flat.block', 'user'])
-            ->orderBy('created_at', $sortOrder);
+            ->with(['flat.block', 'user']);
+            
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('passcode', 'like', "%{$search}%");
+            });
+        }
+
+        if ($fromDate) {
+            $query->whereDate('created_at', '>=', \Carbon\Carbon::parse($fromDate)->startOfDay());
+        }
+        if ($toDate) {
+            $query->whereDate('created_at', '<=', \Carbon\Carbon::parse($toDate)->endOfDay());
+        }
+
+        if ($status) {
+            if (is_array($status)) {
+                $query->whereIn('status', $status);
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        $query->orderBy($sortColumn, $sortOrder);
 
         if ($limit > 0) {
             $paginator = $query->paginate($limit, ['*'], 'page', $page);
@@ -729,15 +811,56 @@ class MoveInOutApiController extends Controller
             return response()->json(['error' => $validator->errors()->first()], 422);
         }
 
-        $sortOrder = $request->input('sort_order', 'desc');
         $limit = (int) ($request->query('limit', $request->input('count', 0)));
         $page = (int) ($request->query('page', 1));
+        
+        $search = $request->query('search');
+        $fromDate = $request->query('fromDate');
+        $toDate = $request->query('toDate');
+        $sortField = $request->query('sortField', 'created_at');
+        $sortOrder = strtolower($request->query('sortOrder', $request->input('sort_order', 'desc'))) === 'asc' ? 'asc' : 'desc';
+        $status = $request->input('status');
+        
+        $columnMap = [
+            'created_at' => 'created_at',
+            'date' => 'date_of_entry_exit',
+            'type' => 'type',
+            'status' => 'status'
+        ];
+        $sortColumn = $columnMap[$sortField] ?? 'created_at';
 
         $query = MoveInOutRequest::where('building_id', $request->building_id)
             ->where('type', 'Move-Out')
-            ->where('status', 'Pending Accounts')
-            ->with(['flat.block', 'user'])
-            ->orderBy('created_at', $sortOrder);
+            ->with(['flat.block', 'user']);
+            
+        if ($status) {
+            if (is_array($status)) {
+                $query->whereIn('status', $status);
+            } else {
+                $query->where('status', $status);
+            }
+        } else {
+            $query->where('status', 'Pending Accounts');
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('passcode', 'like', "%{$search}%");
+            });
+        }
+
+        if ($fromDate) {
+            $query->whereDate('created_at', '>=', \Carbon\Carbon::parse($fromDate)->startOfDay());
+        }
+        if ($toDate) {
+            $query->whereDate('created_at', '<=', \Carbon\Carbon::parse($toDate)->endOfDay());
+        }
+
+        $query->orderBy($sortColumn, $sortOrder);
 
         if ($limit > 0) {
             $paginator = $query->paginate($limit, ['*'], 'page', $page);
