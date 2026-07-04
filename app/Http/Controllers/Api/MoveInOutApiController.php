@@ -494,6 +494,9 @@ class MoveInOutApiController extends Controller
             
         if ($request->filled('status')) {
             $status = $request->input('status');
+            if (is_string($status) && strpos($status, ',') !== false) {
+                $status = array_map('trim', explode(',', $status));
+            }
             if (is_array($status)) {
                 $query->whereIn('status', $status);
             } else {
@@ -723,7 +726,11 @@ class MoveInOutApiController extends Controller
             $query->whereDate('created_at', '<=', \Carbon\Carbon::parse($toDate)->endOfDay());
         }
 
-        if ($status) {
+        if ($request->filled('status')) {
+            $status = $request->input('status');
+            if (is_string($status) && strpos($status, ',') !== false) {
+                $status = array_map('trim', explode(',', $status));
+            }
             if (is_array($status)) {
                 $query->whereIn('status', $status);
             } else {
@@ -833,7 +840,11 @@ class MoveInOutApiController extends Controller
             ->where('type', 'Move-Out')
             ->with(['flat.block', 'user']);
             
-        if ($status) {
+        if ($request->filled('status')) {
+            $status = $request->input('status');
+            if (is_string($status) && strpos($status, ',') !== false) {
+                $status = array_map('trim', explode(',', $status));
+            }
             if (is_array($status)) {
                 $query->whereIn('status', $status);
             } else {
