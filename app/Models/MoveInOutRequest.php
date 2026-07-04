@@ -14,8 +14,26 @@ class MoveInOutRequest extends Model
         'building_id', 'flat_id', 'user_id', 'type', 'person_type', 
         'first_name', 'last_name', 'email', 'phone', 'id_proof', 
         'date_of_entry_exit', 'from_date', 'to_date', 'passcode', 
-        'status', 'comment', 'approved_by', 'visited_at'
+        'status', 'comment', 'approved_by', 'visited_at', 'rejected_comment'
     ];
+
+    protected $appends = ['block', 'created'];
+
+    public function getBlockAttribute()
+    {
+        return $this->flat && $this->flat->block ? $this->flat->block : null;
+    }
+
+    public function getCreatedAttribute()
+    {
+        if ($this->flat && $this->flat->owner) {
+            return [
+                'id' => $this->flat->owner->id,
+                'name' => trim($this->flat->owner->first_name . ' ' . $this->flat->owner->last_name)
+            ];
+        }
+        return null;
+    }
 
     public function building()
     {

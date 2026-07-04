@@ -550,7 +550,7 @@ class MoveInOutApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'request' => $pass,
+            'request' => [$pass],
             'id_proof_url' => $pass->id_proof ? asset('images/move_in_out/' . $pass->id_proof) : null,
             'user' => $pass->user ? [
                 'name' => $pass->user->name,
@@ -631,22 +631,43 @@ class MoveInOutApiController extends Controller
             ->orderBy('created_at', $sortOrder)
             ->get()
             ->map(function ($r) {
-                return [
-                    'id' => $r->id,
-                    'type' => $r->type,
-                    'person_type' => $r->person_type,
-                    'status' => $r->status,
-                    'passcode' => in_array($r->status, ['Approved']) ? $r->passcode : null,
-                    'date_of_entry_exit' => $r->date_of_entry_exit,
-                    'flat' => $r->flat ? [
-                        'name' => $r->flat->name,
-                        'block' => $r->flat->block ? $r->flat->block->name : null,
-                    ] : null,
-                    'created_at' => $r->created_at,
-                ];
+                $data = $r->toArray();
+                if (!in_array($r->status, ['Approved'])) {
+                    $data['passcode'] = null;
+                }
+                return $data;
             });
 
         return response()->json(['success' => true, 'requests' => $requests], 200);
+    }
+
+    // User: View specific move request details
+    public function view_pass(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'request_id' => 'required|exists:move_in_out_requests,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 422);
+        }
+
+        $user = Auth::user();
+        $pass = MoveInOutRequest::where('id', $request->request_id)
+            ->where('user_id', $user->id)
+            ->with(['flat.block', 'user'])
+            ->first();
+
+        if (!$pass) {
+            return response()->json(['error' => 'Pass not found or unauthorized.'], 404);
+        }
+
+        $data = $pass->toArray();
+        if (!in_array($pass->status, ['Approved'])) {
+            $data['passcode'] = null;
+        }
+
+        return response()->json(['success' => true, 'request' => [$data]], 200);
     }
 
     // Accounts: Get move-out requests pending accounts verification
@@ -701,7 +722,7 @@ class MoveInOutApiController extends Controller
             $msg = 'Verified by Accounts. Forwarded to BA for final approval.';
         } else {
             $moveRequest->status = 'Rejected';
-            $moveRequest->comment = $request->comment ?? 'Rejected by Accounts.';
+            $moveRequest->rejected_comment = $request->comment ?? 'Rejected by Accounts.';
             $msg = 'Request rejected.';
         }
 

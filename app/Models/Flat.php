@@ -9,7 +9,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Flat extends Model
 {
     use HasFactory,SoftDeletes;
-    protected $appends = ['current_user'];
+    protected $appends = ['current_user', 'block_name'];
+
+    public function getBlockNameAttribute()
+    {
+        return $this->block ? $this->block->name : null;
+    }
 
     // ...existing code...
 

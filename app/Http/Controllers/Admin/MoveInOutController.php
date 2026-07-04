@@ -150,7 +150,7 @@ class MoveInOutController extends Controller
         $moveRequest = MoveInOutRequest::where('id', $id)->where('building_id', Auth::User()->building_id)->firstOrFail();
         
         $moveRequest->status = 'Rejected';
-        $moveRequest->comment = $request->comment;
+        $moveRequest->rejected_comment = $request->comment;
         $moveRequest->save();
 
         return redirect()->back()->with('success', 'Request rejected.');
