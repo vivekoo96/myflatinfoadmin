@@ -706,7 +706,12 @@ class MoveInOutApiController extends Controller
         ];
         $sortColumn = $columnMap[$sortField] ?? 'created_at';
 
-        $query = MoveInOutRequest::where('user_id', $user->id)
+        $query = MoveInOutRequest::where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereHas('flat', function ($fQuery) use ($user) {
+                      $fQuery->where('owner_id', $user->id);
+                  });
+            })
             ->with(['flat.block', 'user']);
             
         if ($search) {
