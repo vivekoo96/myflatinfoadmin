@@ -625,12 +625,17 @@ class MoveInOutApiController extends Controller
 
         $user = Auth::user();
         $sortOrder = $request->input('sort_order', 'desc');
+        $limit = (int) ($request->query('limit', $request->input('count', 0)));
+        $page = (int) ($request->query('page', 1));
 
-        $requests = MoveInOutRequest::where('user_id', $user->id)
-            ->with(['flat.block'])
-            ->orderBy('created_at', $sortOrder)
-            ->get()
-            ->map(function ($r) {
+        $query = MoveInOutRequest::where('user_id', $user->id)
+            ->with(['flat.block', 'user'])
+            ->orderBy('created_at', $sortOrder);
+
+        if ($limit > 0) {
+            $paginator = $query->paginate($limit, ['*'], 'page', $page);
+            
+            $items = collect($paginator->items())->map(function ($r) {
                 $data = $r->toArray();
                 if (!in_array($r->status, ['Approved'])) {
                     $data['passcode'] = null;
@@ -638,7 +643,30 @@ class MoveInOutApiController extends Controller
                 return $data;
             });
 
-        return response()->json(['success' => true, 'requests' => $requests], 200);
+            return response()->json([
+                'success' => true, 
+                'requests' => $items,
+                'total' => $paginator->total(),
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+            ], 200);
+        } else {
+            $requests = $query->get()->map(function ($r) {
+                $data = $r->toArray();
+                if (!in_array($r->status, ['Approved'])) {
+                    $data['passcode'] = null;
+                }
+                return $data;
+            });
+
+            return response()->json([
+                'success' => true, 
+                'requests' => $requests,
+                'total' => $requests->count(),
+                'current_page' => 1,
+                'last_page' => 1,
+            ], 200);
+        }
     }
 
     // User: View specific move request details
