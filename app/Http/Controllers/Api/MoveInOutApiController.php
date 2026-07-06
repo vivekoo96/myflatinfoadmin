@@ -782,7 +782,7 @@ class MoveInOutApiController extends Controller
         }
     }
 
-    // User: Get a single move request details by POST request ID
+    // Get a single move request details by POST request ID (Accessible by user/security/accounts)
     public function get_my_move_request_details(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -793,20 +793,10 @@ class MoveInOutApiController extends Controller
             return response()->json(['error' => $validator->errors()->first()], 422);
         }
 
-        $user = Auth::user();
-
-        $pass = MoveInOutRequest::where('id', $request->id)
-            ->where(function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                  ->orWhereHas('flat', function ($fQuery) use ($user) {
-                      $fQuery->where('owner_id', $user->id);
-                  });
-            })
-            ->with(['flat.block', 'user'])
-            ->first();
+        $pass = MoveInOutRequest::with(['flat.block', 'user'])->find($request->id);
 
         if (!$pass) {
-            return response()->json(['error' => 'Move request not found or unauthorized.'], 404);
+            return response()->json(['error' => 'Move request not found.'], 404);
         }
 
         $data = $pass->toArray();
