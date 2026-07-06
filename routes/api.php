@@ -49,6 +49,7 @@ use App\Http\Controllers\Api\MoveInOutApiController;
         Route::post('select-flat',[CustomerController::class,'select_flat']);
         Route::get('get-active-passcode', [MoveInOutApiController::class, 'get_active_passcode']);
         Route::get('get-my-move-requests', [MoveInOutApiController::class, 'get_my_move_requests']);
+        Route::get('get-my-move-requests/{id}', [MoveInOutApiController::class, 'show_my_move_request']);
         Route::post('view-move-pass', [MoveInOutApiController::class, 'view_pass']);
 
       Route::post('get-issue-comments-user',[CustomerController::class,'get_issue_comments_user']);

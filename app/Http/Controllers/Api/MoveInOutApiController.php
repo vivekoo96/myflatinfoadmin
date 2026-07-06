@@ -782,6 +782,36 @@ class MoveInOutApiController extends Controller
         }
     }
 
+    // User: Get a single move request details by ID
+    public function show_my_move_request($id)
+    {
+        $user = Auth::user();
+
+        $pass = MoveInOutRequest::where('id', $id)
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereHas('flat', function ($fQuery) use ($user) {
+                      $fQuery->where('owner_id', $user->id);
+                  });
+            })
+            ->with(['flat.block', 'user'])
+            ->first();
+
+        if (!$pass) {
+            return response()->json(['error' => 'Move request not found or unauthorized.'], 404);
+        }
+
+        $data = $pass->toArray();
+        if (!in_array($pass->status, ['Approved'])) {
+            $data['passcode'] = null;
+        }
+
+        return response()->json([
+            'success' => true, 
+            'request' => $data
+        ], 200);
+    }
+
     // User: View specific move request details
     public function view_pass(Request $request)
     {
