@@ -687,7 +687,7 @@ class MoveInOutApiController extends Controller
         }
 
         $user = Auth::user();
-        
+
         $limit = (int) ($request->query('limit', $request->input('count', 0)));
         $page = (int) ($request->query('page', 1));
         
@@ -782,12 +782,20 @@ class MoveInOutApiController extends Controller
         }
     }
 
-    // User: Get a single move request details by ID
-    public function show_my_move_request($id)
+    // User: Get a single move request details by POST request ID
+    public function get_my_move_request_details(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:move_in_out_requests,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 422);
+        }
+
         $user = Auth::user();
 
-        $pass = MoveInOutRequest::where('id', $id)
+        $pass = MoveInOutRequest::where('id', $request->id)
             ->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
                   ->orWhereHas('flat', function ($fQuery) use ($user) {
