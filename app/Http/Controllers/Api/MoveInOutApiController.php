@@ -469,7 +469,7 @@ class MoveInOutApiController extends Controller
         }
 
         $user = Auth::user();
-        $buildingId = $request->building_id; // Security should pass their building_id
+        $buildingId = $request->building_id ?? $user->building_id; // Security should pass their building_id, fallback to user's building
         
         $limit = (int) ($request->query('limit', $request->input('count', 0)));
         $page = (int) ($request->query('page', 1));
@@ -488,9 +488,12 @@ class MoveInOutApiController extends Controller
         ];
         $sortColumn = $columnMap[$sortField] ?? 'created_at';
 
-        $query = MoveInOutRequest::where('building_id', $buildingId)
-            ->where('type', $request->type)
+        $query = MoveInOutRequest::where('type', $request->type)
             ->with(['flat', 'user']);
+            
+        if ($buildingId) {
+            $query->where('building_id', $buildingId);
+        }
             
         if ($request->filled('status')) {
             $status = $request->input('status');
