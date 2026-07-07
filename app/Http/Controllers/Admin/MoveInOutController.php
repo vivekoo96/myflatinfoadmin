@@ -236,7 +236,18 @@ class MoveInOutController extends Controller
             $title = 'Move-In/Out Pass generated';
             $body = "Your {$moveRequest->type} pass for flat {$moveRequest->flat->name} has been generated. Passcode: {$moveRequest->passcode}";
             NotificationHelper::sendNotification($user->id, $title, $body, [
-                'type' => 'MOVE_PASS',
+                'type' => 'MOVE_PASS_APPROVED',
+                'categoryId' => 'PlannedVisitors',
+                'channelId' => 'longring',
+                'sound' => 'bellnotificationsound.wav',
+                'screen' => 'SM_ViewPasseDetailsPage',
+                'params' => json_encode([
+                    'screenTab' => '',
+                    'request_id' => (string) $moveRequest->id,
+                    'building_id' => (string) $moveRequest->building_id,
+                    'flat_id' => (string) $moveRequest->flat_id,
+                    'user_id' => (string) ($moveRequest->user_id ?? ''),
+                ]),
                 'passcode' => $moveRequest->passcode,
                 'request_id' => $moveRequest->id
             ]);
@@ -267,7 +278,18 @@ class MoveInOutController extends Controller
                 $ownerTitle = 'Tenant Move-In/Out Pass generated';
                 $ownerBody = "A {$moveRequest->type} pass for your flat {$flat->name} has been generated for tenant {$name}. Passcode: {$moveRequest->passcode}";
                 NotificationHelper::sendNotification($owner->id, $ownerTitle, $ownerBody, [
-                    'type' => 'MOVE_PASS',
+                    'type' => 'MOVE_PASS_APPROVED',
+                    'categoryId' => 'PlannedVisitors',
+                    'channelId' => 'longring',
+                    'sound' => 'bellnotificationsound.wav',
+                    'screen' => 'SM_ViewPasseDetailsPage',
+                    'params' => json_encode([
+                        'screenTab' => '',
+                        'request_id' => (string) $moveRequest->id,
+                        'building_id' => (string) $moveRequest->building_id,
+                        'flat_id' => (string) $moveRequest->flat_id,
+                        'user_id' => (string) ($moveRequest->user_id ?? ''),
+                    ]),
                     'passcode' => $moveRequest->passcode,
                     'request_id' => $moveRequest->id
                 ]);

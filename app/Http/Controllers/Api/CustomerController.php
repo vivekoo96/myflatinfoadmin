@@ -11359,17 +11359,20 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
         if (!$building) {
             return response()->json(['status' => false, 'message' => 'Building not found.'], 404);
         }
+        
+        $isUpiEnabled = ($building->is_upi_enabled ?? 'Yes') === 'Yes';
 
         $qrCodeUrl = null;
-        if ($building->upi_qr_code) {
+        if ($building->upi_qr_code && $isUpiEnabled) {
             $qrCodeUrl = asset('public/upi_qr_codes/' . $building->upi_qr_code);
         }
 
         return response()->json([
             'status'       => true,
-            'upi_id'       => $building->upi_id,
+            'upi_id'       => $isUpiEnabled ? $building->upi_id : null,
             'upi_qr_code'  => $qrCodeUrl,
-            'has_upi'      => !empty($building->upi_id) || !empty($building->upi_qr_code),
+            'has_upi'      => $isUpiEnabled && (!empty($building->upi_id) || !empty($building->upi_qr_code)),
+            'is_enabled'   => $isUpiEnabled,
         ], 200);
     }
 

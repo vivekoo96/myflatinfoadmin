@@ -106,6 +106,10 @@ class SettingController extends Controller
         }
 
         // UPI Payment Settings
+        if ($request->has('is_upi_enabled')) {
+            $building->is_upi_enabled = $request->is_upi_enabled;
+        }
+        
         if ($request->filled('upi_id')) {
             $building->upi_id = $request->upi_id;
         }

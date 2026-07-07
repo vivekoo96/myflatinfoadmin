@@ -190,6 +190,17 @@
                         <input type="hidden" name="whatsapp_support_number" value="{{ $building->whatsapp_support_number }}">
                         <input type="hidden" name="treasurer_type" value="{{ $building->treasurer_type }}">
                         <input type="hidden" name="treasurer_id" value="{{ $building->treasurer_id }}">
+                        
+                        <div class="row mb-4 pl-2">
+                            <div class="col-md-12">
+                                <div class="custom-control custom-switch custom-switch-lg">
+                                    <input type="hidden" name="is_upi_enabled" value="No">
+                                    <input type="checkbox" class="custom-control-input" id="is_upi_enabled" name="is_upi_enabled" value="Yes" {{ ($building->is_upi_enabled ?? 'Yes') == 'Yes' ? 'checked' : '' }}>
+                                    <label class="custom-control-label font-weight-bold" for="is_upi_enabled" style="font-size: 1.1rem; cursor: pointer;">Enable UPI Payments</label>
+                                </div>
+                                <small class="text-muted d-block mt-1">If disabled, residents will not see the UPI payment option.</small>
+                            </div>
+                        </div>
 
                         <div class="row">
                             <div class="col-md-5">
@@ -266,6 +277,14 @@
                         </div>
                     </form>
                     @else
+                    <div class="row mb-4 pl-2">
+                        <div class="col-md-12">
+                            <div class="custom-control custom-switch custom-switch-lg">
+                                <input type="checkbox" class="custom-control-input" id="is_upi_enabled_disabled" disabled {{ ($building->is_upi_enabled ?? 'Yes') == 'Yes' ? 'checked' : '' }}>
+                                <label class="custom-control-label font-weight-bold" for="is_upi_enabled_disabled" style="font-size: 1.1rem;">Enable UPI Payments</label>
+                            </div>
+                        </div>
+                    </div>
                     <div class="row">
                         <div class="col-md-5">
                             <div class="form-group">
