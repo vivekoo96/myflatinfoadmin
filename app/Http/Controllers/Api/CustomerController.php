@@ -5657,20 +5657,26 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
         $upiDetails = null;
         $bankDetails = null;
         if ($building) {
-            $hasUpi = !empty($building->upi_id) || !empty($building->upi_qr_code);
+            $isUpiEnabled = ($building->is_upi_enabled ?? 'Yes') === 'Yes';
+            $isBankEnabled = ($building->is_bank_enabled ?? 'Yes') === 'Yes';
+
+            $hasUpi = $isUpiEnabled && (!empty($building->upi_id) || !empty($building->upi_qr_code));
             $upiDetails = [
                 'has_upi'      => $hasUpi,
-                'upi_id'       => $building->upi_id,
-                'upi_qr_code'  => $building->upi_qr_code
+                'upi_id'       => $isUpiEnabled ? $building->upi_id : null,
+                'upi_qr_code'  => ($isUpiEnabled && $building->upi_qr_code)
                     ? asset('upi_qr_codes/' . $building->upi_qr_code)
                     : null,
                 'has_razorpay' => !empty($building->razorpay_key) && !empty($building->razorpay_secret),
             ];
-            $bankDetails = [
-                'bank_name'           => $building->bank_name,
-                'bank_account_number' => $building->bank_account_number,
-                'bank_ifsc_code'      => $building->bank_ifsc_code,
-            ];
+
+            if ($isBankEnabled) {
+                $bankDetails = [
+                    'bank_name'           => $building->bank_name,
+                    'bank_account_number' => $building->bank_account_number,
+                    'bank_ifsc_code'      => $building->bank_ifsc_code,
+                ];
+            }
         }
 
         return response()->json([
@@ -11368,6 +11374,7 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
         }
         
         $isUpiEnabled = ($building->is_upi_enabled ?? 'Yes') === 'Yes';
+        $isBankEnabled = ($building->is_bank_enabled ?? 'Yes') === 'Yes';
 
         $qrCodeUrl = null;
         if ($building->upi_qr_code && $isUpiEnabled) {
@@ -11380,9 +11387,10 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
             'upi_qr_code'         => $qrCodeUrl,
             'has_upi'             => $isUpiEnabled && (!empty($building->upi_id) || !empty($building->upi_qr_code)),
             'is_enabled'          => $isUpiEnabled,
-            'bank_name'           => $building->bank_name,
-            'bank_account_number' => $building->bank_account_number,
-            'bank_ifsc_code'      => $building->bank_ifsc_code,
+            'is_bank_enabled'     => $isBankEnabled,
+            'bank_name'           => $isBankEnabled ? $building->bank_name : null,
+            'bank_account_number' => $isBankEnabled ? $building->bank_account_number : null,
+            'bank_ifsc_code'      => $isBankEnabled ? $building->bank_ifsc_code : null,
         ], 200);
     }
 

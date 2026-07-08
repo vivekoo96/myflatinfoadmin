@@ -190,6 +190,7 @@
                         <input type="hidden" name="whatsapp_support_number" value="{{ $building->whatsapp_support_number }}">
                         <input type="hidden" name="treasurer_type" value="{{ $building->treasurer_type }}">
                         <input type="hidden" name="treasurer_id" value="{{ $building->treasurer_id }}">
+                        <input type="hidden" name="is_bank_enabled" value="{{ $building->is_bank_enabled }}">
                         
                         <div class="row mb-4 pl-2">
                             <div class="col-md-12">
@@ -326,7 +327,6 @@
                     @if($isBA)
                     <form action="{{ route('setting.store') }}" method="post">
                         @csrf
-                        {{-- Hidden fields to satisfy form validation for unchanged fields --}}
                         <input type="hidden" name="razorpay_key" value="{{ $building->razorpay_key }}">
                         <input type="hidden" name="razorpay_secret" value="{{ $building->razorpay_secret }}">
                         <input type="hidden" name="gst_no" value="{{ $building->gst_no }}">
@@ -334,7 +334,19 @@
                         <input type="hidden" name="whatsapp_support_number" value="{{ $building->whatsapp_support_number }}">
                         <input type="hidden" name="treasurer_type" value="{{ $building->treasurer_type }}">
                         <input type="hidden" name="treasurer_id" value="{{ $building->treasurer_id }}">
+                        <input type="hidden" name="is_upi_enabled" value="{{ $building->is_upi_enabled }}">
                         
+                        <div class="row mb-4 pl-2">
+                            <div class="col-md-12">
+                                <div class="custom-control custom-switch custom-switch-lg">
+                                    <input type="hidden" name="is_bank_enabled" value="No">
+                                    <input type="checkbox" class="custom-control-input" id="is_bank_enabled" name="is_bank_enabled" value="Yes" {{ ($building->is_bank_enabled ?? 'Yes') == 'Yes' ? 'checked' : '' }}>
+                                    <label class="custom-control-label font-weight-bold" for="is_bank_enabled" style="font-size: 1.1rem; cursor: pointer;">Enable Bank Account Payments</label>
+                                </div>
+                                <small class="text-muted d-block mt-1">If disabled, residents will not see the bank transfer option.</small>
+                            </div>
+                        </div>
+
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group">
@@ -381,6 +393,15 @@
                         </div>
                     </form>
                     @else
+                    <div class="row mb-4 pl-2">
+                        <div class="col-md-12">
+                            <div class="custom-control custom-switch custom-switch-lg">
+                                <input type="checkbox" class="custom-control-input" id="is_bank_enabled_disabled" disabled {{ ($building->is_bank_enabled ?? 'Yes') == 'Yes' ? 'checked' : '' }}>
+                                <label class="custom-control-label font-weight-bold" for="is_bank_enabled_disabled" style="font-size: 1.1rem;">Enable Bank Account Payments</label>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group">

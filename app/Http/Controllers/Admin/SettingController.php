@@ -127,6 +127,9 @@ class SettingController extends Controller
         }
 
         // Bank Account Settings
+        if ($request->has('is_bank_enabled')) {
+            $building->is_bank_enabled = $request->is_bank_enabled;
+        }
         if ($request->has('bank_name')) {
             $building->bank_name = $request->bank_name;
         }
