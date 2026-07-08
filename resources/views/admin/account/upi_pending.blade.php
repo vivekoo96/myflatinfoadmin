@@ -49,8 +49,19 @@
                         <div class="card card-warning card-outline">
                           <div class="card-header">
                             <h3 class="card-title">
-                              <i class="fas fa-mobile-alt mr-1"></i>
+                              @if($payment->type == 'UPI')
+                                <i class="fas fa-mobile-alt mr-1 text-info"></i>
+                              @elseif($payment->type == 'bank')
+                                <i class="fas fa-university mr-1 text-warning"></i>
+                              @elseif($payment->type == 'Online')
+                                <i class="fas fa-globe mr-1 text-primary"></i>
+                              @else
+                                <i class="fas fa-file-invoice-dollar mr-1"></i>
+                              @endif
                               Flat: <strong>{{ $payment->flat->name ?? $payment->flat_id }}</strong>
+                              <span class="badge {{ $payment->type == 'UPI' ? 'badge-info' : ($payment->type == 'bank' ? 'badge-warning' : 'badge-primary') }} ml-1">
+                                {{ $payment->type == 'bank' ? 'Bank' : $payment->type }}
+                              </span>
                               <br><small class="text-dark">Owner: <strong>{{ $payment->flat->owner->name ?? 'N/A' }}</strong> | Tenant: <strong>{{ $payment->flat->tanent->name ?? 'N/A' }}</strong></small>
                             </h3>
                             <div class="card-tools">

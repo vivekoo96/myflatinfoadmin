@@ -70,7 +70,7 @@
 
             {{-- ======================== UPI PENDING APPROVALS BANNER ======================== --}}
             @php
-                $pendingUpi = $maintenance->payments->where('type','UPI')->where('upi_payment_status','Pending');
+                $pendingUpi = $maintenance->payments->whereIn('type', ['UPI', 'bank', 'Online'])->where('upi_payment_status', 'Pending');
             @endphp
             @if($pendingUpi->count() > 0 && (Auth::User()->role == 'BA' || Auth::User()->hasRole('accounts')))
             <div class="alert alert-warning d-flex align-items-center" style="border-left:4px solid #ffc107;">
@@ -148,9 +148,11 @@
                             <br><small class="text-muted">Tenant: {{ $payment->flat->tanent->name ?? 'N/A' }}</small>
                           </td>
                           <td><a href="{{url('user',$payment->user_id)}}" target="_blank">{{$payment->user->name ?? '-'}}</a></td>
-                          <td>
+                           <td>
                             @if($payment->type == 'UPI')
                               <span class="badge badge-info"><i class="fas fa-mobile-alt mr-1"></i>UPI</span>
+                            @elseif($payment->type == 'bank')
+                              <span class="badge badge-warning"><i class="fas fa-university mr-1"></i>Bank</span>
                             @elseif($payment->type == 'Cash')
                               <span class="badge badge-secondary">Cash</span>
                             @elseif($payment->type == 'Online')
@@ -169,7 +171,7 @@
                             @endif
                           </td>
                           <td>
-                            @if($payment->type == 'UPI')
+                            @if(in_array($payment->type, ['UPI', 'bank', 'Online']))
                               @if($payment->upi_payment_status == 'Approved')
                                 <span class="badge badge-success"><i class="fas fa-check mr-1"></i>Approved</span>
                               @elseif($payment->upi_payment_status == 'Rejected')
@@ -211,7 +213,7 @@
                                 <i class="fa fa-edit"></i>
                               </button>
 
-                              @if($payment->type == 'UPI' && $payment->upi_payment_status == 'Pending')
+                              @if(in_array($payment->type, ['UPI', 'bank', 'Online']) && $payment->upi_payment_status == 'Pending')
                               <button class="btn btn-sm btn-success upi-approve-btn ml-1"
                                       data-id="{{ $payment->id }}"
                                       data-flat="{{ $payment->flat->name ?? $payment->flat_id }}"

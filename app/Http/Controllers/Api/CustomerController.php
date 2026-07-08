@@ -11412,7 +11412,7 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
             'screenshot'             => 'required|image|max:5120', // 5MB max
             'amount_paid'            => 'nullable|numeric|min:0',   // optional, for display
             'flat_number'            => 'nullable|string|max:50',   // optional flat name label
-            'payment_type'           => 'nullable|string|in:UPI,Bank', // optional payment type
+            'payment_type'           => 'nullable|string|in:UPI,Bank,bank,Online,online', // optional payment type
         ];
 
         $validation = Validator::make($request->all(), $rules);
@@ -11421,7 +11421,17 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
         }
 
         $paymentType = $request->input('payment_type', 'UPI');
-        $paymentLabel = strtolower($paymentType) === 'bank' ? 'Bank Transfer' : 'UPI';
+        
+        if (strtolower($paymentType) === 'bank') {
+            $paymentLabel = 'Bank Transfer';
+            $dbType = 'bank';
+        } elseif (strtolower($paymentType) === 'online') {
+            $paymentLabel = 'Online';
+            $dbType = 'Online';
+        } else {
+            $paymentLabel = 'UPI';
+            $dbType = 'UPI';
+        }
 
         $maintenancePayment = MaintenancePayment::with(['maintenance', 'flat'])->find($request->maintenance_payment_id);
 
@@ -11471,19 +11481,21 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
         $screenshotPath = null;
         if ($request->hasFile('screenshot')) {
             $file      = $request->file('screenshot');
-            $prefix    = strtolower($paymentType) === 'bank' ? 'bank_' : 'upi_';
+            $prefix    = strtolower($paymentType) === 'bank' ? 'bank_' : (strtolower($paymentType) === 'online' ? 'online_' : 'upi_');
             $filename  = $prefix . $maintenancePayment->id . '_' . time() . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('maintenance_screenshots'), $filename);
             $screenshotPath = $filename;
         }
 
         // ========== UPDATE PAYMENT RECORD ==========
-        $maintenancePayment->type               = 'UPI';
+        $maintenancePayment->type               = $dbType;
         $maintenancePayment->payment_screenshot = $screenshotPath;
         $maintenancePayment->upi_payment_status = 'Pending';
         $maintenancePayment->upi_submitted_at   = now();
         if (strtolower($paymentType) === 'bank') {
             $maintenancePayment->upi_remarks    = 'Paid via Bank Transfer';
+        } elseif (strtolower($paymentType) === 'online') {
+            $maintenancePayment->upi_remarks    = 'Paid via Online Payment';
         }
         $maintenancePayment->save();
 

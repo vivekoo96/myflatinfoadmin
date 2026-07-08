@@ -62,6 +62,7 @@
                                     <th>S No</th>
                                     <th>Flat</th>
                                     <th>Owner/Tenant</th>
+                                    <th>Type</th>
                                     <th>Amount</th>
                                     <th>Screenshot</th>
                                     <th>Status</th>
@@ -86,6 +87,17 @@
                                             -
                                         @endif
                                     </td>
+                                    <td>
+                                        @if($payment->type == 'UPI')
+                                            <span class="badge badge-info"><i class="fas fa-mobile-alt mr-1"></i>UPI</span>
+                                        @elseif($payment->type == 'bank')
+                                            <span class="badge badge-warning"><i class="fas fa-university mr-1"></i>Bank</span>
+                                        @elseif($payment->type == 'Online')
+                                            <span class="badge badge-primary">Online</span>
+                                        @else
+                                            <span class="badge badge-light">{{$payment->type}}</span>
+                                        @endif
+                                    </td>
                                     <td>₹{{ number_format(optional($payment->transaction)->amount ?? ($payment->paid_amount ?: $payment->dues_amount), 2) }}</td>
                                     <td>
                                         @if($payment->payment_screenshot)
@@ -106,7 +118,7 @@
                                     <td>{{ $payment->updated_at ? $payment->updated_at->format('d M Y, h:i A') : '-' }}</td>
                                 </tr>
                                 @empty
-                                <tr><td colspan="9" class="text-center text-muted">No UPI approval history found.</td></tr>
+                                <tr><td colspan="10" class="text-center text-muted">No UPI approval history found.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>

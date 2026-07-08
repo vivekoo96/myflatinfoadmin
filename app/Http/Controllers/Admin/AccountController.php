@@ -1031,7 +1031,7 @@ class AccountController extends Controller
 
         $pendingUpi = \App\Models\MaintenancePayment::with(['flat', 'user', 'maintenance', 'flat.owner', 'flat.tanent'])
             ->where('building_id', $building->id)
-            ->where('type', 'UPI')
+            ->whereIn('type', ['UPI', 'bank', 'Online'])
             ->where('upi_payment_status', 'Pending')
             ->orderBy('upi_submitted_at', 'asc')
             ->get();
@@ -1490,7 +1490,7 @@ private function getUserTokens($userId)
 
         $query = \App\Models\MaintenancePayment::with(['flat.block', 'flat.owner', 'flat.tanent', 'user', 'maintenance', 'transaction'])
             ->where('building_id', $building->id)
-            ->where('type', 'UPI')
+            ->whereIn('type', ['UPI', 'bank', 'Online'])
             ->whereIn('upi_payment_status', ['Approved', 'Rejected'])
             // Only settled (Paid) rows belong in history. Rejected submissions are
             // reset to status 'Unpaid' so the resident can resubmit, so they must
