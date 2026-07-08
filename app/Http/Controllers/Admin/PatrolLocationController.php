@@ -97,10 +97,28 @@ class PatrolLocationController extends Controller
                 return redirect()->back()->with('error', 'Shift not found for this building');
             }
 
-            // Validate patrol_time is within shift hours
-            if ($request->patrol_time < $shift->start_time || $request->patrol_time > $shift->end_time) {
-                return redirect()->back()->with('error', 'Patrol time must be between ' . $shift->start_time . ' and ' . $shift->end_time);
-            }
+             // Validate patrol_time is within shift hours (handling overnight shifts)
+             $tToMin = function($t) {
+                 $parts = explode(':', $t);
+                 return intval($parts[0]) * 60 + intval($parts[1]);
+             };
+
+             $startMin = $tToMin($shift->start_time);
+             $endMin = $tToMin($shift->end_time);
+             $patrolMin = $tToMin($request->patrol_time);
+
+             $isValid = false;
+             if ($startMin <= $endMin) {
+                 $isValid = ($patrolMin >= $startMin && $patrolMin <= $endMin);
+             } else {
+                 $isValid = ($patrolMin >= $startMin || $patrolMin <= $endMin);
+             }
+
+             if (!$isValid) {
+                 $startFormatted = date('h:i A', strtotime($shift->start_time));
+                 $endFormatted = date('h:i A', strtotime($shift->end_time));
+                 return redirect()->back()->with('error', 'Patrol time must be between ' . $startFormatted . ' and ' . $endFormatted);
+             }
 
             // Auto-generate name from gate, shift, and time
             $name = $gate->name . ' - ' . $shift->name . ' - ' . $request->patrol_time;

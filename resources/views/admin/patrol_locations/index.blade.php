@@ -255,7 +255,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form action="{{route('patrol-location.store')}}" method="post">
+      <form action="{{route('patrol-location.store')}}" method="post" id="assignScheduleForm">
         @csrf
         <div class="modal-body">
           <div class="form-group">
@@ -283,6 +283,10 @@
           <div class="form-group">
             <label class="col-form-label">Patrol Time:</label>
             <input type="time" name="patrol_time" id="assign_patrol_time" class="form-control" required>
+            <small id="shift_time_range_help" class="form-text text-muted"></small>
+            <div class="invalid-feedback">
+                Patrol time must be within the selected shift time range.
+            </div>
           </div>
           <input type="hidden" name="id" id="assign_location_hidden_id">
         </div>
@@ -390,17 +394,65 @@
         }
     });
 
+    // Helper function to check if time is within shift range (supporting overnight)
+    function validatePatrolTime() {
+        var shiftSelect = $('#assign_shift_id');
+        var patrolTimeInput = $('#assign_patrol_time');
+        
+        var shiftId = shiftSelect.val();
+        var patrolTime = patrolTimeInput.val();
+        
+        if (!shiftId || !patrolTime) {
+            patrolTimeInput.removeClass('is-invalid is-valid');
+            return true;
+        }
+        
+        var selectedText = shiftSelect.find('option:selected').text();
+        var timeMatch = selectedText.match(/\((\d{2}:\d{2})(?::\d{2})?\s*-\s*(\d{2}:\d{2})(?::\d{2})?\)/);
+        
+        if (timeMatch) {
+            var startTimeStr = timeMatch[1];
+            var endTimeStr = timeMatch[2];
+            
+            function toMinutes(tStr) {
+                var parts = tStr.split(':');
+                return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+            }
+            
+            var startMin = toMinutes(startTimeStr);
+            var endMin = toMinutes(endTimeStr);
+            var patrolMin = toMinutes(patrolTime);
+            
+            var isValid = false;
+            if (startMin <= endMin) {
+                isValid = (patrolMin >= startMin && patrolMin <= endMin);
+            } else {
+                isValid = (patrolMin >= startMin || patrolMin <= endMin);
+            }
+            
+            if (!isValid) {
+                patrolTimeInput.addClass('is-invalid').removeClass('is-valid');
+                return false;
+            } else {
+                patrolTimeInput.addClass('is-valid').removeClass('is-invalid');
+                return true;
+            }
+        }
+        return true;
+    }
+
     // Update patrol time min/max based on shift selection
     $(document).on('change', '#assign_shift_id', function(){
         var shiftId = $(this).val();
         if (!shiftId) {
             $('#assign_patrol_time').removeAttr('min').removeAttr('max');
+            $('#shift_time_range_help').text('');
             return;
         }
 
         // Extract shift times from the selected option
         var selectedText = $(this).find('option:selected').text();
-        var timeMatch = selectedText.match(/\((\d{2}:\d{2})-(\d{2}:\d{2})\)/);
+        var timeMatch = selectedText.match(/\((\d{2}:\d{2})(?::\d{2})?\s*-\s*(\d{2}:\d{2})(?::\d{2})?\)/);
 
         if (timeMatch) {
             var startTime = timeMatch[1];
@@ -408,6 +460,27 @@
 
             $('#assign_patrol_time').attr('min', startTime).attr('max', endTime);
             $('#assign_patrol_time').attr('placeholder', startTime + ' to ' + endTime);
+            $('#shift_time_range_help').text('Must be between ' + startTime + ' and ' + endTime);
+        } else {
+            $('#shift_time_range_help').text('');
+        }
+        validatePatrolTime();
+    });
+
+    $(document).on('change input', '#assign_patrol_time', function(){
+        validatePatrolTime();
+    });
+
+    // Form submit validation
+    $(document).on('submit', '#assignScheduleForm', function(e){
+        if (!validatePatrolTime()) {
+            e.preventDefault();
+            var shiftText = $('#assign_shift_id option:selected').text();
+            var timeMatch = shiftText.match(/\((\d{2}:\d{2})(?::\d{2})?\s*-\s*(\d{2}:\d{2})(?::\d{2})?\)/);
+            var rangeStr = timeMatch ? (timeMatch[1] + ' to ' + timeMatch[2]) : 'the shift hours';
+            alert('Error: Patrol Time must be within the selected shift time range (' + rangeStr + ').');
+            $('#assign_patrol_time').focus();
+            return false;
         }
     });
 
