@@ -135,11 +135,12 @@ $(document).ready(function() {
     try {
         if ($.fn.DataTable && $('#upiHistoryTable tbody tr').length > 0) {
             $('#upiHistoryTable').DataTable({
+                "destroy": true,
                 "responsive": true,
                 "lengthChange": false,
                 "autoWidth": false,
                 "pageLength": 25,
-                "order": [[8, 'desc']]
+                "order": [[9, 'desc']]
             });
         }
     } catch (e) { console.log('DataTables init error:', e); }
