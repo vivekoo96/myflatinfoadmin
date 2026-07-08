@@ -311,6 +311,101 @@
                 </div>
             </div>
             </div>
+
+            {{-- ===================== BANK ACCOUNT SETTINGS ===================== --}}
+            <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-info card-outline">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-university mr-2"></i> Bank Account Settings
+                    </h3>
+                    <small class="text-muted ml-2">Display bank account details to residents for offline/bank transfers</small>
+                </div>
+                <div class="card-body">
+                    @if($isBA)
+                    <form action="{{ route('setting.store') }}" method="post">
+                        @csrf
+                        {{-- Hidden fields to satisfy form validation for unchanged fields --}}
+                        <input type="hidden" name="razorpay_key" value="{{ $building->razorpay_key }}">
+                        <input type="hidden" name="razorpay_secret" value="{{ $building->razorpay_secret }}">
+                        <input type="hidden" name="gst_no" value="{{ $building->gst_no }}">
+                        <input type="hidden" name="call_support_number" value="{{ $building->call_support_number }}">
+                        <input type="hidden" name="whatsapp_support_number" value="{{ $building->whatsapp_support_number }}">
+                        <input type="hidden" name="treasurer_type" value="{{ $building->treasurer_type }}">
+                        <input type="hidden" name="treasurer_id" value="{{ $building->treasurer_id }}">
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label><i class="fas fa-university mr-1"></i> Bank Name</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           name="bank_name"
+                                           value="{{ $building->bank_name }}"
+                                           placeholder="e.g. State Bank of India"
+                                           autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label><i class="fas fa-credit-card mr-1"></i> Bank Account Number</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           name="bank_account_number"
+                                           value="{{ $building->bank_account_number }}"
+                                           placeholder="e.g. 1234567890"
+                                           autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label><i class="fas fa-code mr-1"></i> Bank IFSC Code</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           name="bank_ifsc_code"
+                                           value="{{ $building->bank_ifsc_code }}"
+                                           placeholder="e.g. SBIN0001234"
+                                           style="text-transform: uppercase;"
+                                           autocomplete="off">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-info">
+                                    <i class="fas fa-save mr-1"></i> Save Bank Settings
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    @else
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label><i class="fas fa-university mr-1"></i> Bank Name</label>
+                                <input type="text" class="form-control" value="{{ $building->bank_name ?? 'Not set' }}" disabled>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label><i class="fas fa-credit-card mr-1"></i> Bank Account Number</label>
+                                <input type="text" class="form-control" value="{{ $building->bank_account_number ?? 'Not set' }}" disabled>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label><i class="fas fa-code mr-1"></i> Bank IFSC Code</label>
+                                <input type="text" class="form-control" value="{{ $building->bank_ifsc_code ?? 'Not set' }}" disabled>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                </div>
+            </div>
+            </div>
         </div>
         </section>
         

@@ -5655,6 +5655,7 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
         // ── Building UPI Details ───────────────────────────────────────────────────
         $building   = $flat->building;
         $upiDetails = null;
+        $bankDetails = null;
         if ($building) {
             $hasUpi = !empty($building->upi_id) || !empty($building->upi_qr_code);
             $upiDetails = [
@@ -5664,6 +5665,11 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
                     ? asset('upi_qr_codes/' . $building->upi_qr_code)
                     : null,
                 'has_razorpay' => !empty($building->razorpay_key) && !empty($building->razorpay_secret),
+            ];
+            $bankDetails = [
+                'bank_name'           => $building->bank_name,
+                'bank_account_number' => $building->bank_account_number,
+                'bank_ifsc_code'      => $building->bank_ifsc_code,
             ];
         }
 
@@ -5676,6 +5682,7 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
             'grand_total' => $grand_total,
             'last_paid_date' => $last_paid_date,
             'upi_details'    => $upiDetails,
+            'bank_details'   => $bankDetails,
         ], 200);
     }
     
@@ -11368,11 +11375,14 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
         }
 
         return response()->json([
-            'status'       => true,
-            'upi_id'       => $isUpiEnabled ? $building->upi_id : null,
-            'upi_qr_code'  => $qrCodeUrl,
-            'has_upi'      => $isUpiEnabled && (!empty($building->upi_id) || !empty($building->upi_qr_code)),
-            'is_enabled'   => $isUpiEnabled,
+            'status'              => true,
+            'upi_id'              => $isUpiEnabled ? $building->upi_id : null,
+            'upi_qr_code'         => $qrCodeUrl,
+            'has_upi'             => $isUpiEnabled && (!empty($building->upi_id) || !empty($building->upi_qr_code)),
+            'is_enabled'          => $isUpiEnabled,
+            'bank_name'           => $building->bank_name,
+            'bank_account_number' => $building->bank_account_number,
+            'bank_ifsc_code'      => $building->bank_ifsc_code,
         ], 200);
     }
 
@@ -11394,12 +11404,16 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
             'screenshot'             => 'required|image|max:5120', // 5MB max
             'amount_paid'            => 'nullable|numeric|min:0',   // optional, for display
             'flat_number'            => 'nullable|string|max:50',   // optional flat name label
+            'payment_type'           => 'nullable|string|in:UPI,Bank', // optional payment type
         ];
 
         $validation = Validator::make($request->all(), $rules);
         if ($validation->fails()) {
             return response()->json(['status' => false, 'message' => $validation->errors()->first()], 422);
         }
+
+        $paymentType = $request->input('payment_type', 'UPI');
+        $paymentLabel = strtolower($paymentType) === 'bank' ? 'Bank Transfer' : 'UPI';
 
         $maintenancePayment = MaintenancePayment::with(['maintenance', 'flat'])->find($request->maintenance_payment_id);
 
@@ -11440,7 +11454,7 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
             if (!$isEnabled) {
                 return response()->json([
                     'status'  => false,
-                    'message' => 'UPI payment submission is closed within 24 hours before the due date (' . $dueDate->format('d M Y') . '). Please try again after the due date.',
+                    'message' => $paymentLabel . ' payment submission is closed within 24 hours before the due date (' . $dueDate->format('d M Y') . '). Please try again after the due date.',
                 ], 422);
             }
         }
@@ -11449,7 +11463,8 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
         $screenshotPath = null;
         if ($request->hasFile('screenshot')) {
             $file      = $request->file('screenshot');
-            $filename  = 'upi_' . $maintenancePayment->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $prefix    = strtolower($paymentType) === 'bank' ? 'bank_' : 'upi_';
+            $filename  = $prefix . $maintenancePayment->id . '_' . time() . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('maintenance_screenshots'), $filename);
             $screenshotPath = $filename;
         }
@@ -11459,6 +11474,9 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
         $maintenancePayment->payment_screenshot = $screenshotPath;
         $maintenancePayment->upi_payment_status = 'Pending';
         $maintenancePayment->upi_submitted_at   = now();
+        if (strtolower($paymentType) === 'bank') {
+            $maintenancePayment->upi_remarks    = 'Paid via Bank Transfer';
+        }
         $maintenancePayment->save();
 
         // ========== NOTIFY ADMIN / ACCOUNTS ==========
@@ -11477,8 +11495,8 @@ $body = "It looks like {$visitor->head_name} visitor is missing.";
                 ->pluck('user_id');
             $recipientIds = $recipientIds->merge($accountsUserIds)->filter()->unique();
 
-            $title = 'UPI Payment Submitted';
-            $body  = ($user->name ?? 'A resident') . ' has submitted a UPI payment screenshot for Flat ' . ($flat->name ?? $flat->id) . '. Please review and approve.';
+            $title = $paymentLabel . ' Payment Submitted';
+            $body  = ($user->name ?? 'A resident') . ' has submitted a ' . $paymentLabel . ' payment screenshot for Flat ' . ($flat->name ?? $flat->id) . '. Please review and approve.';
             $dataPayload = [
                 'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
                 'screen'       => 'MaintenancePage',

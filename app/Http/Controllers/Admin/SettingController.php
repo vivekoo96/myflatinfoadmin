@@ -73,9 +73,15 @@ class SettingController extends Controller
         }
 
         $building = Auth::User()->building;
-        $building->razorpay_key = $request->razorpay_key;
-        $building->razorpay_secret = $request->razorpay_secret;
-        $building->gst_no = $request->gst_no;
+        if ($request->has('razorpay_key')) {
+            $building->razorpay_key = $request->razorpay_key;
+        }
+        if ($request->has('razorpay_secret')) {
+            $building->razorpay_secret = $request->razorpay_secret;
+        }
+        if ($request->has('gst_no')) {
+            $building->gst_no = $request->gst_no;
+        }
 
         // Only update phone numbers when they are actually provided (not empty hidden fields from UPI form)
         if ($request->filled('call_support_number')) {
@@ -118,6 +124,17 @@ class SettingController extends Controller
             $filename = 'upi_qr_' . $building->id . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('upi_qr_codes'), $filename);
             $building->upi_qr_code = $filename;
+        }
+
+        // Bank Account Settings
+        if ($request->has('bank_name')) {
+            $building->bank_name = $request->bank_name;
+        }
+        if ($request->has('bank_account_number')) {
+            $building->bank_account_number = $request->bank_account_number;
+        }
+        if ($request->has('bank_ifsc_code')) {
+            $building->bank_ifsc_code = $request->bank_ifsc_code;
         }
 
         $building->save();
