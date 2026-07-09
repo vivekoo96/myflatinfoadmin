@@ -2891,6 +2891,7 @@ if($notify_id){
         $facility_id = $request->facility_id;
         $bookings = $request->bookings;
         $user = Auth::user();
+        $flat = AuthHelper::flat();
     
         $facility = Facility::where('id', $facility_id)->where('status', 'Active')->first();
         if (!$facility) {
@@ -2993,10 +2994,10 @@ if($notify_id){
                     $newBooking->facility_id = $facility_id;
                     $newBooking->timing_id = $timing['id'];
                     $newBooking->date = $date;
-                    $newBooking->flat_id = AuthHelper::flat()->id;
+                    $newBooking->flat_id = $flat->id;
                     $newBooking->user_id = $user->id;
                     $newBooking->members = $timing['members'];
-                    $newBooking->building_id = $user->flat->building_id ?? null;
+                    $newBooking->building_id = $flat->building_id;
                     $newBooking->reciept_no = $reciept;
                     $newBooking->status = 'Success';
                     $newBooking->type = 'Offline';

@@ -282,9 +282,10 @@
           </div>
           <div class="form-group">
             <label class="col-form-label">Patrol Time:</label>
-            <input type="time" name="patrol_time" id="assign_patrol_time" class="form-control" required>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+            <input type="text" name="patrol_time" id="assign_patrol_time" class="form-control bg-white" placeholder="Select Time" required readonly>
             <small id="shift_time_range_help" class="form-text text-muted"></small>
-            <div class="invalid-feedback">
+            <div class="invalid-feedback" id="patrol_time_error_feedback">
                 Patrol time must be within the selected shift time range.
             </div>
           </div>
@@ -292,7 +293,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-primary">Save Schedule</button>
+          <button type="submit" id="submit_schedule_btn" class="btn btn-primary">Save Schedule</button>
         </div>
       </form>
     </div>
@@ -300,10 +301,21 @@
 </div>
 
 @section('script')
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
   $(document).ready(function(){
     var token = "{{csrf_token()}}";
+    
+    var fpInstance = flatpickr("#assign_patrol_time", {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "H:i",
+        time_24hr: true,
+        onChange: function(selectedDates, timeStr) {
+            validatePatrolTime();
+        }
+    });
 
     // View QR
     $(document).on('click', '.view-qr', function(){
@@ -375,35 +387,35 @@
         var shift_id = $(this).data('building_shift_id');
         var patrol_time = $(this).data('patrol_time');
 
+        if (patrol_time && patrol_time.length > 5) {
+            patrol_time = patrol_time.substring(0, 5);
+        }
+
         $('#assign_location_hidden_id').val(id);
         $('#assign_gate_id').val(gate_id);
         $('#assign_shift_id').val(shift_id);
-        $('#assign_patrol_time').val(patrol_time);
-        $('#assignLocationModal .modal-title').text('Edit Patrol Schedule');
-    });
-
-    // Clear assignment modal on open
-    $('#assignLocationModal').on('show.bs.modal', function(e){
-        var btn = $(e.relatedTarget);
-        if (!btn.hasClass('edit-assignment')) {
-            $('#assign_location_hidden_id').val('');
-            $('#assign_gate_id').val('');
-            $('#assign_shift_id').val('');
-            $('#assign_patrol_time').val('');
-            $('#assignLocationModal .modal-title').text('Add Patrol Schedule');
+        if (typeof fpInstance !== 'undefined') {
+            fpInstance.setDate(patrol_time || '');
         }
+        $('#assign_patrol_time').removeClass('is-invalid is-valid');
+        $('#submit_schedule_btn').prop('disabled', false);
+        $('#assignLocationModal .modal-title').text('Edit Patrol Schedule');
+        updateShiftHelpText();
     });
 
     // Helper function to check if time is within shift range (supporting overnight)
     function validatePatrolTime() {
         var shiftSelect = $('#assign_shift_id');
         var patrolTimeInput = $('#assign_patrol_time');
+        var submitBtn = $('#submit_schedule_btn');
+        var errorFeedback = $('#patrol_time_error_feedback');
         
         var shiftId = shiftSelect.val();
         var patrolTime = patrolTimeInput.val();
         
         if (!shiftId || !patrolTime) {
             patrolTimeInput.removeClass('is-invalid is-valid');
+            submitBtn.prop('disabled', false);
             return true;
         }
         
@@ -432,61 +444,73 @@
             
             if (!isValid) {
                 patrolTimeInput.addClass('is-invalid').removeClass('is-valid');
+                errorFeedback.text('Patrol time must be within the selected shift range (' + startTimeStr + ' to ' + endTimeStr + ').');
+                submitBtn.prop('disabled', true);
                 return false;
             } else {
                 patrolTimeInput.addClass('is-valid').removeClass('is-invalid');
+                submitBtn.prop('disabled', false);
                 return true;
             }
         }
+        submitBtn.prop('disabled', false);
         return true;
     }
 
-    // Update patrol time min/max based on shift selection
-    $(document).on('change', '#assign_shift_id', function(){
-        var shiftId = $(this).val();
+    function updateShiftHelpText() {
+        var shiftSelect = $('#assign_shift_id');
+        var shiftId = shiftSelect.val();
         if (!shiftId) {
-            $('#assign_patrol_time').removeAttr('min').removeAttr('max');
             $('#shift_time_range_help').text('');
             return;
         }
 
-        // Extract shift times from the selected option
-        var selectedText = $(this).find('option:selected').text();
+        var selectedText = shiftSelect.find('option:selected').text();
         var timeMatch = selectedText.match(/\((\d{2}:\d{2})(?::\d{2})?\s*-\s*(\d{2}:\d{2})(?::\d{2})?\)/);
 
         if (timeMatch) {
             var startTime = timeMatch[1];
             var endTime = timeMatch[2];
-
-            $('#assign_patrol_time').attr('min', startTime).attr('max', endTime);
-            $('#assign_patrol_time').attr('placeholder', startTime + ' to ' + endTime);
-            $('#shift_time_range_help').text('Must be between ' + startTime + ' and ' + endTime);
+            $('#shift_time_range_help').text('Active shift range: ' + startTime + ' to ' + endTime);
         } else {
             $('#shift_time_range_help').text('');
         }
+    }
+
+    // Handle shift change
+    $(document).on('change', '#assign_shift_id', function(){
+        updateShiftHelpText();
         validatePatrolTime();
     });
 
+    // Handle time input changes
     $(document).on('change input', '#assign_patrol_time', function(){
         validatePatrolTime();
     });
 
-    // Form submit validation
-    $(document).on('submit', '#assignScheduleForm', function(e){
-        if (!validatePatrolTime()) {
-            e.preventDefault();
-            var shiftText = $('#assign_shift_id option:selected').text();
-            var timeMatch = shiftText.match(/\((\d{2}:\d{2})(?::\d{2})?\s*-\s*(\d{2}:\d{2})(?::\d{2})?\)/);
-            var rangeStr = timeMatch ? (timeMatch[1] + ' to ' + timeMatch[2]) : 'the shift hours';
-            alert('Error: Patrol Time must be within the selected shift time range (' + rangeStr + ').');
-            $('#assign_patrol_time').focus();
-            return false;
+    // Clear assignment modal on open
+    $('#assignLocationModal').on('show.bs.modal', function(e){
+        var btn = $(e.relatedTarget);
+        if (!btn.hasClass('edit-assignment')) {
+            $('#assign_location_hidden_id').val('');
+            $('#assign_gate_id').val('');
+            $('#assign_shift_id').val('');
+            if (typeof fpInstance !== 'undefined') {
+                fpInstance.clear();
+            }
+            $('#assign_patrol_time').removeClass('is-invalid is-valid');
+            $('#submit_schedule_btn').prop('disabled', false);
+            $('#shift_time_range_help').text('');
+            $('#assignLocationModal .modal-title').text('Add Patrol Schedule');
         }
     });
 
-    // Trigger shift change on modal open to set time restrictions
-    $('#assignLocationModal').on('shown.bs.modal', function(){
-        $('#assign_shift_id').trigger('change');
+    // Form submit validation backup
+    $(document).on('submit', '#assignScheduleForm', function(e){
+        if (!validatePatrolTime()) {
+            e.preventDefault();
+            return false;
+        }
     });
 
     // Delete Schedule (fully delete, not just clear assignment)
