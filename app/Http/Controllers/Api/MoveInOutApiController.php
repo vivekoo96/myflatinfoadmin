@@ -659,17 +659,51 @@ class MoveInOutApiController extends Controller
                 if ($pass->person_type == 'Tanent' && $pass->user_id) {
                     $flat->tanent_id = $pass->user_id;
                     $flat->living_status = 'Tenant';
+                    
+                    // Update tenant's flat_id
+                    $user = User::find($pass->user_id);
+                    if ($user) {
+                        $user->flat_id = $pass->flat_id;
+                        $user->save();
+                    }
                 } else {
                     $flat->living_status = 'Owner';
                     $flat->tanent_id = 0;
+                    
+                    // Update owner's flat_id
+                    if ($pass->user_id) {
+                        $user = User::find($pass->user_id);
+                        if ($user) {
+                            $user->flat_id = $pass->flat_id;
+                            $user->save();
+                        }
+                    }
                 }
             } else {
                 // Move-Out
                 if ($pass->person_type == 'Tanent') {
                     $flat->tanent_id = 0;
                     $flat->living_status = 'Owner'; // Usually reverts to home owner until next tenant
+                    
+                    // Clear tenant's flat_id
+                    if ($pass->user_id) {
+                        $user = User::find($pass->user_id);
+                        if ($user && $user->flat_id == $pass->flat_id) {
+                            $user->flat_id = null;
+                            $user->save();
+                        }
+                    }
                 } else {
                     $flat->living_status = 'Empty'; // Or whatever status means vacant
+                    
+                    // Clear owner's flat_id
+                    if ($pass->user_id) {
+                        $user = User::find($pass->user_id);
+                        if ($user && $user->flat_id == $pass->flat_id) {
+                            $user->flat_id = null;
+                            $user->save();
+                        }
+                    }
                 }
             }
             $flat->save();
