@@ -607,23 +607,6 @@ class MoveInOutApiController extends Controller
             return response()->json(['error' => 'Invalid or expired passcode.'], 404);
         }
 
-        // Resolve user by email or phone if user_id is null
-        if (!$pass->user_id) {
-            $user = null;
-            if ($pass->email) {
-                $user = User::where('email', $pass->email)->first();
-            }
-            if (!$user && $pass->phone) {
-                $user = User::where('phone', $pass->phone)->first();
-            }
-            if ($user) {
-                $pass->user_id = $user->id;
-                $pass->save();
-                // Reload relation
-                $pass->load('user');
-            }
-        }
-
         // Validate type if optional type filter is passed
         if ($request->filled('type') && in_array($request->type, ['Move-In', 'Move-Out'])) {
             if ($pass->type !== $request->type) {
@@ -631,16 +614,133 @@ class MoveInOutApiController extends Controller
             }
         }
 
+        // Resolve user by email or phone if user_id is null
+        if (!$pass->user_id) {
+            $resolvedUser = null;
+            if ($pass->email) {
+                $resolvedUser = User::where('email', $pass->email)->first();
+            }
+            if (!$resolvedUser && $pass->phone) {
+                $resolvedUser = User::where('phone', $pass->phone)->first();
+            }
+            if ($resolvedUser) {
+                $pass->user_id = $resolvedUser->id;
+            }
+        }
+
+        // Mark pass as Completed
+        $pass->status = 'Completed';
+        $pass->visited_at = now();
+        $pass->save();
+
+        // Update flat and user records
+        $flat = Flat::find($pass->flat_id);
+        if ($flat) {
+            if ($pass->type == 'Move-In') {
+                if ($pass->person_type == 'Tanent') {
+                    // Always update flat's tanent status
+                    $flat->living_status = 'Tanent';
+
+                    if ($pass->user_id) {
+                        $flat->tanent_id = $pass->user_id;
+
+                        $user = User::find($pass->user_id);
+                        if ($user) {
+                            $user->flat_id = $pass->flat_id;
+                            $user->save();
+
+                            \DB::table('oauth_access_tokens')
+                                ->where('user_id', $user->id)
+                                ->update(['flat_id' => $pass->flat_id]);
+
+                            \App\Models\UserDevice::where('user_id', $user->id)
+                                ->update(['current_flat_id' => $pass->flat_id]);
+                        }
+                    }
+                } else {
+                    // Owner Move-In
+                    $flat->living_status = 'Owner';
+                    $flat->tanent_id = 0;
+
+                    if ($pass->user_id) {
+                        $flat->owner_id = $pass->user_id;
+
+                        $user = User::find($pass->user_id);
+                        if ($user) {
+                            $user->flat_id = $pass->flat_id;
+                            $user->save();
+
+                            \DB::table('oauth_access_tokens')
+                                ->where('user_id', $user->id)
+                                ->update(['flat_id' => $pass->flat_id]);
+
+                            \App\Models\UserDevice::where('user_id', $user->id)
+                                ->update(['current_flat_id' => $pass->flat_id]);
+                        }
+                    }
+                }
+            } else {
+                // Move-Out
+                if ($pass->person_type == 'Tanent') {
+                    $flat->tanent_id = 0;
+                    $flat->living_status = 'Owner';
+
+                    if ($pass->user_id) {
+                        $user = User::find($pass->user_id);
+                        if ($user && $user->flat_id == $pass->flat_id) {
+                            $user->flat_id = null;
+                            $user->save();
+                        }
+
+                        \DB::table('oauth_access_tokens')
+                            ->where('user_id', $pass->user_id)
+                            ->where('flat_id', $pass->flat_id)
+                            ->update(['flat_id' => null]);
+
+                        \App\Models\UserDevice::where('user_id', $pass->user_id)
+                            ->where('current_flat_id', $pass->flat_id)
+                            ->update(['current_flat_id' => null]);
+                    }
+                } else {
+                    // Owner Move-Out
+                    $flat->living_status = 'Vacant';
+                    $flat->owner_id = null;
+
+                    if ($pass->user_id) {
+                        $user = User::find($pass->user_id);
+                        if ($user && $user->flat_id == $pass->flat_id) {
+                            $user->flat_id = null;
+                            $user->save();
+                        }
+
+                        \DB::table('oauth_access_tokens')
+                            ->where('user_id', $pass->user_id)
+                            ->where('flat_id', $pass->flat_id)
+                            ->update(['flat_id' => null]);
+
+                        \App\Models\UserDevice::where('user_id', $pass->user_id)
+                            ->where('current_flat_id', $pass->flat_id)
+                            ->update(['current_flat_id' => null]);
+                    }
+                }
+            }
+            $flat->save();
+        }
+
+        // Reload to return fresh data
+        $pass->load(['flat', 'user']);
+
         return response()->json([
             'success' => true,
+            'msg'     => 'Entry processed successfully.',
             'request' => [$pass],
             'id_proof_url' => $pass->id_proof ? asset('images/move_in_out/' . $pass->id_proof) : null,
             'user' => $pass->user ? [
-                'name' => $pass->user->name,
+                'name'  => $pass->user->name,
                 'phone' => $pass->user->phone,
                 'email' => $pass->user->email,
             ] : [
-                'name' => $pass->first_name . ' ' . $pass->last_name,
+                'name'  => $pass->first_name . ' ' . $pass->last_name,
                 'phone' => $pass->phone,
                 'email' => $pass->email,
             ]
