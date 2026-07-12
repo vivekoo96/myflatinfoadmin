@@ -689,7 +689,7 @@ class MoveInOutApiController extends Controller
             if ($pass->type == 'Move-In') {
                 if ($pass->person_type == 'Tanent' && $pass->user_id) {
                     $flat->tanent_id = $pass->user_id;
-                    $flat->living_status = 'Tenant';
+                    $flat->living_status = 'Tanent';
                     
                     // Update tenant's flat_id
                     $user = User::find($pass->user_id);
@@ -754,7 +754,7 @@ class MoveInOutApiController extends Controller
                             ->update(['current_flat_id' => null]);
                     }
                 } else {
-                    $flat->living_status = 'Empty'; // Or whatever status means vacant
+                    $flat->living_status = 'Vacant'; // Owner moved out, flat is now vacant
                     
                     // Clear owner's flat_id
                     if ($pass->user_id) {
