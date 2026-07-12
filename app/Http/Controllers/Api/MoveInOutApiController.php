@@ -687,31 +687,39 @@ class MoveInOutApiController extends Controller
         $flat = Flat::find($pass->flat_id);
         if ($flat) {
             if ($pass->type == 'Move-In') {
-                if ($pass->person_type == 'Tanent' && $pass->user_id) {
-                    $flat->tanent_id = $pass->user_id;
+                if ($pass->person_type == 'Tanent') {
+                    // Always update flat's tanent status regardless of user_id
                     $flat->living_status = 'Tanent';
                     
-                    // Update tenant's flat_id
-                    $user = User::find($pass->user_id);
-                    if ($user) {
-                        $user->flat_id = $pass->flat_id;
-                        $user->save();
+                    if ($pass->user_id) {
+                        // Set tanent_id only if we have a linked user
+                        $flat->tanent_id = $pass->user_id;
                         
-                        // Update active oauth tokens
-                        \DB::table('oauth_access_tokens')
-                            ->where('user_id', $user->id)
-                            ->update(['flat_id' => $pass->flat_id]);
+                        // Update tenant's flat_id
+                        $user = User::find($pass->user_id);
+                        if ($user) {
+                            $user->flat_id = $pass->flat_id;
+                            $user->save();
                             
-                        // Update active device records
-                        \App\Models\UserDevice::where('user_id', $user->id)
-                            ->update(['current_flat_id' => $pass->flat_id]);
+                            // Update active oauth tokens
+                            \DB::table('oauth_access_tokens')
+                                ->where('user_id', $user->id)
+                                ->update(['flat_id' => $pass->flat_id]);
+                                
+                            // Update active device records
+                            \App\Models\UserDevice::where('user_id', $user->id)
+                                ->update(['current_flat_id' => $pass->flat_id]);
+                        }
                     }
                 } else {
+                    // Owner Move-In
                     $flat->living_status = 'Owner';
                     $flat->tanent_id = 0;
                     
-                    // Update owner's flat_id
                     if ($pass->user_id) {
+                        // Set owner_id only if we have a linked user
+                        $flat->owner_id = $pass->user_id;
+                        
                         $user = User::find($pass->user_id);
                         if ($user) {
                             $user->flat_id = $pass->flat_id;
@@ -755,6 +763,7 @@ class MoveInOutApiController extends Controller
                     }
                 } else {
                     $flat->living_status = 'Vacant'; // Owner moved out, flat is now vacant
+                    $flat->owner_id = null; // Clear owner from flats table
                     
                     // Clear owner's flat_id
                     if ($pass->user_id) {
