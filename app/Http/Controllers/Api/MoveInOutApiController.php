@@ -607,6 +607,23 @@ class MoveInOutApiController extends Controller
             return response()->json(['error' => 'Invalid or expired passcode.'], 404);
         }
 
+        // Resolve user by email or phone if user_id is null
+        if (!$pass->user_id) {
+            $user = null;
+            if ($pass->email) {
+                $user = User::where('email', $pass->email)->first();
+            }
+            if (!$user && $pass->phone) {
+                $user = User::where('phone', $pass->phone)->first();
+            }
+            if ($user) {
+                $pass->user_id = $user->id;
+                $pass->save();
+                // Reload relation
+                $pass->load('user');
+            }
+        }
+
         // Validate type if optional type filter is passed
         if ($request->filled('type') && in_array($request->type, ['Move-In', 'Move-Out'])) {
             if ($pass->type !== $request->type) {
@@ -649,6 +666,20 @@ class MoveInOutApiController extends Controller
             return response()->json(['error' => 'Invalid or expired passcode.'], 404);
         }
 
+        // Resolve user by email or phone if user_id is null
+        if (!$pass->user_id) {
+            $user = null;
+            if ($pass->email) {
+                $user = User::where('email', $pass->email)->first();
+            }
+            if (!$user && $pass->phone) {
+                $user = User::where('phone', $pass->phone)->first();
+            }
+            if ($user) {
+                $pass->user_id = $user->id;
+            }
+        }
+
         $pass->status = 'Completed';
         $pass->visited_at = now();
         $pass->save();
@@ -665,6 +696,15 @@ class MoveInOutApiController extends Controller
                     if ($user) {
                         $user->flat_id = $pass->flat_id;
                         $user->save();
+                        
+                        // Update active oauth tokens
+                        \DB::table('oauth_access_tokens')
+                            ->where('user_id', $user->id)
+                            ->update(['flat_id' => $pass->flat_id]);
+                            
+                        // Update active device records
+                        \App\Models\UserDevice::where('user_id', $user->id)
+                            ->update(['current_flat_id' => $pass->flat_id]);
                     }
                 } else {
                     $flat->living_status = 'Owner';
@@ -676,6 +716,15 @@ class MoveInOutApiController extends Controller
                         if ($user) {
                             $user->flat_id = $pass->flat_id;
                             $user->save();
+                            
+                            // Update active oauth tokens
+                            \DB::table('oauth_access_tokens')
+                                ->where('user_id', $user->id)
+                                ->update(['flat_id' => $pass->flat_id]);
+                                
+                            // Update active device records
+                            \App\Models\UserDevice::where('user_id', $user->id)
+                                ->update(['current_flat_id' => $pass->flat_id]);
                         }
                     }
                 }
@@ -692,6 +741,17 @@ class MoveInOutApiController extends Controller
                             $user->flat_id = null;
                             $user->save();
                         }
+                        
+                        // Clear active oauth tokens matching this flat
+                        \DB::table('oauth_access_tokens')
+                            ->where('user_id', $pass->user_id)
+                            ->where('flat_id', $pass->flat_id)
+                            ->update(['flat_id' => null]);
+                            
+                        // Clear active device records matching this flat
+                        \App\Models\UserDevice::where('user_id', $pass->user_id)
+                            ->where('current_flat_id', $pass->flat_id)
+                            ->update(['current_flat_id' => null]);
                     }
                 } else {
                     $flat->living_status = 'Empty'; // Or whatever status means vacant
@@ -703,6 +763,17 @@ class MoveInOutApiController extends Controller
                             $user->flat_id = null;
                             $user->save();
                         }
+                        
+                        // Clear active oauth tokens matching this flat
+                        \DB::table('oauth_access_tokens')
+                            ->where('user_id', $pass->user_id)
+                            ->where('flat_id', $pass->flat_id)
+                            ->update(['flat_id' => null]);
+                            
+                        // Clear active device records matching this flat
+                        \App\Models\UserDevice::where('user_id', $pass->user_id)
+                            ->where('current_flat_id', $pass->flat_id)
+                            ->update(['current_flat_id' => null]);
                     }
                 }
             }
