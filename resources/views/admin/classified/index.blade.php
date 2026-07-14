@@ -219,9 +219,15 @@
                     <td>
                       @if($item->building_id != 0)
                       @if(Auth::user()->building_id == $item->building_id)
+                      @php
+                          $photoUrls = [];
+                          foreach ($item->photos as $photoObj) {
+                              $photoUrls[] = $photoObj->photo;
+                          }
+                      @endphp
                       <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#addModal" data-id="{{$item->id}}" data-title="{{$item->title}}" data-desc="{{$item->desc}}"  
                        data-status="{{$item->status}}" data-building_id="{{$item->building_id}}" data-reason="{{$item->reason}}" 
-                      data-block_id="{{$item->block_id}}" data-category="{{$item->category}}" data-user_id="{{$item->user_id}}"><i class="fa fa-edit"></i></button>
+                      data-block_id="{{$item->block_id}}" data-category="{{$item->category}}" data-user_id="{{$item->user_id}}" data-photos="{{ json_encode($photoUrls) }}"><i class="fa fa-edit"></i></button>
                       @endif
                       @if($item->deleted_at)
                         @if(Auth::user()->building_id == $item->building_id)
@@ -309,6 +315,11 @@
           <div class="form-group">
             <label for="image" class="col-form-label">Images (Optional):</label>
             <input type="file" name="photos[]" id="image" class="form-control" multiple accept="image/*">
+          </div>
+
+          <div class="form-group" id="existing-photos-container" style="display: none;">
+            <label class="col-form-label">Existing Photos:</label>
+            <div id="existing-photos-list" class="d-flex flex-wrap gap-2"></div>
           </div>
            <div class="form-group">
             <label for="name" class="col-form-label">Status:</label>
@@ -466,6 +477,21 @@
       $('#title').val(button.data('title') || '');
       $('#desc').val(button.data('desc') || '');
       $('#reason').val(button.data('reason') || '');
+
+      var photos = button.data('photos') || [];
+      $('#existing-photos-list').html('');
+      if (photos.length > 0) {
+        $('#existing-photos-container').show();
+        photos.forEach(function(photoUrl) {
+          $('#existing-photos-list').append(
+            '<div style="margin: 5px; position: relative; display: inline-block;">' +
+            '<img src="' + photoUrl + '" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">' +
+            '</div>'
+          );
+        });
+      } else {
+        $('#existing-photos-container').hide();
+      }
 
       toggleReason($('#status').val());
 
