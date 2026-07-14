@@ -66,6 +66,7 @@ class ClassifiedController extends Controller
                       });
             })
             ->with(['user', 'building', 'block', 'flat', 'photos'])
+            ->orderBy('id', 'desc')
             ->get();
 
         // Manually assign classifieds to building object for the view
