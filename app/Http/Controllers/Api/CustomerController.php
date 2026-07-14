@@ -1773,6 +1773,18 @@ public function create_classified(Request $request)
 
     // ✅ Handle photo uploads
     if ($request->hasFile('photos')) {
+        // If updating an existing classified, delete old photos first
+        if ($request->classified_id) {
+            $existingPhotos = ClassifiedPhoto::where('classified_id', $classified->id)->get();
+            foreach ($existingPhotos as $oldPhoto) {
+                $oldFile = public_path('images/classifieds/' . $oldPhoto->getPhotoFilenameAttribute());
+                if (file_exists($oldFile)) {
+                    @unlink($oldFile);
+                }
+                Storage::disk('s3')->delete($oldPhoto->getPhotoFilenameAttribute());
+                $oldPhoto->delete();
+            }
+        }
         foreach ($request->file('photos') as $file) {
             $extension = $file->getClientOriginalExtension();
             $filename = uniqid('classified_') . '.' . $extension;
@@ -1809,6 +1821,10 @@ public function delete_classified_photo(Request $request)
             ], 422);
         }
         $classified_photo = ClassifiedPhoto::find($request->classified_photo_id);
+        $filePath = public_path('images/classifieds/' . $classified_photo->getPhotoFilenameAttribute());
+        if (file_exists($filePath)) {
+            @unlink($filePath);
+        }
         Storage::disk('s3')->delete($classified_photo->getPhotoFilenameAttribute());
         $classified_photo->delete();
         return response()->json([
@@ -1836,6 +1852,10 @@ public function delete_classified(Request $request)
         }
         $classified = Classified::find($request->classified_id);
         foreach($classified->photos as $photo){
+            $filePath = public_path('images/classifieds/' . $photo->getPhotoFilenameAttribute());
+            if (file_exists($filePath)) {
+                @unlink($filePath);
+            }
             Storage::disk('s3')->delete($photo->getPhotoFilenameAttribute());
             $photo->delete();
         }

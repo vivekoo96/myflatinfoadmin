@@ -360,6 +360,18 @@ class ClassifiedController extends Controller
         
         // Handle photo uploads
         if ($request->hasFile('photos')) {
+            // If updating an existing classified, delete old photos first
+            if ($request->id) {
+                $existingPhotos = ClassifiedPhoto::where('classified_id', $classified->id)->get();
+                foreach ($existingPhotos as $oldPhoto) {
+                    $oldFile = public_path('images/classifieds/' . $oldPhoto->getPhotoFilenameAttribute());
+                    if (file_exists($oldFile)) {
+                        @unlink($oldFile);
+                    }
+                    Storage::disk('s3')->delete($oldPhoto->getPhotoFilenameAttribute());
+                    $oldPhoto->delete();
+                }
+            }
             foreach ($request->file('photos') as $file) {
                 $extension = $file->getClientOriginalExtension();
                 $filename = uniqid('classified_') . '.' . $extension;
