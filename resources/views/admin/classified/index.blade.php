@@ -217,7 +217,6 @@
                     <td>{{$item->status}}</td>
                      @if(Auth::User()->role == 'BA')
                     <td>
-                      <a href="{{route('classified.show',$item->id)}}"  class="btn btn-sm btn-warning"><i class="fa fa-eye"></i></a>
                       @if($item->building_id != 0)
                       @if(Auth::user()->building_id == $item->building_id)
                       <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#addModal" data-id="{{$item->id}}" data-title="{{$item->title}}" data-desc="{{$item->desc}}"  

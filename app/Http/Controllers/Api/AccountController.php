@@ -371,11 +371,17 @@ class AccountController extends Controller
             ],422);
         }
         
-          $user = User::where('email',$request->email)->orWhere('phone',$request->email)->first();
+          $user = User::withTrashed()->where('email',$request->email)->orWhere('phone',$request->email)->first();
         
         if(!$user){
             return response()->json([
                 'error' => 'This account is not register with us'
+            ],422);
+        }
+        
+        if($user->deleted_at){
+            return response()->json([
+                'error' => 'This account has been deleted'
             ],422);
         }
         

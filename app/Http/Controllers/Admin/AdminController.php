@@ -61,9 +61,12 @@ class AdminController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->orWhere('phone',$request->email)->first();
+        $user = User::withTrashed()->where('email', $request->email)->orWhere('phone',$request->email)->first();
 
         if($user){
+            if($user->deleted_at){
+                return redirect()->back()->with('error', 'User account has been deleted.');
+            }
             // Check if user is BA or has any role other than 'user'
             if($user->role == 'BA'){
                 // BA check: if user-level status is Inactive, cannot login
