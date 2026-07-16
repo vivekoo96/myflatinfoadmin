@@ -77,12 +77,12 @@ class RoleController extends Controller
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
         ];
-        $msg = 'Role Added';
+        $msg = $request->type == 'issue' ? 'Department Added' : 'Role Added';
         $role = new Role();
         
         if ($request->id) {
             $role = Role::withTrashed()->find($request->id);
-            $msg = 'Role Updated';
+            $msg = $request->type == 'issue' ? 'Department Name Updated' : 'Role Updated';
         }
     
         $validation = \Validator::make($request->all(), $rules);

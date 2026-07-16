@@ -309,18 +309,17 @@
             $('#desc').prop('readonly', true).css('background-color', '#f8f9fa');
             $('#photos').prop('disabled', true);
 
-            // If issue is NOT Pending then disable editing entirely
-            //   if (currentStatus == 'Solved') {
-              // Disable status field and save button so user cannot edit
+            // If issue is Completed or Solved, disable status field and save button
+            if (currentStatus === 'Solved' || currentStatus === 'Completed') {
               $('#status').prop('disabled', true);
               $('#save-button').prop('disabled', true);
-              $('.error').html('<div class="alert alert-info">Editing disabled: only issues with status <strong>Pending</strong> can be edited.</div>');
-            // } else {
+              $('.error').html('<div class="alert alert-info">Editing disabled: Completed/Solved issues cannot be modified.</div>');
+            } else {
               // Keep status field enabled for editing
-            //   $('#status').prop('disabled', false);
-            //   $('#save-button').prop('disabled', false);
-            //   $('.error').html('');
-            // }
+              $('#status').prop('disabled', false);
+              $('#save-button').prop('disabled', false);
+              $('.error').html('');
+            }
           
           // Add hidden inputs for all disabled fields when editing
           // Add hidden inputs to ensure disabled select values are submitted
@@ -435,7 +434,7 @@
         
         // Apply save button logic after modal is fully shown
         setTimeout(function() {
-            if (currentStatus === 'Solved') {
+            if (currentStatus === 'Solved' || currentStatus === 'Completed') {
               $('#save-button').prop('disabled', true).text('Issue Completed - Cannot Edit');
             } else {
               $('#save-button').prop('disabled', false).text('Save');

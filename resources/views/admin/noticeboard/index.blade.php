@@ -118,10 +118,8 @@
                         <span class="badge badge-secondary ml-1">Inactive</span>
                       @elseif(\Carbon\Carbon::parse($item->from_time)->isFuture())
                         <span class="badge badge-info ml-1">Future</span>
-                      @elseif(\Carbon\Carbon::parse($item->from_time)->isToday())
-                        <span class="badge badge-success ml-1">Today</span>
                       @else
-                        <span class="badge badge-warning ml-1">Active</span>
+                        <span class="badge badge-success ml-1">Active</span>
                       @endif
                     </td>
                     <td>

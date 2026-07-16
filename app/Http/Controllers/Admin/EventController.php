@@ -99,7 +99,7 @@ class EventController extends Controller
         }
         $rules = [
             'name' => 'required|max:65',
-            'desc' => 'required|max:200',
+            'desc' => 'required|max:2000',
             'from_time' => 'required|date' . ($request->id ? '' : '|after_or_equal:now'),
             'to_time' => 'required|date|after:from_time',
             'is_payment_enabled' => 'required|in:Yes,No',
@@ -111,7 +111,7 @@ class EventController extends Controller
         $event = new Event();
         $oldStatus = null;
         $oldPayment = null;
-
+ 
         if ($request->id) {
             $event = Event::withTrashed()->find($request->id);
             $oldStatus = $event->status;
@@ -122,12 +122,18 @@ class EventController extends Controller
         $validation = \Validator::make($request->all(), $rules, [
             'name.required' => 'Event name is required.',
             'desc.required' => 'Venue details are required.',
+            'desc.max' => 'Venue details may not be greater than 2000 characters.',
             'from_time.after_or_equal' => 'From time cannot be in the past.',
             'to_time.after' => 'To Date & Time cannot be earlier than From Date & Time.'
         ]);
 
         if ($validation->fails()) {
             return redirect()->back()->with('error', $validation->errors()->first())->withInput();
+        }
+
+        $toTime = Carbon::parse($request->to_time);
+        if ($toTime->isPast() && $request->is_payment_enabled == 'Yes' && $oldPayment !== 'Yes') {
+            return redirect()->back()->with('error', 'Cannot enable payment for a completed event.')->withInput();
         }
         
         // if($request->hasFile('image')) {
@@ -441,6 +447,13 @@ class EventController extends Controller
                 return response()->json(['msg' => 'no_change'], 200);
             }
             return redirect()->back();
+        }
+
+        if ($newPayment === 'Yes' && Carbon::parse($event->to_time)->isPast()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['msg' => 'Cannot enable payment for a completed event.'], 422);
+            }
+            return redirect()->back()->with('error', 'Cannot enable payment for a completed event.');
         }
 
         $event->is_payment_enabled = $newPayment;

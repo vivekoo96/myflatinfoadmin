@@ -143,11 +143,14 @@
             <input type="text" name="name" id="name" class="form-control" min="3" max="30" placeholder="Name" minlength="4" required>
           </div>
           <div class="form-group">
-            <label for="name" class="col-form-label">Venue Details:</label>
-            <textarea name="desc" id="desc" class="form-control" required></textarea>
+            <label for="desc" class="col-form-label">Venue Details:</label>
+            <textarea name="desc" id="desc" class="form-control" placeholder="Enter venue details" required></textarea>
           </div>
           <div class="form-group">
-            <label for="name" class="col-form-label">Image: <img src="" id="image2" style="width:40px"></label>
+            <label for="image" class="col-form-label">Image:</label>
+            <div class="mb-2">
+              <img src="" id="image2" style="max-width: 100px; max-height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; display: none;">
+            </div>
             <input type="file" name="image" id="image" class="form-control" accept="image/*">
           </div>
           <div class="form-group">
@@ -217,6 +220,18 @@
     var action = '';
     var token = "{{csrf_token()}}";
     
+    // Image selection preview handler
+    $('#image').on('change', function() {
+        var input = this;
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $('#image2').attr('src', e.target.result).show();
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    });
+    
     // Bind hidden.bs.modal event to reset form state when modal closes
     $('#addModal').on('hidden.bs.modal', function () {
       var $form = $(this).find('form');
@@ -274,7 +289,13 @@
       $('#to_time').val(button.data('to_time'));
       $('#building_id').val(button.data('building_id'));
       $('#is_payment_enabled').val(button.data('is_payment_enabled'));
-      $('#image2').attr('src',button.data('image'));
+      var existingImg = button.data('image');
+      if (existingImg) {
+        $('#image2').attr('src', existingImg).show();
+      } else {
+        $('#image2').attr('src', '').hide();
+      }
+      $('#image').val(''); // Clear the file input
       $('.error').html(''); // Clear any previous errors
       
       // Set status: default to Pending only for new events
@@ -386,6 +407,23 @@
             $('#status').prepend($('<option>').attr('value','Pending').text('Pending'));
           }
         }
+
+        // Check if event is completed (to_time is in the past)
+        var toTimeVal = button.data('to_time');
+        if (toTimeVal) {
+          var toDate = new Date(toTimeVal);
+          if (toDate < new Date()) {
+            $('#is_payment_enabled').prop('disabled', true);
+            // Add helper input to submit value since select is disabled
+            var $form = $('#addModal').find('form');
+            $form.find('input.helper-is_payment_enabled').remove();
+            var $hidden = $('<input>').attr({type:'hidden', name: 'is_payment_enabled', value: $('#is_payment_enabled').val()}).addClass('helper-is_payment_enabled');
+            $form.append($hidden);
+          } else {
+            $('#is_payment_enabled').prop('disabled', false);
+            $('#addModal').find('input.helper-is_payment_enabled').remove();
+          }
+        }
       } else {
           // For new events, set min to current datetime
           $('#from_time').attr('min', nowString);
@@ -483,7 +521,7 @@
     // Show backend error in modal if present
     $(document).ready(function() {
       var errorText = $('.alert-danger').text();
-      if (errorText && errorText.match(/To Date & Time cannot be earlier than From Date & Time|after:from_time|To Time must be after|Event name is required|Venue details are required/)) {
+      if (errorText && errorText.match(/To Date & Time cannot be earlier than From Date & Time|after:from_time|To Time must be after|Event name is required|Venue details/)) {
         $('#addModal').modal('show');
         $('#addModal .error').html('<div class="alert alert-danger">' + errorText + '</div>');
       }

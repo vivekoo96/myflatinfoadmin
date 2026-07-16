@@ -1738,7 +1738,7 @@ $(document).ready(function() {
 });
 
  setTimeout(function() {
-      $('.alert-success, .alert-danger').fadeOut('slow');
+      $('.alert-success:not(.no-fade), .alert-danger:not(.no-fade)').fadeOut('slow');
     }, 2000);
     
     // Handle access denied clicks - redirect to permission denied page

@@ -652,7 +652,7 @@
                     <!--<button class="btn btn-sm btn-success" data-toggle="modal" data-target="#addModal">Add New Booking</button>-->
                     <div class="table-responsive">
                     <!-- Table -->
-                    <table class="table table-bordered table-striped custom-datatable">
+                    <table id="example1" class="table table-bordered table-striped custom-datatable no-dt">
                   <thead>
                   <tr>
                     <!-- <th>S No</th> -->
@@ -1587,7 +1587,7 @@ $(function() {
         // Wait a moment for cleanup
         setTimeout(function() {
             var table = $('#example1').DataTable({
-                "responsive": true,
+                "responsive": false,
                 "scrollX": true,
                 "ordering": true,
                 "lengthChange": false,
@@ -1702,6 +1702,13 @@ $(function() {
             
             // Add smooth transition effect
             $container.find('.dates-short').hide().fadeIn(300);
+        });
+
+        // Adjust DataTable columns when tabs are shown to fix alignment scroll issues
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+            setTimeout(function() {
+                $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
+            }, 100);
         });
     });
 

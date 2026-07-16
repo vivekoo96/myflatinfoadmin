@@ -159,8 +159,8 @@
                     <!--<th>Block</th>-->
                     <th>Category</th>
                     <th>Title</th>
-                    <!--<th>Image</th>-->
-                    <th>Desc</th>
+                    <th>Image</th>
+                    <th style="max-width: 200px;">Desc</th>
                     <th>Status</th>
                     @if(Auth::User()->role == 'BA')
                     <th>Action</th>
@@ -177,6 +177,11 @@
                     <td>
                       @if($item->user)
                         <a href="{{url('customer',$item->user_id)}}">{{$item->user->name}}</a>
+                        @if($item->user->role == 'BA')
+                          <span class="badge badge-warning">Building Admin</span>
+                        @elseif($item->user->role == 'SA')
+                          <span class="badge badge-info">Super Admin</span>
+                        @endif
                       @else
                         <span class="text-muted">User Deleted</span>
                       @endif
@@ -201,19 +206,16 @@
                     </td> --}}
                     <td>{{$item->category}}</td>
                     <td>{{$item->title}}</td>
-                    <!--<td>-->
-                   
-                    <!--   @if($item->photos->first() && $item->photos->first()->photo)-->
-                      
-                    <!--    <a href="{{$item->photos->first()->photo}}" target="_blank" style="text-decoration: underline;">-->
-                    <!--        View Image-->
-                    <!--    </a>-->
-                    <!--@else-->
-                    <!--    <span class="text-muted">No Image</span>-->
-                    <!--@endif-->
-                     
-                    <!--</td>-->
-                    <td>{{$item->desc}}</td>
+                    <td>
+                        @if($item->photos && $item->photos->first() && $item->photos->first()->photo)
+                            <a href="{{ $item->photos->first()->photo }}" target="_blank" class="text-primary" style="text-decoration: underline;">
+                                View Image
+                            </a>
+                        @else
+                            <span class="text-muted">No Image</span>
+                        @endif
+                    </td>
+                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{$item->desc}}">{{$item->desc}}</td>
                     <td>{{$item->status}}</td>
                      @if(Auth::User()->role == 'BA')
                     <td>
@@ -321,7 +323,7 @@
             <label class="col-form-label">Existing Photos:</label>
             <div id="existing-photos-list" class="d-flex flex-wrap gap-2"></div>
           </div>
-           <div class="form-group">
+           <div class="form-group" id="status-group">
             <label for="name" class="col-form-label">Status:</label>
             <select name="status" id="status" class="form-control" required>
                 @if(Auth::User()->role == 'BA')
@@ -469,9 +471,11 @@
 
       /* ---------------- STATUS FIX ---------------- */
       if (edit_id) {
+        $('#status-group').show();
         $('#status').val(button.data('status'));
       } else {
-        $('#status').val('Pending'); // ✅ ADD DEFAULT
+        $('#status-group').hide();
+        $('#status').val('Approved'); // ✅ ADD DEFAULT
       }
 
       $('#title').val(button.data('title') || '');
