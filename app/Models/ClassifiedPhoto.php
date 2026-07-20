@@ -26,12 +26,22 @@ class ClassifiedPhoto extends Model
     public function getPhotoAttribute($value)
     {
         if ($value != '') {
-            $filename = (strpos($value, 'classifieds/') === 0) ? substr($value, 12) : $value;
+            $filename = basename($value);
             
-            // ✅ Generate correct public or S3 URL
+            // Generate correct public or S3 URL
             if ($this->classified && $this->classified->building_id == 0) {
-                return rtrim(config('app.superadmin_url'), '/')
-                . '/public/images/classifieds/' . $filename;
+                $superadminUrl = config('app.superadmin_url');
+                if (empty($superadminUrl)) {
+                    $currentUrl = url('/');
+                    if (strpos($currentUrl, 'dev.buildingadmin') !== false) {
+                        $superadminUrl = str_replace('dev.buildingadmin', 'dev.superadmin', $currentUrl);
+                    } elseif (strpos($currentUrl, 'buildingadmin') !== false) {
+                        $superadminUrl = str_replace('buildingadmin', 'superadmin', $currentUrl);
+                    } else {
+                        $superadminUrl = 'https://superadmin.myflatinfo.com';
+                    }
+                }
+                return rtrim($superadminUrl, '/') . '/public/images/classifieds/' . $filename;
             }
             return asset('public/images/classifieds/' . $filename);
         }
