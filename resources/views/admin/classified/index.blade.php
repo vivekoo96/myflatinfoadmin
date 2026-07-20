@@ -207,10 +207,18 @@
                     <td>{{$item->category}}</td>
                     <td>{{$item->title}}</td>
                     <td>
-                        @if($item->photos && $item->photos->first() && $item->photos->first()->photo)
-                            <a href="{{ $item->photos->first()->photo }}" target="_blank" class="text-primary" style="text-decoration: underline;">
-                                View Image
-                            </a>
+                        @if($item->photos && $item->photos->count() > 0)
+                            @if($item->photos->count() === 1)
+                                <a href="{{ $item->photos->first()->photo }}" target="_blank" class="text-primary" style="text-decoration: underline;">
+                                    View Image
+                                </a>
+                            @else
+                                @foreach($item->photos as $index => $photoObj)
+                                    <a href="{{ $photoObj->photo }}" target="_blank" class="text-primary" style="text-decoration: underline; margin-right: 8px; white-space: nowrap;">
+                                        View Image {{ $index + 1 }}
+                                    </a>
+                                @endforeach
+                            @endif
                         @else
                             <span class="text-muted">No Image</span>
                         @endif
