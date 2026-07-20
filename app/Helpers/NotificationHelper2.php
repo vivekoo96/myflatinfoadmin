@@ -52,6 +52,18 @@ class NotificationHelper2
         $saveToDB   = $options['save_to_db'] ?? true;
         $iosSound   = $options['ios_sound'] ?? 'bellnotificationsound.wav';
 
+        // Auto-resolve flat_id if not provided and building_id + userId exist
+        if (!$flatId && $userId && $buildingId) {
+            $flat = \App\Models\Flat::where('building_id', $buildingId)
+                ->where(function ($q) use ($userId) {
+                    $q->where('owner_id', $userId)
+                      ->orWhere('tanent_id', $userId);
+                })->first();
+            if ($flat) {
+                $flatId = $flat->id;
+            }
+        }
+
         try {
 
             /** Save notification in DB */
