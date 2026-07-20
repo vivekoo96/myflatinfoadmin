@@ -61,6 +61,23 @@ Route::get('/info', function() {
     return view('info', compact('aboutUs'));
 })->name('info');
 
+// Fallback routes for storage files when the symlink is broken/missing
+Route::get('storage/{path}', function ($path) {
+    $filePath = storage_path('app/public/' . $path);
+    if (!file_exists($filePath) || is_dir($filePath)) {
+        abort(404);
+    }
+    return response()->file($filePath);
+})->where('path', '.*');
+
+Route::get('public/storage/{path}', function ($path) {
+    $filePath = storage_path('app/public/' . $path);
+    if (!file_exists($filePath) || is_dir($filePath)) {
+        abort(404);
+    }
+    return response()->file($filePath);
+})->where('path', '.*');
+
 Route::get('clear-cache',function(){
     //\Artisan::call('storage:link');
     //\Artisan::call('vendor:publish --provider="Fruitcake\Cors\CorsServiceProvider');
