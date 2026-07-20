@@ -1777,9 +1777,14 @@ public function create_classified(Request $request)
         if ($request->classified_id) {
             $existingPhotos = ClassifiedPhoto::where('classified_id', $classified->id)->get();
             foreach ($existingPhotos as $oldPhoto) {
-                $oldFile = public_path('images/classifieds/' . $oldPhoto->getPhotoFilenameAttribute());
-                if (file_exists($oldFile)) {
-                    @unlink($oldFile);
+                $filename = $oldPhoto->getPhotoFilenameAttribute();
+                $flatFile = public_path('images/classifieds/' . basename($filename));
+                $nestedFile = public_path('images/classifieds/classifieds/' . basename($filename));
+                if (file_exists($flatFile)) {
+                    @unlink($flatFile);
+                }
+                if (file_exists($nestedFile)) {
+                    @unlink($nestedFile);
                 }
                 Storage::disk('s3')->delete($oldPhoto->getPhotoFilenameAttribute());
                 $oldPhoto->delete();

@@ -26,12 +26,14 @@ class ClassifiedPhoto extends Model
     public function getPhotoAttribute($value)
     {
         if ($value != '') {
+            $filename = (strpos($value, 'classifieds/') === 0) ? substr($value, 12) : $value;
+            
             // ✅ Generate correct public or S3 URL
             if ($this->classified && $this->classified->building_id == 0) {
                 return rtrim(config('app.superadmin_url'), '/')
-                . '/public/images/' . $value;
+                . '/public/images/classifieds/' . $filename;
             }
-            return asset('public/images/classifieds/' . $value);
+            return asset('public/images/classifieds/' . $filename);
         }
     }
 

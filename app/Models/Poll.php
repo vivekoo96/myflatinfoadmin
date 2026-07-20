@@ -37,8 +37,8 @@ class Poll extends Model
     public function getDisplayStatusAttribute(): string
     {
         if ($this->status === 'active' && $this->expiry_date) {
-            if (Carbon::now()->diffInHours($this->expiry_date, false) <= 24 &&
-                Carbon::now()->lt($this->expiry_date)) {
+            $diffInMinutes = Carbon::now()->diffInMinutes($this->expiry_date, false);
+            if ($diffInMinutes >= 0 && $diffInMinutes <= 1440) {
                 return 'expiring_soon';
             }
         }

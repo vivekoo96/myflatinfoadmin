@@ -5,6 +5,15 @@
 
     RewriteEngine On
 
+    # Fallback rewrites for classifieds folder path discrepancies (flat <=> nested)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{DOCUMENT_ROOT}/$1images/classifieds/classifieds/$2 -f
+    RewriteRule ^(public/)?images/classifieds/([^/]+)$ $1images/classifieds/classifieds/$2 [L]
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{DOCUMENT_ROOT}/$1images/classifieds/$2 -f
+    RewriteRule ^(public/)?images/classifieds/classifieds/([^/]+)$ $1images/classifieds/$2 [L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

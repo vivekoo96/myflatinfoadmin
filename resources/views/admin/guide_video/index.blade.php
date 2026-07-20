@@ -1,16 +1,16 @@
 @extends('layouts.admin')
 
-@section('title') How to Use – Video Tutorials @endsection
+@section('title') Video Tutorials @endsection
 
 @section('content')
 <section class="content-header">
   <div class="container-fluid">
     <div class="row mb-2">
-      <div class="col-sm-6"><h1>How to Use</h1></div>
+      <div class="col-sm-6"><h1>Video Tutorials</h1></div>
       <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
           <li class="breadcrumb-item"><a href="#">Home</a></li>
-          <li class="breadcrumb-item active">How to Use</li>
+          <li class="breadcrumb-item active">Video Tutorials</li>
         </ol>
       </div>
     </div>

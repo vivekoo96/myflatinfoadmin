@@ -66,7 +66,11 @@ class PollController extends Controller
             $rules['expiry_date'] = 'date|after:now';
         }
 
-        $validator = \Validator::make($request->all(), $rules);
+        $messages = [
+            'expiry_date.after' => 'The expiry date and time must be in the future (after the current time).',
+        ];
+
+        $validator = \Validator::make($request->all(), $rules, $messages);
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
@@ -239,6 +243,35 @@ class PollController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────
+    // REOPEN (closed/published → active)
+    // ─────────────────────────────────────────────────────────────
+    public function reopen($id)
+    {
+        if (! $this->canManagePolls()) {
+            return response()->json(['error' => 'Permission denied'], 403);
+        }
+
+        $building = $this->getCurrentBuilding();
+        if (! $building) {
+            return response()->json(['error' => 'Building context not found. Please re-select your building.'], 422);
+        }
+
+        $poll = Poll::where('id', $id)
+            ->where('building_id', $building->id)
+            ->firstOrFail();
+
+        if (! in_array($poll->status, ['closed', 'published'])) {
+            return response()->json(['error' => 'Only closed or published polls can be reopened.'], 422);
+        }
+
+        $poll->status = 'active';
+        $poll->result_released_at = null;
+        $poll->save();
+
+        return response()->json(['msg' => 'success', 'status' => 'active']);
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // RELEASE RESULTS (closed → published)
     // ─────────────────────────────────────────────────────────────
     public function releaseResults($id)
@@ -327,6 +360,147 @@ class PollController extends Controller
         $poll->save();
 
         return response()->json(['msg' => 'success', 'expiry_date' => $poll->expiry_date->format('d M Y, h:i A')]);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // EDIT DATA (GET - returns JSON for the edit modal)
+    // ─────────────────────────────────────────────────────────────
+    public function editData($id)
+    {
+        if (! $this->canManagePolls()) {
+            return response()->json(['error' => 'Permission denied'], 403);
+        }
+
+        $building = $this->getCurrentBuilding();
+        if (! $building) {
+            return response()->json(['error' => 'Building context not found.'], 422);
+        }
+
+        $poll = Poll::where('id', $id)
+            ->where('building_id', $building->id)
+            ->where('status', 'draft')
+            ->with(['questions.options'])
+            ->firstOrFail();
+
+        return response()->json([
+            'id'          => $poll->id,
+            'title'       => $poll->title,
+            'description' => $poll->description,
+            'type'        => $poll->type,
+            'structure'   => $poll->structure,
+            'voting_type' => $poll->voting_type,
+            'expiry_date' => $poll->expiry_date ? $poll->expiry_date->format('Y-m-d\TH:i') : '',
+            'questions'   => $poll->questions->map(function ($q) {
+                return [
+                    'question' => $q->question,
+                    'options'  => $q->options->pluck('option_text')->toArray(),
+                ];
+            }),
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // UPDATE DRAFT (POST - full edit of a draft poll)
+    // ─────────────────────────────────────────────────────────────
+    public function updateDraft(Request $request, $id)
+    {
+        if (! $this->canManagePolls()) {
+            return response()->json(['error' => 'Permission denied'], 403);
+        }
+
+        $building = $this->getCurrentBuilding();
+        if (! $building) {
+            return response()->json(['error' => 'Building context not found.'], 422);
+        }
+
+        $poll = Poll::where('id', $id)
+            ->where('building_id', $building->id)
+            ->where('status', 'draft')
+            ->firstOrFail();
+
+        // Validate
+        $rules = [
+            'title'       => 'required|string|max:255',
+            'type'        => 'required|in:poll,survey',
+            'structure'   => 'required|in:single,multiple',
+            'voting_type' => 'required|in:user_based,owner_based,tenant_based',
+        ];
+        if ($request->expiry_date) {
+            $rules['expiry_date'] = 'date|after:now';
+        }
+        $validator = \Validator::make($request->all(), $rules, [
+            'expiry_date.after' => 'The expiry date must be in the future.',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 422);
+        }
+
+        // Collect questions from flat keys like questions[0][question]
+        $questions = [];
+        foreach ($request->all() as $key => $value) {
+            if (preg_match('/^questions\[(\d+)\]\[question\]$/', $key, $m)) {
+                $questions[(int) $m[1]]['question'] = $value;
+            }
+            if (preg_match('/^questions\[(\d+)\]\[options\]\[(\d+)\]$/', $key, $m)) {
+                $questions[(int) $m[1]]['options'][(int) $m[2]] = $value;
+            }
+        }
+        // Also handle array-style submission
+        if ($request->has('questions') && is_array($request->questions)) {
+            $questions = $request->questions;
+        }
+
+        if (empty($questions)) {
+            return response()->json(['error' => 'At least one question is required.'], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update poll metadata
+            $poll->update([
+                'title'       => $request->title,
+                'description' => $request->description,
+                'type'        => $request->type,
+                'structure'   => $request->structure,
+                'voting_type' => $request->voting_type,
+                'expiry_date' => $request->expiry_date ? Carbon::parse($request->expiry_date) : null,
+            ]);
+
+            // Delete old questions and options, then recreate
+            foreach ($poll->questions as $oldQ) {
+                PollOption::where('poll_question_id', $oldQ->id)->delete();
+            }
+            PollQuestion::where('poll_id', $poll->id)->delete();
+
+            // Recreate questions and options
+            foreach ($questions as $qIndex => $qData) {
+                $qText = is_array($qData) ? ($qData['question'] ?? '') : $qData;
+                if (empty(trim($qText))) continue;
+
+                $question = PollQuestion::create([
+                    'poll_id'  => $poll->id,
+                    'question' => $qText,
+                    'order'    => $qIndex,
+                ]);
+
+                $opts = is_array($qData) ? ($qData['options'] ?? []) : [];
+                foreach ($opts as $oIndex => $optText) {
+                    if (empty(trim($optText))) continue;
+                    PollOption::create([
+                        'poll_question_id' => $question->id,
+                        'option_text'      => $optText,
+                        'order'            => $oIndex,
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return response()->json(['msg' => 'success']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Poll updateDraft failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to update poll: ' . $e->getMessage()], 500);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────

@@ -309,17 +309,18 @@ Route::middleware('admin')->group(function () {
             Route::resource('/poll', PollController::class)->only(['index', 'store', 'show', 'destroy']);
             Route::post('/poll/{id}/activate', [PollController::class, 'activate'])->name('poll.activate');
             Route::post('/poll/{id}/close', [PollController::class, 'close'])->name('poll.close');
+            Route::post('/poll/{id}/reopen', [PollController::class, 'reopen'])->name('poll.reopen');
             Route::post('/poll/{id}/release-results', [PollController::class, 'releaseResults'])->name('poll.releaseResults');
             Route::post('/poll/{id}/update-expiry', [PollController::class, 'updateExpiry'])->name('poll.updateExpiry');
+            Route::get('/poll/{id}/edit-data', [PollController::class, 'editData'])->name('poll.editData');
+            Route::post('/poll/{id}/update-draft', [PollController::class, 'updateDraft'])->name('poll.updateDraft');
         });
 
-        // Guided Video Tutorials (read-only display for BA)
-        Route::get('/guide-video', [GuideVideoController::class, 'index'])->name('guide-video.index');
-
-        // Video Tutorials (grouped display)
-        Route::get('/video-tutorials', function() {
-            return view('admin.video_tutorials');
-        })->name('video-tutorials.index');
+        // Video Tutorials (read-only display for BA)
+        Route::get('/video-tutorials', [GuideVideoController::class, 'index'])->name('video-tutorials.index');
+        Route::get('/guide-video', function() {
+            return redirect()->route('video-tutorials.index');
+        });
 
         // Meeting Minutes
         Route::get('/meeting-minute', [MeetingMinuteController::class, 'index'])->name('meeting-minute.index');

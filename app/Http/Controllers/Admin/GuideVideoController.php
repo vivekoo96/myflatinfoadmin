@@ -31,6 +31,6 @@ class GuideVideoController extends Controller
     private function isAllowed(): bool
     {
         $user = Auth::user();
-        return $user && ($user->role === 'BA' || ($user->selectedRole && $user->selectedRole->slug === 'president'));
+        return $user && ($user->role === 'BA' || $user->role === 'SA' || ($user->selectedRole && strtolower($user->selectedRole->slug) === 'president'));
     }
 }

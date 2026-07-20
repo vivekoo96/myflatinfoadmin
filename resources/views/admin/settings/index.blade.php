@@ -468,7 +468,7 @@
 
                     // If server returned JSON, build select
                     if (data && data.building_users) {
-                        var html = '<select name="treasurer_person" id="treasurer_person" class="form-control">';
+                        var html = '<select name="treasurer_id" id="treasurer_id" class="form-control">';
 
                         // If role not provided or no users, optionally include building owner
                         if (!data.role || data.building_users.length === 0) {

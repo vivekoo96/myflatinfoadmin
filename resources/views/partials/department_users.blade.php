@@ -39,21 +39,29 @@
         $selectedTreasurer = $building->treasurer_id ?? Auth::id();
     @endphp
 
-   @foreach($uniqueUsers as $building_user)
-    @php
-        $user = $building_user->user ?? $building_user;
+    @if($uniqueUsers->isEmpty())
+        @php
+            $defaultUserId = $building->user_id ?? Auth::id();
+            $defaultUserName = ($building->user->name ?? null) ?? Auth::user()->name;
+        @endphp
+        <option value="{{ $defaultUserId }}" selected>{{ $defaultUserName }}</option>
+    @else
+        @foreach($uniqueUsers as $building_user)
+            @php
+                $user = $building_user->user ?? $building_user;
 
-        $displayName = $user->name
-            ?? trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
-    @endphp
+                $displayName = $user->name
+                    ?? trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
+            @endphp
 
-    <option
-        value="{{ $building_user->user_id ?? $building_user->id }}"
-        {{ $selectedTreasurer == ($building_user->user_id ?? $building_user->id) ? 'selected' : '' }}
-    >
-        {{ $displayName }}
-    </option>
-@endforeach
+            <option
+                value="{{ $building_user->user_id ?? $building_user->id }}"
+                {{ $selectedTreasurer == ($building_user->user_id ?? $building_user->id) ? 'selected' : '' }}
+            >
+                {{ $displayName }}
+            </option>
+        @endforeach
+    @endif
 </select>
 
 {{-- If disabled, send value manually --}}
