@@ -22,6 +22,7 @@ use Pushok\Notification as ApnsNotification;
 use Pushok\Payload;
 use Pushok\Payload\Alert;
 
+use App\Helpers\NotificationHelper2 as NotificationHelper;
 use DB;
 use \Session;
 use Mail;
@@ -128,28 +129,15 @@ class PaymentController extends Controller
         $payment->transaction_id = $transaction->id;
         $payment->save();
                     
-        $devices = DB::table('user_devices')
-                ->where('user_id', $user->id)
-                ->whereNotNull('fcm_token')
-                ->where('is_active', 1)
-                ->select('fcm_token', 'device_type')
-                ->get();
-
-        // Setup Firebase for Android/Web
-        $firebaseFactory = (new Factory)->withServiceAccount(base_path('myflatinfo-firebase-adminsdk.json'));
-        $firebaseMessaging = $firebaseFactory->createMessaging();
-    
-        $apnsClient = $this->apnsClient;
         $title = 'Event Payment Successful';
         $body = "Your payment of ₹$request->amount for the event was successful. You can now download your payment receipt.";
 
-        
         $dataPayload = [
             'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
             'screen' => 'EventsFundList',
             'params' => json_encode([
                 'eventID' => $event->id,
-                'flat'=>$request->flat_id,
+                'flat' => $request->flat_id,
             ]),
             'categoryId' => '',
             'channelId' => '',
@@ -157,63 +145,22 @@ class PaymentController extends Controller
             'type' => 'EVENT_PAID',
             'user_id' => (string)$user->id,
         ];
-        
-        foreach ($devices as $device) {
-            $token = $device->fcm_token;
-            $type = strtolower($device->device_type); // ios, android, web
-    
-            if (in_array($type, ['android', 'web'])) {
-                $message = CloudMessage::withTarget('token', $token)
-                    ->withNotification(Notification::create(
-                        $title,
-                        $body
-                    ))
-                    ->withData($dataPayload);
-    
-                try {
-                    $firebaseMessaging->send($message);
-                    // \Log::info("Firebase notification sent to: $token");
-                } catch (\Exception $e) {
-                    \Log::error("FCM error for token $token: " . $e->getMessage());
-                }
-    
-            } elseif ($type === 'ios') {
-                $alert = Alert::create()
-                    ->setTitle($title)
-                    ->setBody($body);
-                $payload = Payload::create()
-                    ->setAlert($alert)
-                    ->setAlert($alert)
-                    ->setSound('bellnotificationsound.wav')
-                    ->setCustomValue('click_action', $dataPayload['click_action'])
-                    ->setCustomValue('screen', $dataPayload['screen'])
-                    ->setCustomValue('params', $dataPayload['params'])
-                    ->setCustomValue('categoryId', $dataPayload['categoryId'])
-                    ->setCustomValue('channelId', $dataPayload['channelId'])
-                    ->setCustomValue('type', $dataPayload['type'])
-                    ->setCustomValue('sound', $dataPayload['sound']);
-                $notification = new ApnsNotification($payload, $token);
-    
-                try {
-                    $apnsClient->addNotification($notification);
-                    $responses = $apnsClient->push(); // returns an array of ApnsResponseInterface
-                    foreach ($responses as $response) {
-                        if ($response->getStatusCode() === 200) {
-                            // Push was successful
-                        } else {
-                            // Push failed, optionally log the error
-                            \Log::error('APNs Error', [
-                                'status' => $response->getStatusCode(),
-                                'reason' => $response->getReasonPhrase(),
-                                'error'  => $response->getErrorReason()
-                            ]);
-                        }
-                    }
-                } catch (\Exception $e) {
-                    \Log::error("APNs exception: " . $e->getMessage());
-                }
-            }
-        }
+
+        NotificationHelper::sendNotification(
+            $user->id,
+            $title,
+            $body,
+            $dataPayload,
+            [
+                'from_id' => Auth::user()->id,
+                'flat_id' => $request->flat_id,
+                'building_id' => Auth::user()->building_id,
+                'type' => 'event_paid',
+                'apns_client' => $this->apnsClient ?? null,
+                'ios_sound' => 'bellnotificationsound.wav'
+            ],
+            ['user']
+        );
 
         return redirect()->back()->with('success', $msg);
     }
