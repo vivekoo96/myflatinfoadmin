@@ -6686,7 +6686,8 @@ if ($isStayToChanged && $visitor->over_stay_count > 0) {
             $payment->user_id = Auth::User()->id;
             $payment->event_id = $order->model_id;
             $payment->flat_id = $flat->id;
-$payment->date = Carbon::parse($request->date)->format('Y-m-d');
+            $payment->type = 'Credit';
+            $payment->date = Carbon::parse($request->date)->format('Y-m-d');
             $payment->payment_type = 'InBank';
             $payment->amount = $order->amount;
             $payment->status = 'Paid';
