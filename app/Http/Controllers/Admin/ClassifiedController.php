@@ -359,25 +359,35 @@ class ClassifiedController extends Controller
         
         $classified->save();
         
+        // Handle photo deletion if updating and existing_photos is provided
+        if ($request->id && $request->has('existing_photos')) {
+            $keepPhotoIds = $request->input('existing_photos', []);
+            if (!is_array($keepPhotoIds)) {
+                $keepPhotoIds = [$keepPhotoIds];
+            }
+            $keepPhotoIds = array_map('intval', $keepPhotoIds);
+
+            $photosToDelete = ClassifiedPhoto::where('classified_id', $classified->id)
+                ->whereNotIn('id', $keepPhotoIds)
+                ->get();
+
+            foreach ($photosToDelete as $oldPhoto) {
+                $filename = $oldPhoto->getPhotoFilenameAttribute();
+                $flatFile = public_path('images/classifieds/' . basename($filename));
+                $nestedFile = public_path('images/classifieds/classifieds/' . basename($filename));
+                if (file_exists($flatFile)) {
+                    @unlink($flatFile);
+                }
+                if (file_exists($nestedFile)) {
+                    @unlink($nestedFile);
+                }
+                Storage::disk('s3')->delete($oldPhoto->getPhotoFilenameAttribute());
+                $oldPhoto->delete();
+            }
+        }
+
         // Handle photo uploads
         if ($request->hasFile('photos')) {
-            // If updating an existing classified, delete old photos first
-            if ($request->id) {
-                $existingPhotos = ClassifiedPhoto::where('classified_id', $classified->id)->get();
-                foreach ($existingPhotos as $oldPhoto) {
-                    $filename = $oldPhoto->getPhotoFilenameAttribute();
-                    $flatFile = public_path('images/classifieds/' . basename($filename));
-                    $nestedFile = public_path('images/classifieds/classifieds/' . basename($filename));
-                    if (file_exists($flatFile)) {
-                        @unlink($flatFile);
-                    }
-                    if (file_exists($nestedFile)) {
-                        @unlink($nestedFile);
-                    }
-                    Storage::disk('s3')->delete($oldPhoto->getPhotoFilenameAttribute());
-                    $oldPhoto->delete();
-                }
-            }
             foreach ($request->file('photos') as $file) {
                 $extension = $file->getClientOriginalExtension();
                 $filename = uniqid('classified_') . '.' . $extension;

@@ -1591,8 +1591,19 @@ public function get_classifieds(Request $request)
 
     $classifieds = $classifiedsQuery->get();
 
+    $formattedClassifieds = $classifieds->map(function ($item) {
+        $data = $item->toArray();
+        $data['photos'] = $item->photos->map(function ($p) {
+            return [
+                'id' => $p->id,
+                'photo' => $p->photo,
+            ];
+        })->toArray();
+        return $data;
+    });
+
     return response()->json([
-        'classifieds' => $classifieds,
+        'classifieds' => $formattedClassifieds,
         'classifiedIds' => $classifiedIds,
         'selectedCategory' => $selectedCategory
     ]);
@@ -1686,7 +1697,12 @@ $allCount = Classified::withTrashed()
                 'email' => $item->user->email ?? '',
                 'photo' => $item->user->photo ?? '',
             ],
-            'photos' => $item->photos->pluck('photo'),
+            'photos' => $item->photos->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'photo' => $p->photo,
+                ];
+            })->toArray(),
             'flat_name' => $item->flat->name ?? $item->flat->flat_no ?? null,
             'block_name' => $item->block->name ?? $item->block->block_name ?? null,
         ];
@@ -1712,6 +1728,8 @@ public function create_classified(Request $request)
         'category' => 'required|in:All Buildings,Within Building',
         'photos' => 'nullable|array',
         'photos.*' => 'image|max:5120',
+        'existing_photos' => 'nullable|array',
+        'existing_photos.*' => 'integer|exists:classified_photos,id',
     ];
 
     $validation = \Validator::make($request->all(), $rules);
@@ -1771,25 +1789,35 @@ public function create_classified(Request $request)
         ]);
     }
 
+    // ✅ Handle photo deletion if updating and existing_photos is provided
+    if ($request->classified_id && $request->has('existing_photos')) {
+        $keepPhotoIds = $request->input('existing_photos', []);
+        if (!is_array($keepPhotoIds)) {
+            $keepPhotoIds = [$keepPhotoIds];
+        }
+        $keepPhotoIds = array_map('intval', $keepPhotoIds);
+
+        $photosToDelete = ClassifiedPhoto::where('classified_id', $classified->id)
+            ->whereNotIn('id', $keepPhotoIds)
+            ->get();
+
+        foreach ($photosToDelete as $oldPhoto) {
+            $filename = $oldPhoto->getPhotoFilenameAttribute();
+            $flatFile = public_path('images/classifieds/' . basename($filename));
+            $nestedFile = public_path('images/classifieds/classifieds/' . basename($filename));
+            if (file_exists($flatFile)) {
+                @unlink($flatFile);
+            }
+            if (file_exists($nestedFile)) {
+                @unlink($nestedFile);
+            }
+            Storage::disk('s3')->delete($oldPhoto->getPhotoFilenameAttribute());
+            $oldPhoto->delete();
+        }
+    }
+
     // ✅ Handle photo uploads
     if ($request->hasFile('photos')) {
-        // If updating an existing classified, delete old photos first
-        if ($request->classified_id) {
-            $existingPhotos = ClassifiedPhoto::where('classified_id', $classified->id)->get();
-            foreach ($existingPhotos as $oldPhoto) {
-                $filename = $oldPhoto->getPhotoFilenameAttribute();
-                $flatFile = public_path('images/classifieds/' . basename($filename));
-                $nestedFile = public_path('images/classifieds/classifieds/' . basename($filename));
-                if (file_exists($flatFile)) {
-                    @unlink($flatFile);
-                }
-                if (file_exists($nestedFile)) {
-                    @unlink($nestedFile);
-                }
-                Storage::disk('s3')->delete($oldPhoto->getPhotoFilenameAttribute());
-                $oldPhoto->delete();
-            }
-        }
         foreach ($request->file('photos') as $file) {
             $extension = $file->getClientOriginalExtension();
             $filename = uniqid('classified_') . '.' . $extension;
