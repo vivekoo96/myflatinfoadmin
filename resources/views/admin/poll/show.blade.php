@@ -52,7 +52,8 @@
                   $votingLabels = [
                     'user_based' => 'User Based',
                     'owner_based' => 'Owner Based',
-                    'tenant_based' => 'Tenant Based'
+                    'tenant_based' => 'Tenant Based',
+                    'flat_based' => 'Flat Based'
                   ];
                 @endphp
                 {{ $votingLabels[$poll->voting_type] ?? $poll->voting_type }}

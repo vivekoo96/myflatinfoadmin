@@ -1659,19 +1659,33 @@ public function my_classifieds(Request $request)
         
         
         $withinCount = Classified::withTrashed()
-    ->where('flat_id', AuthHelper::flat()->id)
-    ->whereBetween('created_at', [$withinStart, $endDate])
-    ->where('category', 'Within Building')
-    ->whereNotIn('status', ['Rejected'])
-    ->count();
+            ->where('flat_id', AuthHelper::flat()->id)
+            ->whereBetween('created_at', [$withinStart, $endDate])
+            ->where('category', 'Within Building')
+            ->whereNotIn('status', ['Rejected'])
+            ->where(function ($query) {
+                $query->whereNull('deleted_at')
+                      ->orWhere(function ($q) {
+                          $q->whereNotNull('deleted_at')
+                            ->whereNotIn('status', ['Pending', 'Send For Editing']);
+                      });
+            })
+            ->count();
 
 
-$allCount = Classified::withTrashed()
-    ->where('flat_id', AuthHelper::flat()->id)
-    ->whereBetween('created_at', [$allStart, $endDate])
-    ->where('category', 'All Buildings')
-    ->whereNotIn('status', ['Rejected'])
-    ->count();
+        $allCount = Classified::withTrashed()
+            ->where('flat_id', AuthHelper::flat()->id)
+            ->whereBetween('created_at', [$allStart, $endDate])
+            ->where('category', 'All Buildings')
+            ->whereNotIn('status', ['Rejected'])
+            ->where(function ($query) {
+                $query->whereNull('deleted_at')
+                      ->orWhere(function ($q) {
+                          $q->whereNotNull('deleted_at')
+                            ->whereNotIn('status', ['Pending', 'Send For Editing']);
+                      });
+            })
+            ->count();
 
 
     // 🔹 Calculate remaining limits

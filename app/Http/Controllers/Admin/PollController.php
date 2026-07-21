@@ -55,7 +55,7 @@ class PollController extends Controller
             'title'       => 'required|string|max:255',
             'type'        => 'required|in:poll,survey',
             'structure'   => 'required|in:single,multiple',
-            'voting_type' => 'required|in:user_based,owner_based,tenant_based',
+            'voting_type' => 'required|in:user_based,owner_based,tenant_based,flat_based',
             'questions'   => 'required|array|min:1',
             'questions.*.question' => 'required|string|max:500',
             'questions.*.options'  => 'required|array|min:2',
@@ -423,7 +423,7 @@ class PollController extends Controller
             'title'       => 'required|string|max:255',
             'type'        => 'required|in:poll,survey',
             'structure'   => 'required|in:single,multiple',
-            'voting_type' => 'required|in:user_based,owner_based,tenant_based',
+            'voting_type' => 'required|in:user_based,owner_based,tenant_based,flat_based',
         ];
         if ($request->expiry_date) {
             $rules['expiry_date'] = 'date|after:now';
@@ -582,30 +582,38 @@ class PollController extends Controller
             $building = Building::find($poll->building_id);
             if (! $building) return;
 
-            // Determine which users to notify based on voting_type
             $votingType = $poll->voting_type;
-            $targetUsers = collect();
 
             $flats = Flat::where('building_id', $building->id)
                 ->with(['owner', 'tanent'])
                 ->get();
 
+            // Build a map: user_id => { user, flat_ids[] }
+            // so each user gets a notification record per flat they belong to
+            $userFlatsMap = [];
+
             foreach ($flats as $flat) {
-                if ($votingType === 'user_based') {
-                    // Notify both owner and tenant
-                    if ($flat->owner) $targetUsers->push($flat->owner);
-                    if ($flat->tanent) $targetUsers->push($flat->tanent);
+                if ($votingType === 'user_based' || $votingType === 'flat_based') {
+                    if ($flat->owner) {
+                        $userFlatsMap[$flat->owner->id]['user'] = $flat->owner;
+                        $userFlatsMap[$flat->owner->id]['flat_ids'][] = $flat->id;
+                    }
+                    if ($flat->tanent) {
+                        $userFlatsMap[$flat->tanent->id]['user'] = $flat->tanent;
+                        $userFlatsMap[$flat->tanent->id]['flat_ids'][] = $flat->id;
+                    }
                 } elseif ($votingType === 'owner_based') {
-                    // Notify only owners
-                    if ($flat->owner) $targetUsers->push($flat->owner);
+                    if ($flat->owner) {
+                        $userFlatsMap[$flat->owner->id]['user'] = $flat->owner;
+                        $userFlatsMap[$flat->owner->id]['flat_ids'][] = $flat->id;
+                    }
                 } elseif ($votingType === 'tenant_based') {
-                    // Notify only tenants
-                    if ($flat->tanent) $targetUsers->push($flat->tanent);
+                    if ($flat->tanent) {
+                        $userFlatsMap[$flat->tanent->id]['user'] = $flat->tanent;
+                        $userFlatsMap[$flat->tanent->id]['flat_ids'][] = $flat->id;
+                    }
                 }
             }
-
-            // Remove duplicates
-            $targetUsers = $targetUsers->unique('id');
 
             $dataPayload = [
                 'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
@@ -622,7 +630,40 @@ class PollController extends Controller
                 'poll_id'     => (string) $poll->id,
             ];
 
-            foreach ($targetUsers as $targetUser) {
+            foreach ($userFlatsMap as $userId => $data) {
+                $targetUser = $data['user'];
+                $flatIds    = array_values(array_unique($data['flat_ids']));
+
+                // Save a DB notification record for EVERY flat this user belongs to,
+                // directly and guaranteed — so it shows on the notification page of each
+                // flat (a 4-flat owner sees it in all 4). This does NOT depend on the
+                // push helper succeeding (push can fail on missing FCM config, etc.).
+                foreach ($flatIds as $flatId) {
+                    try {
+                        \App\Models\Notification::create([
+                            'user_id'     => $targetUser->id,
+                            'from_id'     => null,
+                            'flat_id'     => $flatId,
+                            'building_id' => $building->id,
+                            'title'       => $title,
+                            'body'        => $body,
+                            'type'        => 'poll_notification',
+                            'dataPayload' => array_merge($dataPayload, [
+                                'user_id' => (string) $targetUser->id,
+                            ]),
+                            'status'      => 0,
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Poll notification save failed', [
+                            'user_id' => $targetUser->id,
+                            'flat_id' => $flatId,
+                            'error'   => $e->getMessage(),
+                        ]);
+                    }
+                }
+
+                // Send ONE push to the user (save_to_db=false so we don't duplicate the
+                // records saved above).
                 try {
                     NotificationHelper::sendNotification(
                         $targetUser->id,
@@ -633,14 +674,16 @@ class PollController extends Controller
                         ]),
                         [
                             'from_id'     => null,
+                            'flat_id'     => $flatIds[0] ?? null,
                             'building_id' => $building->id,
                             'type'        => 'poll_notification',
                             'ios_sound'   => 'default',
+                            'save_to_db'  => false,
                         ],
                         ['user']
                     );
                 } catch (\Exception $e) {
-                    Log::error('Poll notification failed', ['user_id' => $targetUser->id, 'error' => $e->getMessage()]);
+                    Log::error('Poll notification push failed', ['user_id' => $targetUser->id, 'error' => $e->getMessage()]);
                 }
             }
         } catch (\Exception $e) {

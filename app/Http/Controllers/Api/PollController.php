@@ -37,7 +37,7 @@ class PollController extends Controller
 
         $data = $polls->filter(function (Poll $poll) use ($isOwner, $isTenant) {
             // Show polls based on voting type and user role
-            if ($poll->voting_type === 'user_based') {
+            if ($poll->voting_type === 'user_based' || $poll->voting_type === 'flat_based') {
                 return true; // Both owner and tenant see
             } elseif ($poll->voting_type === 'owner_based') {
                 return $isOwner; // Only owner sees
@@ -95,7 +95,7 @@ class PollController extends Controller
         $isTenant = $flat->tanent_id == $user->id;
 
         $canView = false;
-        if ($poll->voting_type === 'user_based') {
+        if ($poll->voting_type === 'user_based' || $poll->voting_type === 'flat_based') {
             $canView = true;
         } elseif ($poll->voting_type === 'owner_based') {
             $canView = $isOwner;
@@ -200,14 +200,21 @@ class PollController extends Controller
             return response()->json(['error' => 'This poll has expired.'], 422);
         }
 
-        // Validate voting eligibility based on voting type
+        // Validate voting eligibility based on voting type.
+        // Use loose (==) comparison: owner_id/tanent_id come back as strings from the
+        // DB while $user->id is an int, so a strict !== wrongly rejects the real owner
+        // /tenant (getPollDetail already uses == for the same eligibility check).
         if ($poll->voting_type === 'owner_based') {
-            if ($flat->owner_id !== $user->id) {
+            if ($flat->owner_id != $user->id) {
                 return response()->json(['error' => 'Only flat owners can vote in this poll.'], 403);
             }
         } elseif ($poll->voting_type === 'tenant_based') {
-            if ($flat->tanent_id !== $user->id) {
+            if ($flat->tanent_id != $user->id) {
                 return response()->json(['error' => 'Only flat tenants can vote in this poll.'], 403);
+            }
+        } elseif ($poll->voting_type === 'flat_based') {
+            if ($flat->owner_id != $user->id && $flat->tanent_id != $user->id) {
+                return response()->json(['error' => 'Only flat residents can vote in this poll.'], 403);
             }
         }
 
@@ -256,8 +263,12 @@ class PollController extends Controller
                 }
 
                 // Double-check duplicate (race condition safety)
-                $existsQuery = PollVote::where('poll_question_id', $questionId)
-                    ->where('user_id', $user->id);
+                $existsQuery = PollVote::where('poll_question_id', $questionId);
+                if ($poll->voting_type === 'flat_based') {
+                    $existsQuery->where('flat_id', $flat->id);
+                } else {
+                    $existsQuery->where('user_id', $user->id);
+                }
 
                 if ($existsQuery->exists()) {
                     DB::rollBack();
@@ -311,7 +322,7 @@ class PollController extends Controller
         $isTenant = $flat->tanent_id == $user->id;
 
         $canView = false;
-        if ($poll->voting_type === 'user_based') {
+        if ($poll->voting_type === 'user_based' || $poll->voting_type === 'flat_based') {
             $canView = true;
         } elseif ($poll->voting_type === 'owner_based') {
             $canView = $isOwner;
@@ -405,10 +416,9 @@ class PollController extends Controller
 
         $query = PollVote::where('poll_question_id', $firstQuestion->id);
 
-        if ($poll->voting_type === 'user_based') {
-            $query->where('user_id', $userId);
-        } elseif ($poll->voting_type === 'owner_based' || $poll->voting_type === 'tenant_based') {
-            // For owner/tenant based, check by user_id since only one person per flat votes
+        if ($poll->voting_type === 'flat_based') {
+            $query->where('flat_id', $flatId);
+        } else {
             $query->where('user_id', $userId);
         }
 
