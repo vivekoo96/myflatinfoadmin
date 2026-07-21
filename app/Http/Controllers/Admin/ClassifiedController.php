@@ -182,6 +182,18 @@ class ClassifiedController extends Controller
         $originalValues = null;
         if ($request->id) {
             $classified = Classified::withTrashed()->find($request->id);
+
+            // If the resident has deleted their post, the BA must NOT be able to change
+            // it (e.g. approving/rejecting a classified the user already deleted while it
+            // was pending). Block any modification of a soft-deleted classified.
+            if ($classified && $classified->trashed()) {
+                $errMsg = 'This classified has been deleted by the user and can no longer be modified.';
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json(['error' => $errMsg], 422);
+                }
+                return redirect()->back()->with('error', $errMsg);
+            }
+
             $originalValues = $classified ? $classified->getOriginal() : null;
             $msg = 'Classified updated Susccessfully';
         }

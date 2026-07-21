@@ -224,11 +224,11 @@
                         @endif
                     </td>
                     <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{$item->desc}}">{{$item->desc}}</td>
-                    <td>{{$item->status}}</td>
+                    <td>{{$item->status}}@if($item->deleted_at)<br><span class="badge badge-secondary">Deleted by user</span>@endif</td>
                      @if(Auth::User()->role == 'BA')
                     <td>
                       @if($item->building_id != 0)
-                      @if(Auth::user()->building_id == $item->building_id)
+                      @if(Auth::user()->building_id == $item->building_id && !$item->deleted_at)
                       @php
                           $photoUrls = [];
                           foreach ($item->photos as $photoObj) {
