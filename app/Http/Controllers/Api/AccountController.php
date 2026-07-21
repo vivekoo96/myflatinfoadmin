@@ -744,7 +744,7 @@ class AccountController extends Controller
 
     // Transaction update/create
     $transaction = Transaction::where('model', 'Corpus')
-        ->where('model_id', $flat->id)
+        ->where('flat_id', $flat->id)
         ->first();
 
     if (!$transaction) {
@@ -754,13 +754,16 @@ class AccountController extends Controller
     $transaction->building_id = $flat->building_id;
     $transaction->user_id = $flat->owner_id;
     $transaction->model = 'Corpus';
+    $transaction->model_id = $flat->id;
     $transaction->type = 'Credit';
     $transaction->flat_id = $flat->id;
     $transaction->payerrole_id = Auth::id();
     $transaction->payment_type = $request->payment_type;
     $transaction->date = $request->corpus_paid_on;
     $transaction->amount = $request->corpus_fund;
-    $transaction->reciept_no = 'RCP' . rand(10000000, 99999999);
+    if (empty($transaction->reciept_no)) {
+        $transaction->reciept_no = 'RCP' . rand(10000000, 99999999);
+    }
     $transaction->desc = 'Corpus Fund for ' . $flat->name . ' through Accountant : '.Auth::User()->name;
     $transaction->status = 'Success';
     $transaction->save();

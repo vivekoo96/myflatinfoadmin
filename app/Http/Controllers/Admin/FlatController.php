@@ -22,6 +22,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use \Mail;
 use App\Mail\FlatRegistered;
+use App\Helpers\NotificationHelper2 as NotificationHelper;
 
 class FlatController extends Controller
 {
@@ -412,11 +413,11 @@ class FlatController extends Controller
             'payment_type' => 'required',
         ];
     
-    $msg = 'Corpus fund Updated';
-    // Check if status is being toggled between Paid and Unpaid
-    $old_flat = Flat::withTrashed()->find($request->id);
-    // dd($old_flat);
-    $old_status = $old_flat ? $old_flat->is_corpus_paid : null;
+        $msg = 'Corpus fund Updated';
+        // Check if status is being toggled between Paid and Unpaid
+        $old_flat = Flat::withTrashed()->find($request->id);
+        // dd($old_flat);
+        $old_status = $old_flat ? $old_flat->is_corpus_paid : null;
 
         $flat = Flat::withTrashed()->find($request->id);
     
@@ -437,34 +438,76 @@ class FlatController extends Controller
             return redirect()->back()->with('error', 'Changing Corpus Fund status from Paid to Unpaid is not allowed.');
         }
         // dd($flat);
-            // Set bill number from frontend or clear it
-            if($request->is_corpus_paid == 'No') {
-                $flat->corpus_paid_on = NULL;
-                $flat->bill_no = NULL;
-            } else {
-                $flat->bill_no = $request->bill_no;
-            }
+        // Set bill number from frontend or clear it
+        if($request->is_corpus_paid == 'No') {
+            $flat->corpus_paid_on = NULL;
+            $flat->bill_no = NULL;
+        } else {
+            $flat->bill_no = $request->bill_no;
+        }
         $flat->save();
         
-        $transaction = Transaction::where('model','CorpusFund')->where('model_id',$flat->id)->first();
+        $transaction = Transaction::where('model', 'Corpus')->where('flat_id', $flat->id)->first();
         if(!$transaction){
             $transaction = new Transaction();
         }
-            $transaction->building_id = $flat->building_id;
-            $transaction->user_id = $flat->owner_id;
-            // $transaction->order_id = $order->order_id;
-            $transaction->model = 'Corpus';
-            $transaction->type = 'Credit';
-            $transaction->payerrole_id = Auth::User()->id;
-            $transaction->flat_id = $flat->id;
-             $transaction->block_id = $flat->block->id;
-            $transaction->payment_type = $request->payment_type;
-            $transaction->date = $request->corpus_paid_on;
-            $transaction->amount = $request->corpus_fund;
+        $transaction->building_id = $flat->building_id;
+        $transaction->user_id = $flat->owner_id;
+        // $transaction->order_id = $order->order_id;
+        $transaction->model = 'Corpus';
+        $transaction->model_id = $flat->id;
+        $transaction->type = 'Credit';
+        $transaction->payerrole_id = Auth::User()->id;
+        $transaction->flat_id = $flat->id;
+        $transaction->block_id = $flat->block ? $flat->block->id : null;
+        $transaction->payment_type = $request->payment_type;
+        $transaction->date = $request->corpus_paid_on;
+        $transaction->amount = $request->corpus_fund;
+        if (empty($transaction->reciept_no)) {
             $transaction->reciept_no = 'RCP'.rand(10000000,99999999);
-            $transaction->desc = 'Corpus Fund for '.$flat->name;
-            $transaction->status = 'Success';
-            $transaction->save();
+        }
+        $transaction->desc = 'Corpus Fund for '.$flat->name;
+        $transaction->status = 'Success';
+        $transaction->save();
+        
+        /**
+         * 🔔 Send Notification to Flat Owner
+         */
+        if ($flat->owner_id) {
+            $title = 'Corpus Fund Updated';
+            $body = 'Your corpus fund details for flat ' . $flat->name . ' have been updated through Building Admin : ' . Auth::User()->name;
+
+            $dataPayload = [
+                'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                'screen' => 'CorpusFundPage',
+                'params' => json_encode([
+                    'flat_id' => $flat->id,
+                    'building_id' => $flat->building_id,
+                ]),
+                'categoryId' => 'CorpusFundUpdate',
+                'channelId' => 'default',
+                'sound' => 'default',
+                'type' => 'CORPUS_FUND_UPDATE',
+                'user_id' => (string) $flat->owner_id,
+                'flat_id' => (string) $flat->id,
+                'building_id' => (string) $flat->building_id,
+            ];
+
+            NotificationHelper::sendNotification(
+                $flat->owner_id,
+                $title,
+                $body,
+                $dataPayload,
+                [
+                    'from_id' => Auth::User()->id,
+                    'flat_id' => $flat->id,
+                    'building_id' => $flat->building_id,
+                    'type' => 'corpus_fund_update',
+                    'ios_sound' => 'default'
+                ],
+                ['user']
+            );
+        }
         
         return redirect()->back()->with('success', $msg);
     }
