@@ -48,21 +48,32 @@ class PollController extends Controller
         })->map(function (Poll $poll) use ($user, $flat) {
             $hasVoted = $this->hasUserVoted($poll, $user->id, $flat->id);
 
+            $flatVoteInfo = [
+                'has_ownerortenant_voted' => false,
+                'who_voted'               => null,
+            ];
+
+            if ($poll->voting_type === 'flat_based') {
+                $flatVoteInfo = $this->getFlatVoteInfo($poll, $flat);
+            }
+
             return [
-                'id'                => $poll->id,
-                'title'             => $poll->title,
-                'description'       => $poll->description,
-                'type'              => $poll->type,
-                'structure'         => $poll->structure,
-                'voting_type'       => $poll->voting_type,
-                'status'            => $poll->display_status,
-                'expiry_date'       => $poll->expiry_date ? $poll->expiry_date->toDateTimeString() : null,
-                'created_by_name'   => $poll->creator ? $poll->creator->name : null,
-                'created_by_role'   => $poll->created_by_role,
-                'has_voted'         => $hasVoted,
-                'total_voters'      => $poll->total_voters,
-                'questions_count'   => $poll->questions->count(),
-                'results_released'  => $poll->status === 'published',
+                'id'                      => $poll->id,
+                'title'                   => $poll->title,
+                'description'             => $poll->description,
+                'type'                    => $poll->type,
+                'structure'               => $poll->structure,
+                'voting_type'             => $poll->voting_type,
+                'status'                  => $poll->display_status,
+                'expiry_date'             => $poll->expiry_date ? $poll->expiry_date->toDateTimeString() : null,
+                'created_by_name'         => $poll->creator ? $poll->creator->name : null,
+                'created_by_role'         => $poll->created_by_role,
+                'has_voted'               => $hasVoted,
+                'has_ownerortenant_voted' => $flatVoteInfo['has_ownerortenant_voted'],
+                'who_voted'               => $flatVoteInfo['who_voted'],
+                'total_voters'            => $poll->total_voters,
+                'questions_count'         => $poll->questions->count(),
+                'results_released'        => $poll->status === 'published',
             ];
         })->values();
 
@@ -109,6 +120,15 @@ class PollController extends Controller
 
         $hasVoted = $this->hasUserVoted($poll, $user->id, $flat->id);
 
+        $flatVoteInfo = [
+            'has_ownerortenant_voted' => false,
+            'who_voted'               => null,
+        ];
+
+        if ($poll->voting_type === 'flat_based') {
+            $flatVoteInfo = $this->getFlatVoteInfo($poll, $flat);
+        }
+
         // Get user's existing votes so the UI can pre-select them
         $userVotes = PollVote::where('poll_id', $poll->id)
             ->where('user_id', $user->id)
@@ -149,22 +169,24 @@ class PollController extends Controller
 
         return response()->json([
             'poll' => [
-                'id'                => $poll->id,
-                'title'             => $poll->title,
-                'description'       => $poll->description,
-                'type'              => $poll->type,
-                'structure'         => $poll->structure,
-                'voting_type'       => $poll->voting_type,
-                'status'            => $poll->display_status,
-                'expiry_date'       => $poll->expiry_date ? $poll->expiry_date->toDateTimeString() : null,
-                'created_by_name'   => $poll->creator ? $poll->creator->name : null,
-                'created_by_role'   => $poll->created_by_role,
-                'has_voted'         => $hasVoted,
-                'total_voters'      => $totalVotes,
-                'participation_pct' => $participation,
-                'results_released'  => $poll->status === 'published',
-                'result_released_at' => $poll->result_released_at ? $poll->result_released_at->toDateTimeString() : null,
-                'questions'         => $questionsData,
+                'id'                      => $poll->id,
+                'title'                   => $poll->title,
+                'description'             => $poll->description,
+                'type'                    => $poll->type,
+                'structure'               => $poll->structure,
+                'voting_type'             => $poll->voting_type,
+                'status'                  => $poll->display_status,
+                'expiry_date'             => $poll->expiry_date ? $poll->expiry_date->toDateTimeString() : null,
+                'created_by_name'         => $poll->creator ? $poll->creator->name : null,
+                'created_by_role'         => $poll->created_by_role,
+                'has_voted'               => $hasVoted,
+                'has_ownerortenant_voted' => $flatVoteInfo['has_ownerortenant_voted'],
+                'who_voted'               => $flatVoteInfo['who_voted'],
+                'total_voters'            => $totalVotes,
+                'participation_pct'       => $participation,
+                'results_released'        => $poll->status === 'published',
+                'result_released_at'      => $poll->result_released_at ? $poll->result_released_at->toDateTimeString() : null,
+                'questions'               => $questionsData,
             ],
         ], 200);
     }
@@ -336,6 +358,15 @@ class PollController extends Controller
 
         $hasVoted = $this->hasUserVoted($poll, $user->id, $flat->id);
 
+        $flatVoteInfo = [
+            'has_ownerortenant_voted' => false,
+            'who_voted'               => null,
+        ];
+
+        if ($poll->voting_type === 'flat_based') {
+            $flatVoteInfo = $this->getFlatVoteInfo($poll, $flat);
+        }
+
         // Build participation percentage (same as getPollDetail)
         $totalVotes   = $poll->total_voters;
         $totalFlats   = \App\Models\Flat::where('building_id', $flat->building_id)->where('status', 'Active')->count();
@@ -383,22 +414,24 @@ class PollController extends Controller
 
         return response()->json([
             'poll' => [
-                'id'                 => $poll->id,
-                'title'              => $poll->title,
-                'description'        => $poll->description,
-                'type'               => $poll->type,
-                'structure'          => $poll->structure,
-                'voting_type'        => $poll->voting_type,
-                'status'             => $poll->display_status,
-                'expiry_date'        => $poll->expiry_date ? $poll->expiry_date->toDateTimeString() : null,
-                'created_by_name'    => $poll->creator ? $poll->creator->name : null,
-                'created_by_role'    => $poll->created_by_role,
-                'has_voted'          => $hasVoted,
-                'total_voters'       => $poll->total_voters,
-                'participation_pct'  => $participation,
-                'results_released'   => $poll->status === 'published',
-                'result_released_at' => $poll->result_released_at ? $poll->result_released_at->toDateTimeString() : null,
-                'questions' => $questionsData,
+                'id'                      => $poll->id,
+                'title'                   => $poll->title,
+                'description'             => $poll->description,
+                'type'                    => $poll->type,
+                'structure'               => $poll->structure,
+                'voting_type'             => $poll->voting_type,
+                'status'                  => $poll->display_status,
+                'expiry_date'             => $poll->expiry_date ? $poll->expiry_date->toDateTimeString() : null,
+                'created_by_name'         => $poll->creator ? $poll->creator->name : null,
+                'created_by_role'         => $poll->created_by_role,
+                'has_voted'               => $hasVoted,
+                'has_ownerortenant_voted' => $flatVoteInfo['has_ownerortenant_voted'],
+                'who_voted'               => $flatVoteInfo['who_voted'],
+                'total_voters'            => $poll->total_voters,
+                'participation_pct'       => $participation,
+                'results_released'        => $poll->status === 'published',
+                'result_released_at'      => $poll->result_released_at ? $poll->result_released_at->toDateTimeString() : null,
+                'questions'               => $questionsData,
             ],
             
         ], 200);
@@ -407,6 +440,33 @@ class PollController extends Controller
     // ─────────────────────────────────────────────────────────────
     // HELPER
     // ─────────────────────────────────────────────────────────────
+    private function getFlatVoteInfo(Poll $poll, $flat)
+    {
+        $vote = PollVote::where('poll_id', $poll->id)
+            ->where('flat_id', $flat->id)
+            ->first();
+
+        if (! $vote) {
+            return [
+                'has_ownerortenant_voted' => false,
+                'who_voted'               => null,
+            ];
+        }
+
+        $whoVoted = null;
+
+        if ($vote->user_id == $flat->owner_id) {
+            $whoVoted = 'owner';
+        } elseif ($vote->user_id == $flat->tanent_id) {
+            $whoVoted = 'tenant';
+        }
+
+        return [
+            'has_ownerortenant_voted' => true,
+            'who_voted'               => $whoVoted,
+        ];
+    }
+
     private function hasUserVoted(Poll $poll, int $userId, int $flatId): bool
     {
         if ($poll->questions->isEmpty()) return false;
